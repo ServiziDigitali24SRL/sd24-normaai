@@ -1,101 +1,232 @@
-import Image from "next/image";
+"use client";
+
+export const dynamic = "force-dynamic";
+
+import { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase-browser";
+import type { User } from "@supabase/supabase-js";
+import Sidebar from "@/components/Sidebar";
+import ChatBar from "@/components/ChatBar";
+import ModalCittadino from "@/components/modals/ModalCittadino";
+import ModalImpresa from "@/components/modals/ModalImpresa";
+import ModalProfessionista from "@/components/modals/ModalProfessionista";
+import ModalInvesti from "@/components/modals/ModalInvesti";
+import ModalComeFunziona from "@/components/modals/ModalComeFunziona";
+import ModalCronologia from "@/components/modals/ModalCronologia";
+import ModalDeveloper from "@/components/modals/ModalDeveloper";
+import ModalBug from "@/components/modals/ModalBug";
+
+function CheckoutToastHandler({ onToast }: { onToast: (t: "success" | "cancel" | null) => void }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkout = searchParams.get("checkout");
+    if (checkout === "success") {
+      onToast("success");
+      router.replace("/");
+      setTimeout(() => onToast(null), 5000);
+    } else if (checkout === "cancel") {
+      onToast("cancel");
+      router.replace("/");
+      setTimeout(() => onToast(null), 4000);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return null;
+}
+
+type ModalId =
+  | "cittadino"
+  | "impresa"
+  | "professionista"
+  | "investi"
+  | "come-funziona"
+  | "cronologia"
+  | "developer"
+  | "bug"
+  | null;
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [activeModal, setActiveModal] = useState<ModalId>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [checkoutToast, setCheckoutToast] = useState<"success" | "cancel" | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createClient();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // Auth state listener
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setUser(null);
+  }
+
+  // Derive display info from user metadata
+  const userRole = user?.user_metadata?.role as string | undefined;
+  const userName = user?.user_metadata?.full_name
+    || user?.user_metadata?.ragione_sociale
+    || user?.email?.split("@")[0]
+    || "";
+  const roleLabel = userRole === "privato" ? "Cittadino"
+    : userRole === "impresa" ? "Impresa"
+    : userRole === "professionista" ? "Professionista"
+    : null;
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sb-open");
+    if (saved !== null) setSidebarOpen(saved === "true");
+
+    const onSbChange = (e: Event) => {
+      setSidebarOpen((e as CustomEvent<boolean>).detail);
+    };
+    window.addEventListener("sb-toggle", onSbChange);
+    return () => window.removeEventListener("sb-toggle", onSbChange);
+  }, []);
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      localStorage.setItem("sb-open", String(next));
+      window.dispatchEvent(new CustomEvent("sb-toggle", { detail: next }));
+      return next;
+    });
+  }, []);
+
+  function openModal(id: string) {
+    setActiveModal(id as ModalId);
+  }
+
+  function closeModal() {
+    setActiveModal(null);
+  }
+
+  return (
+    <>
+      <Suspense fallback={null}>
+        <CheckoutToastHandler onToast={setCheckoutToast} />
+      </Suspense>
+      <Sidebar onOpenModal={openModal} isOpen={sidebarOpen} onToggle={toggleSidebar} user={user} onLogout={handleLogout} />
+
+      {/* Main content */}
+      <div
+        className={`flex flex-col min-h-screen transition-[margin] duration-[250ms] ease-in-out ${
+          sidebarOpen ? "ml-[240px]" : "ml-0"
+        }`}
+      >
+        {/* Topbar */}
+        <div className="flex items-center px-4 py-3 border-b border-[#1a1a1a] bg-[#0D0D0D] sticky top-0 z-50">
+          {/* Hamburger */}
+          <button
+            onClick={toggleSidebar}
+            aria-label="Mostra/nascondi sidebar"
+            className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] mr-3 rounded-md text-[#555] hover:text-cream hover:bg-white/[0.05] transition-all duration-150 shrink-0"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+            <span
+              className={`block h-[1.5px] bg-current transition-all duration-200 ${
+                sidebarOpen ? "w-4" : "w-5"
+              }`}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <span className="block w-5 h-[1.5px] bg-current" />
+            <span
+              className={`block h-[1.5px] bg-current transition-all duration-200 ${
+                sidebarOpen ? "w-4" : "w-5"
+              }`}
+            />
+          </button>
+
+          {/* Logo visibile solo quando sidebar chiusa */}
+          <div
+            className={`font-serif text-[17px] tracking-[-0.5px] mr-auto transition-all duration-[250ms] overflow-hidden ${
+              sidebarOpen ? "w-0 opacity-0" : "w-auto opacity-100"
+            }`}
           >
-            Read our docs
-          </a>
+            Norma<span className="text-accent">AI</span>
+          </div>
+
+          {user ? (
+            <div className="flex items-center gap-3 ml-auto">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-[11px] font-semibold text-accent uppercase">
+                  {userName.charAt(0)}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[12px] text-cream leading-tight">{userName}</span>
+                  {roleLabel && (
+                    <span className="text-[10px] text-[#666] leading-tight">{roleLabel}</span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-[11px] text-[#555] hover:text-accent border border-[#252525] hover:border-accent/30 bg-transparent rounded-md px-2 py-1 transition-colors duration-150"
+              >
+                Esci
+              </button>
+            </div>
+          ) : (
+            <>
+              <span className="text-[12px] text-[#555] mr-[10px] ml-auto">
+                Sei un professionista?
+              </span>
+              <button
+                onClick={() => openModal("professionista")}
+                className="bg-accent border-none text-white py-[7px] px-[15px] rounded-lg text-[12.5px] font-medium transition-colors duration-150 hover:bg-accent-hover shrink-0"
+              >
+                Accedi
+              </button>
+            </>
+          )}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {/* Hero */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6 pt-12 pb-[72px]">
+          <div className="font-serif text-[48px] tracking-[-2px] mb-[6px]">
+            Norma<span className="text-accent">AI</span>
+          </div>
+          <div className="text-[14px] text-[#555] italic mb-11">
+            La norma è uguale per tutti.
+          </div>
+          <ChatBar />
+        </div>
+      </div>
+
+      {/* Checkout toast */}
+      {checkoutToast && (
+        <div className={`fixed top-4 right-4 z-[600] px-5 py-3 rounded-xl text-[13px] font-medium shadow-lg transition-all ${
+          checkoutToast === "success"
+            ? "bg-[#0d1f0d] border border-[#1a3a1a] text-[#4caf50]"
+            : "bg-[#1f0d0d] border border-[#3a1a1a] text-[#f44]"
+        }`}>
+          {checkoutToast === "success"
+            ? "✓ Abbonamento attivato! Benvenuto su NormaAI."
+            : "Pagamento annullato. Nessun addebito."}
+        </div>
+      )}
+
+      {/* Modals */}
+      <ModalCittadino open={activeModal === "cittadino"} onClose={closeModal} />
+      <ModalImpresa open={activeModal === "impresa"} onClose={closeModal} />
+      <ModalProfessionista open={activeModal === "professionista"} onClose={closeModal} />
+      <ModalInvesti open={activeModal === "investi"} onClose={closeModal} />
+      <ModalComeFunziona open={activeModal === "come-funziona"} onClose={closeModal} />
+      <ModalCronologia
+        open={activeModal === "cronologia"}
+        onClose={closeModal}
+        onOpenCittadino={() => openModal("cittadino")}
+        onOpenImpresa={() => openModal("impresa")}
+      />
+      <ModalDeveloper open={activeModal === "developer"} onClose={closeModal} />
+      <ModalBug open={activeModal === "bug"} onClose={closeModal} />
+    </>
   );
 }
