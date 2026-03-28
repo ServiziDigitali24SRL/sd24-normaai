@@ -60,6 +60,16 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
             icon={<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" /></svg>}
             label="Cronologia"
           />
+          <NavItem
+            onClick={() => {}}
+            icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>}
+            label="Progetti"
+          />
+          <NavItem
+            onClick={() => {}}
+            icon={<svg viewBox="0 0 24 24"><polyline points="21,8 21,21 3,21 3,8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>}
+            label="Archivio"
+          />
           {!user && (
             <>
               <Divider />
