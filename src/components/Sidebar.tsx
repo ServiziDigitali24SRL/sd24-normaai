@@ -60,10 +60,9 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
             icon={<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" /></svg>}
             label="Cronologia"
           />
-          <Divider />
-
           {!user && (
             <>
+              <Divider />
               <NavItem
                 onClick={() => onOpenModal("cittadino")}
                 icon={<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>}
@@ -74,45 +73,45 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
                 icon={<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></svg>}
                 label="Login Impresa"
               />
+              <Divider />
+              <NavItem
+                onClick={() => onOpenModal("investi")}
+                highlight
+                icon={
+                  <svg viewBox="0 0 24 24" className="!stroke-none !fill-gold">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                }
+                label="Investi in NormaAI"
+              />
+              <NavItem
+                onClick={() => onOpenModal("come-funziona")}
+                icon={<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>}
+                label="Come funziona"
+              />
+              <NavItem
+                onClick={() => onOpenModal("developer")}
+                icon={<svg viewBox="0 0 24 24"><polyline points="16,18 22,12 16,6" /><polyline points="8,6 2,12 8,18" /></svg>}
+                label="API Sviluppatori"
+              />
+              <NavItem
+                onClick={() => router.push("/guide")}
+                icon={<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>}
+                label="Guide gratuite"
+              />
+              <Divider />
+              <NavItem
+                onClick={() => router.push("/privacy")}
+                icon={<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
+                label="Privacy Policy"
+              />
+              <NavItem
+                onClick={() => router.push("/termini")}
+                icon={<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>}
+                label="Termini di Servizio"
+              />
             </>
           )}
-          <Divider />
-          <NavItem
-            onClick={() => onOpenModal("investi")}
-            highlight
-            icon={
-              <svg viewBox="0 0 24 24" className="!stroke-none !fill-gold">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-              </svg>
-            }
-            label="Investi in NormaAI"
-          />
-          <NavItem
-            onClick={() => onOpenModal("come-funziona")}
-            icon={<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>}
-            label="Come funziona"
-          />
-          <NavItem
-            onClick={() => onOpenModal("developer")}
-            icon={<svg viewBox="0 0 24 24"><polyline points="16,18 22,12 16,6" /><polyline points="8,6 2,12 8,18" /></svg>}
-            label="API Sviluppatori"
-          />
-          <NavItem
-            onClick={() => router.push("/guide")}
-            icon={<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>}
-            label="Guide gratuite"
-          />
-          <Divider />
-          <NavItem
-            onClick={() => router.push("/privacy")}
-            icon={<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>}
-            label="Privacy Policy"
-          />
-          <NavItem
-            onClick={() => router.push("/termini")}
-            icon={<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>}
-            label="Termini di Servizio"
-          />
           <NavItem
             onClick={() => onOpenModal("bug")}
             icon={<svg viewBox="0 0 24 24"><path d="M8 2l1.88 1.88"/><path d="M14.12 3.88L16 2"/><path d="M9 7.13v-1a3.003 3.003 0 016 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6z"/><path d="M12 20v-9"/><path d="M6.53 9C4.6 8.8 3 7.1 3 5"/><path d="M6 13H2"/><path d="M3 21c0-2.1 1.7-3.9 3.8-4"/><path d="M20.97 5c0 2.1-1.6 3.8-3.5 4"/><path d="M22 13h-4"/><path d="M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>}
