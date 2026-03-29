@@ -72,11 +72,6 @@ export default function ModalProfessionisti({ open, onClose }: Props) {
     setSelected(null);
   }
 
-  const grouped = CATEGORIE.map(cat => ({
-    ...cat,
-    items: pros.filter(p => p.categoria === cat.id),
-  })).filter(cat => cat.items.length > 0 || view === "list");
-
   return (
     <ModalOverlay open={open} onClose={handleClose}>
       <div className="p-7 max-h-[85vh] overflow-y-auto">
