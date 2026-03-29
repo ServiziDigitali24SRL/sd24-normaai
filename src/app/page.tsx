@@ -17,6 +17,7 @@ import ModalCronologia from "@/components/modals/ModalCronologia";
 import ModalDeveloper from "@/components/modals/ModalDeveloper";
 import ModalBug from "@/components/modals/ModalBug";
 import ModalFormazione from "@/components/modals/ModalFormazione";
+import ModalProfessionisti from "@/components/modals/ModalProfessionisti";
 
 function CheckoutToastHandler({ onToast }: { onToast: (t: "success" | "cancel" | null) => void }) {
   const searchParams = useSearchParams();
@@ -49,6 +50,7 @@ type ModalId =
   | "developer"
   | "bug"
   | "formazione"
+  | "professionisti"
   | null;
 
 export default function Home() {
@@ -241,6 +243,10 @@ export default function Home() {
         onClose={closeModal}
         userRole={userRole}
         userCategoria={user?.user_metadata?.categoria as string | undefined}
+      />
+      <ModalProfessionisti
+        open={activeModal === "professionisti"}
+        onClose={closeModal}
       />
     </>
   );
