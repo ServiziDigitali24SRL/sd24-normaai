@@ -93,6 +93,11 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
             label="Cronologia"
           />
           <NavItem
+            onClick={() => onOpenModal("formazione")}
+            icon={<svg viewBox="0 0 24 24"><polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>}
+            label="Formazione"
+          />
+          <NavItem
             onClick={() => {}}
             icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>}
             label="Progetti"
@@ -233,7 +238,7 @@ function ToolsMenu({ toggles, onToggle }: { toggles: Record<string, boolean>; on
   return (
     <div ref={ref} className="relative min-w-[240px]">
       {open && (
-        <div className="absolute left-[14px] right-[14px] bottom-full mb-[4px] bg-[#161616] border border-[#252525] rounded-xl shadow-2xl overflow-hidden z-50 max-h-[420px] overflow-y-auto">
+        <div className="absolute left-[14px] right-[14px] top-full mt-[4px] bg-[#161616] border border-[#252525] rounded-xl shadow-2xl overflow-hidden z-50 max-h-[420px] overflow-y-auto">
           {Object.entries(sections).map(([section, items], si) => (
             <div key={section}>
               {si > 0 && <div className="h-px bg-[#222] mx-3" />}

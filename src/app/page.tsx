@@ -16,6 +16,7 @@ import ModalComeFunziona from "@/components/modals/ModalComeFunziona";
 import ModalCronologia from "@/components/modals/ModalCronologia";
 import ModalDeveloper from "@/components/modals/ModalDeveloper";
 import ModalBug from "@/components/modals/ModalBug";
+import ModalFormazione from "@/components/modals/ModalFormazione";
 
 function CheckoutToastHandler({ onToast }: { onToast: (t: "success" | "cancel" | null) => void }) {
   const searchParams = useSearchParams();
@@ -47,6 +48,7 @@ type ModalId =
   | "cronologia"
   | "developer"
   | "bug"
+  | "formazione"
   | null;
 
 export default function Home() {
@@ -59,8 +61,15 @@ export default function Home() {
   // Auth state listener
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === "SIGNED_IN" && session?.user) {
+        const key = `norma-onboarding-${session.user.id}`;
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, "1");
+          setTimeout(() => setActiveModal("formazione"), 800);
+        }
+      }
     });
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,6 +236,12 @@ export default function Home() {
       />
       <ModalDeveloper open={activeModal === "developer"} onClose={closeModal} />
       <ModalBug open={activeModal === "bug"} onClose={closeModal} />
+      <ModalFormazione
+        open={activeModal === "formazione"}
+        onClose={closeModal}
+        userRole={userRole}
+        userCategoria={user?.user_metadata?.categoria as string | undefined}
+      />
     </>
   );
 }

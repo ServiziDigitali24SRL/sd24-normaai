@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 120,
+            "statusMessage": "Deploy su GitHub + Vercel...",
+            "command": "FILE=$(jq -r '.tool_input.file_path // .tool_response.filePath // \"\"'); if [[ \"$FILE\" == *\"/NORMA-AI/normaai-app/\"* && \"$FILE\" != *\"/.claude/\"* ]]; then cd /Users/user/Documents/PROGETTI/NORMA-AI/normaai-app && export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\" && git add -A -- ':!.claude' && git diff --cached --quiet || (git commit -m \"auto: $(date '+%Y-%m-%d %H:%M')\" && git push origin main); fi"
+          }
+        ]
+      }
+    ]
+  }
+}
