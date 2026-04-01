@@ -1,9 +1,30 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import * as fs from "fs";
+import * as path from "path";
 
 export const dynamic = "force-dynamic";
 
-const RAG_URL = process.env.RAG_SERVICE_URL || "http://89.167.123.25:8001";
+// Dev fallback: carica .env.local se ANTHROPIC_API_KEY non è ancora in process.env
+// (capita quando il server viene avviato prima che il file esista)
+if (!process.env.ANTHROPIC_API_KEY) {
+  try {
+    const envPath = path.join(process.cwd(), ".env.local");
+    const lines = fs.readFileSync(envPath, "utf-8").split("\n");
+    for (const line of lines) {
+      const match = line.match(/^([^#\s][^=]*)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+        if (!process.env[key]) process.env[key] = value;
+      }
+    }
+  } catch { /* .env.local non trovato — ignorato */ }
+}
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
 // ── Per-category system prompts ──────────────────────────────────────────────
 
@@ -75,7 +96,10 @@ function getVerticale(vertical: string | null): string | undefined {
 
 function getAnthropic(): Anthropic {
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
+  if (!key) {
+    console.error("[NormaAI] ANTHROPIC_API_KEY not found in env. Available keys:", Object.keys(process.env).filter(k => k.includes("ANTHROPIC") || k.includes("NEXT")));
+    throw new Error("ANTHROPIC_API_KEY not configured");
+  }
   return new Anthropic({ apiKey: key });
 }
 
@@ -90,6 +114,49 @@ interface RagResult {
   data: string;
   url: string;
   score: number;
+}
+
+interface SupabaseChunk {
+  id: string;
+  content: string;
+  metadata: Record<string, string>;
+  similarity: number;
+}
+
+async function generateEmbedding(text: string): Promise<number[] | null> {
+  if (!OPENAI_API_KEY) return null;
+  try {
+    const res = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: text }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const { data } = await res.json();
+    return data?.[0]?.embedding ?? null;
+  } catch { return null; }
+}
+
+async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_embeddings`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query_embedding: embedding,
+        match_count: 6,
+        match_threshold: 0.30,
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return [];
+    return await res.json() as SupabaseChunk[];
+  } catch { return []; }
 }
 
 interface Source {
@@ -154,45 +221,37 @@ export async function POST(req: NextRequest) {
 
   const currentTurn: number = typeof turnNumber === "number" ? turnNumber : 0;
 
-  // 1. Fetch RAG chunks from VPS ─────────────────────────────────────────────
+  // 1. RAG — embedding + Supabase hybrid_search ────────────────────────────
   let ragContext = "";
   let sources: Source[] = [];
 
   try {
-    const ragRes = await fetch(`${RAG_URL}/search`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: question,
-        top_k: 6,
-        verticale: getVerticale(vertical),
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (ragRes.ok) {
-      const ragData = await ragRes.json();
-      const results: RagResult[] = ragData.results || [];
-
-      if (results.length > 0) {
-        ragContext = results
-          .map(
-            (r, i) =>
-              `[Fonte ${i + 1}] ${r.titolo}\nFonte: ${r.fonte} | Tipo: ${r.tipo}${r.data ? " | Data: " + r.data : ""}\n${r.chunk}`
-          )
+    const embedding = await generateEmbedding(question);
+    if (embedding) {
+      const chunks = await searchSupabase(embedding);
+      if (chunks.length > 0) {
+        ragContext = chunks
+          .map((c, i) => {
+            const m = c.metadata || {};
+            const ref = m.law_reference || m.source_type || "Normativa";
+            const art = m.article_number ? ` art. ${m.article_number}` : "";
+            return `[Fonte ${i + 1}] ${ref}${art} (${m.source_type || "corpus"})\n${c.content}`;
+          })
           .join("\n\n---\n\n");
-
-        sources = results.map((r) => ({
-          id: r.id,
-          titolo: r.titolo,
-          fonte: r.fonte,
-          url: r.url,
-          tipo: r.tipo,
-        }));
+        sources = chunks.map((c) => {
+          const m = c.metadata || {};
+          return {
+            id: String(c.id),
+            titolo: (m.law_reference || m.source_type || "Normativa") + (m.article_number ? " art. " + m.article_number : ""),
+            fonte: m.source_type || "normattiva",
+            url: "",
+            tipo: m.category || m.source_type || "normativa",
+          };
+        });
       }
     }
   } catch {
-    // RAG unavailable — continue without context, Claude answers from training
+    // RAG unavailable — Claude risponde dalla sua conoscenza
   }
 
   // 2. Build system prompt ───────────────────────────────────────────────────
@@ -242,7 +301,7 @@ export async function POST(req: NextRequest) {
       try {
         const anthropic = getAnthropic();
         const anthropicStream = await anthropic.messages.create({
-          model: "claude-sonnet-4-5",
+          model: "claude-sonnet-4-6",
           max_tokens: 1500,
           system: fullSystem,
           messages,

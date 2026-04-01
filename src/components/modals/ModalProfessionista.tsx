@@ -316,7 +316,7 @@ function StepDot({
             : "bg-[#1a1a1a] text-[#555] border border-[#252525]"
         }`}
       >
-        {isDone ? "\u2713" : n}
+        {isDone ? "✓" : n}
       </div>
       <div className="text-[10px] text-[#555] mt-1">{label}</div>
     </div>

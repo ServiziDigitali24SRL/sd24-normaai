@@ -23,7 +23,7 @@ export interface ProfData {
 export const PROFS: Record<ProfId, ProfData> = {
   avvocato: {
     name: "Avvocato",
-    icon: "\u2696\uFE0F",
+    icon: "⚖️",
     desc: "Ricerca giurisprudenziale, corpus Cassazione, TAR/CdS",
     opp: "9.5/10 opportunita",
     live: [
@@ -32,12 +32,12 @@ export const PROFS: Record<ProfId, ProfData> = {
         detail:
           "271K+ sentenze Cassazione, TAR, CdS indicizzate",
         saving:
-          "Risparmio 90%+ vs DeJure/One LEGALE (\u20AC2.000-5.000/anno)",
+          "Risparmio 90%+ vs DeJure/One LEGALE (€2.000-5.000/anno)",
       },
       {
         name: "Chat su corpus normativo completo",
         detail:
-          "Codici, GDPR, normativa UE \u2014 in linguaggio naturale",
+          "Codici, GDPR, normativa UE — in linguaggio naturale",
         saving: null,
       },
       {
@@ -45,12 +45,12 @@ export const PROFS: Record<ProfId, ProfData> = {
         detail:
           "Privati e imprese che cercano un avvocato tramite NormaAI",
         saving:
-          "\u20AC49 contatto privato \u00B7 \u20AC99 contatto impresa",
+          "€49 contatto privato · €99 contatto impresa",
       },
       {
         name: "Profilo pubblico nella directory",
         detail:
-          "Visibilita SEO e GEO \u2014 trovato da chi cerca online",
+          "Visibilita SEO e GEO — trovato da chi cerca online",
         saving: null,
       },
     ],
@@ -68,20 +68,20 @@ export const PROFS: Record<ProfId, ProfData> = {
       {
         name: "Analisi predittiva casi",
         detail:
-          "Orientamento giurisprudenziale \u2014 solo 1.2% degli avvocati lo usa oggi",
+          "Orientamento giurisprudenziale — solo 1.2% degli avvocati lo usa oggi",
       },
     ],
   },
   commercialista: {
     name: "Commercialista",
-    icon: "\uD83D\uDCCA",
+    icon: "📊",
     desc: "Circolari AdE, TUIR, IVA, scadenze fiscali",
     opp: "8.5/10 opportunita",
     live: [
       {
         name: "Circolari AdE in linguaggio naturale",
         detail:
-          '"Che dice la circolare su X?" \u2014 risposta in 5 secondi',
+          '"Che dice la circolare su X?" — risposta in 5 secondi',
         saving: "vs 20-30 minuti su IPSOA ogni volta",
       },
       {
@@ -95,12 +95,12 @@ export const PROFS: Record<ProfId, ProfData> = {
         detail:
           "Imprese che cercano un commercialista tramite NormaAI",
         saving:
-          "\u20AC49 contatto privato \u00B7 \u20AC99 contatto impresa",
+          "€49 contatto privato · €99 contatto impresa",
       },
       {
         name: "Profilo pubblico nella directory",
         detail:
-          "Visibilita SEO e GEO \u2014 trovato da chi cerca online",
+          "Visibilita SEO e GEO — trovato da chi cerca online",
         saving: null,
       },
     ],
@@ -113,10 +113,10 @@ export const PROFS: Record<ProfId, ProfData> = {
       {
         name: "Check compliance antiriciclaggio AI",
         detail:
-          "D.Lgs. 231/2007 \u2014 verifica automatica per ogni cliente",
+          "D.Lgs. 231/2007 — verifica automatica per ogni cliente",
       },
       {
-        name: "Norma \u2192 azione operativa",
+        name: "Norma → azione operativa",
         detail:
           "L'AI spiega cosa fare in pratica per ogni adempimento",
       },
@@ -124,14 +124,14 @@ export const PROFS: Record<ProfId, ProfData> = {
   },
   lavoro: {
     name: "Consulente del Lavoro",
-    icon: "\uD83D\uDC54",
+    icon: "👔",
     desc: "800+ CCNL, Jobs Act, D.Lgs 81/08 sicurezza",
     opp: "9.0/10 opportunita",
     live: [
       {
         name: "Ricerca AI su 800+ CCNL",
         detail:
-          "9.827 documenti CNEL indicizzati \u2014 rinnovi, modifiche, accordi",
+          "9.827 documenti CNEL indicizzati — rinnovi, modifiche, accordi",
         saving: "vs leggere 80 pagine di rinnovo CCNL",
       },
       {
@@ -145,12 +145,12 @@ export const PROFS: Record<ProfId, ProfData> = {
         detail:
           "Imprese che cercano un CdL tramite NormaAI",
         saving:
-          "\u20AC49 contatto privato \u00B7 \u20AC99 contatto impresa",
+          "€49 contatto privato · €99 contatto impresa",
       },
       {
         name: "Profilo pubblico nella directory",
         detail:
-          "Visibilita SEO e GEO \u2014 trovato da chi cerca online",
+          "Visibilita SEO e GEO — trovato da chi cerca online",
         saving: null,
       },
     ],
@@ -168,13 +168,13 @@ export const PROFS: Record<ProfId, ProfData> = {
       {
         name: "Scadenze a cascata per cliente",
         detail:
-          "Formazione, visite mediche, rinnovi \u2014 per ogni azienda",
+          "Formazione, visite mediche, rinnovi — per ogni azienda",
       },
     ],
   },
   tecnico: {
     name: "Geometra / Ingegnere",
-    icon: "\uD83C\uDFD7\uFE0F",
+    icon: "🏗️",
     desc: "DPR 380, NTC 2018, Codice Appalti, bonus edilizi",
     opp: "8.0/10 opportunita",
     live: [
@@ -188,7 +188,7 @@ export const PROFS: Record<ProfId, ProfData> = {
       {
         name: "Corpus NTC 2018 + Codice Appalti",
         detail:
-          "D.Lgs 36/2023 completo \u2014 gare, documenti, soglie",
+          "D.Lgs 36/2023 completo — gare, documenti, soglie",
         saving: null,
       },
       {
@@ -196,12 +196,12 @@ export const PROFS: Record<ProfId, ProfData> = {
         detail:
           "Privati e imprese che cercano un tecnico tramite NormaAI",
         saving:
-          "\u20AC49 contatto privato \u00B7 \u20AC99 contatto impresa",
+          "€49 contatto privato · €99 contatto impresa",
       },
       {
         name: "Profilo pubblico nella directory",
         detail:
-          "Visibilita SEO e GEO \u2014 trovato da chi cerca online",
+          "Visibilita SEO e GEO — trovato da chi cerca online",
         saving: null,
       },
     ],
@@ -209,7 +209,7 @@ export const PROFS: Record<ProfId, ProfData> = {
       {
         name: "Navigator Bonus Edilizi 2026",
         detail:
-          "Superbonus, Ecobonus, Sismabonus \u2014 requisiti e scadenze aggiornate",
+          "Superbonus, Ecobonus, Sismabonus — requisiti e scadenze aggiornate",
       },
       {
         name: "Alert modifiche TUE + Codice Appalti",
@@ -225,14 +225,14 @@ export const PROFS: Record<ProfId, ProfData> = {
   },
   finanziario: {
     name: "Consulente Finanziario",
-    icon: "\uD83D\uDCC8",
-    desc: "MiFID II, TUF, Consob, compliance investimenti \u2014 per CF autonomi e indipendenti",
+    icon: "📈",
+    desc: "MiFID II, TUF, Consob, compliance investimenti — per CF autonomi e indipendenti",
     opp: "6.5/10 opportunita",
     live: [
       {
         name: "Corpus MiFID II + TUF + Consob",
         detail:
-          "Normativa finanziaria aggiornata \u2014 adeguatezza, KID, product governance",
+          "Normativa finanziaria aggiornata — adeguatezza, KID, product governance",
         saving: null,
       },
       {
@@ -246,12 +246,12 @@ export const PROFS: Record<ProfId, ProfData> = {
         detail:
           "Privati che cercano consulenza finanziaria tramite NormaAI",
         saving:
-          "\u20AC49 contatto privato \u00B7 \u20AC99 contatto impresa",
+          "€49 contatto privato · €99 contatto impresa",
       },
       {
         name: "Profilo pubblico nella directory",
         detail:
-          "Visibilita SEO e GEO \u2014 trovato da chi cerca online",
+          "Visibilita SEO e GEO — trovato da chi cerca online",
         saving: null,
       },
     ],
@@ -259,7 +259,7 @@ export const PROFS: Record<ProfId, ProfData> = {
       {
         name: "Compliance MiFID II AI",
         detail:
-          '"Questo prodotto e adeguato per profilo di rischio X?" \u2014 check istantaneo',
+          '"Questo prodotto e adeguato per profilo di rischio X?" — check istantaneo',
       },
       {
         name: "Alert regolamentari Consob / SFDR",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
+import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
   title: "NormaAI — La norma è uguale per tutti.",
@@ -14,10 +15,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it">
-      <body className="antialiased">
-        {children}
-        <CookieBanner />
+    <html lang="it" suppressHydrationWarning>
+      <body className="antialiased h-screen overflow-hidden">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          {children}
+          <CookieBanner />
+        </ThemeProvider>
       </body>
     </html>
   );
