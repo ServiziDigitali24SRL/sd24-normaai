@@ -58,6 +58,33 @@ Stai assistendo un cittadino che ha una domanda su investimenti, conti correnti,
 Rispondi in modo chiaro e concreto: quali sono i diritti del cittadino, cosa può pretendere dalla banca o dall'intermediario, come tutelarsi.
 Cita le norme rilevanti (TUF, TUB, MiFID II, regolamenti Consob/Banca d'Italia) spiegandole in parole semplici.
 Ricorda sempre che non stai fornendo consulenza finanziaria personalizzata.`,
+
+  "Analisi Contratto": `Sei NormaAI Contract Analyzer, un agente legale AI specializzato nell'analisi di contratti commerciali italiani.
+
+Il tuo compito è analizzare il contratto allegato e produrre un report strutturato con esattamente queste 5 sezioni:
+
+## 🔍 Tipo di contratto
+Identifica il tipo (es. contratto di fornitura, NDA, contratto di lavoro, appalto, licenza software...) e le parti coinvolte.
+
+## ⚠️ Rischi identificati
+Elenca i rischi legali concreti per il cliente, con riferimento normativo specifico. Usa formato:
+- **[ALTO/MEDIO/BASSO]** Descrizione rischio → Norma violata o applicabile (es. art. 1341 c.c.)
+
+## 📋 Clausole mancanti
+Elenca le clausole che dovrebbero esserci ma mancano (es. limitazione responsabilità, foro competente, GDPR, recesso, penali). Per ognuna indica perché è importante e la norma di riferimento.
+
+## ✅ Conformità legge italiana
+Verifica la conformità alle principali norme applicabili (Codice Civile, GDPR se dati personali, Codice del Consumo se B2C, D.Lgs. 231/2001 se responsabilità aziendale). Indica: CONFORME / NON CONFORME / DA VERIFICARE per ciascuna.
+
+## 💡 Raccomandazioni
+Massimo 5 azioni concrete che l'azienda deve fare prima di firmare, in ordine di priorità.
+
+---
+REGOLE:
+- Cita sempre articoli specifici (es. art. 1229 c.c. — nullità clausole di irresponsabilità)
+- Sii diretto e operativo, non generico
+- Se una clausola è ambigua, segnalala come rischio
+- Usa i documenti normativi forniti dal corpus per le citazioni`,
 };
 
 const DEFAULT_SYSTEM_PROMPT = `Sei NormaAI, l'assistente AI specializzato nella normativa italiana.
@@ -90,6 +117,7 @@ function getVerticale(vertical: string | null): string | undefined {
     "Consulente del Lavoro": "lavoro",
     "Ingegnere/Geometra": "tecnico",
     "Consulente Finanziario": "finanziario",
+    "Analisi Contratto": "avvocato",
   };
   return map[vertical];
 }
@@ -118,8 +146,12 @@ interface RagResult {
 
 interface SupabaseChunk {
   id: string;
-  content: string;
-  metadata: Record<string, string>;
+  chunk: string;
+  titolo: string;
+  fonte: string;
+  tipo: string;
+  verticale: string;
+  url: string;
   similarity: number;
 }
 
@@ -138,20 +170,23 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
   } catch { return null; }
 }
 
-async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
+async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_embeddings`, {
+    const body: Record<string, unknown> = {
+      query_embedding: embedding,
+      match_count: 6,
+      match_threshold: 0.20,
+    };
+    if (verticale) body.filter_verticale = verticale;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
       headers: {
         "apikey": SUPABASE_KEY,
         "Authorization": `Bearer ${SUPABASE_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        query_embedding: embedding,
-        match_count: 6,
-        match_threshold: 0.30,
-      }),
+      body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return [];
@@ -228,26 +263,21 @@ export async function POST(req: NextRequest) {
   try {
     const embedding = await generateEmbedding(question);
     if (embedding) {
-      const chunks = await searchSupabase(embedding);
+      const verticale = getVerticale(vertical ?? null);
+      const chunks = await searchSupabase(embedding, verticale);
       if (chunks.length > 0) {
         ragContext = chunks
           .map((c, i) => {
-            const m = c.metadata || {};
-            const ref = m.law_reference || m.source_type || "Normativa";
-            const art = m.article_number ? ` art. ${m.article_number}` : "";
-            return `[Fonte ${i + 1}] ${ref}${art} (${m.source_type || "corpus"})\n${c.content}`;
+            return `[Fonte ${i + 1}] ${c.titolo || "Normativa"} (${c.fonte || "corpus"})\n${c.chunk}`;
           })
           .join("\n\n---\n\n");
-        sources = chunks.map((c) => {
-          const m = c.metadata || {};
-          return {
-            id: String(c.id),
-            titolo: (m.law_reference || m.source_type || "Normativa") + (m.article_number ? " art. " + m.article_number : ""),
-            fonte: m.source_type || "normattiva",
-            url: "",
-            tipo: m.category || m.source_type || "normativa",
-          };
-        });
+        sources = chunks.map((c) => ({
+          id: String(c.id),
+          titolo: c.titolo || "Normativa",
+          fonte: c.fonte || "normattiva",
+          url: c.url || "",
+          tipo: c.tipo || "normativa",
+        }));
       }
     }
   } catch {
