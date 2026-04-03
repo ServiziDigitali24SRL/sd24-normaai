@@ -12,6 +12,8 @@ const PILLS = [
   { label: "Consulente Finanziario", hint: "TUF, MiFID II, antiriciclaggio…" },
 ];
 
+const CONTRACT_VERTICAL = "Analisi Contratto";
+
 interface Source { id: string; titolo: string; fonte: string; url: string; tipo: string }
 
 export interface HistoryMsg {
@@ -44,6 +46,7 @@ interface Attachment {
 }
 
 const STORAGE_KEY = "norma-history-v1";
+const CONV_ID_KEY = "norma-conv-id";
 const TTL = 24 * 60 * 60 * 1000;
 const MAX_DOC_BYTES = 3.5 * 1024 * 1024;
 const MAX_IMG_BYTES = 3 * 1024 * 1024;
@@ -61,6 +64,29 @@ function loadHistory(): HistoryMsg[] {
 
 function saveHistory(items: HistoryMsg[]) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ items, savedAt: Date.now() })); } catch { }
+}
+
+async function loadHistoryFromDB(userId: string, conversationId: string | null): Promise<{ messages: HistoryMsg[]; conversationId: string | null }> {
+  try {
+    const params = new URLSearchParams({ userId });
+    if (conversationId) params.set("conversationId", conversationId);
+    const res = await fetch(`/api/conversations?${params}`);
+    if (!res.ok) return { messages: [], conversationId: null };
+    return await res.json();
+  } catch { return { messages: [], conversationId: null }; }
+}
+
+async function saveMessageToDB(userId: string, conversationId: string | null, msg: HistoryMsg): Promise<string | null> {
+  try {
+    const res = await fetch("/api/conversations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, conversationId, msg }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.conversationId ?? null;
+  } catch { return null; }
 }
 
 function readFileAsBase64(file: File): Promise<string> {
@@ -123,8 +149,10 @@ export default function ChatBar({ user }: { user?: User | null }) {
   const [recording, setRecording] = useState(false);
   const [attachErr, setAttachErr] = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [contractMode, setContractMode] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputHeight, setInputHeight] = useState(0);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   const taRef = useRef<HTMLTextAreaElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
@@ -153,7 +181,17 @@ export default function ChatBar({ user }: { user?: User | null }) {
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => { setHistory(loadHistory()); }, []);
+  useEffect(() => {
+    if (user?.id) {
+      const savedConvId = localStorage.getItem(CONV_ID_KEY);
+      loadHistoryFromDB(user.id, savedConvId).then(({ messages, conversationId: convId }) => {
+        if (messages.length > 0) setHistory(messages);
+        if (convId) { setConversationId(convId); localStorage.setItem(CONV_ID_KEY, convId); }
+      });
+    } else {
+      setHistory(loadHistory());
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const el = messagesRef.current;
@@ -178,8 +216,10 @@ export default function ChatBar({ user }: { user?: User | null }) {
   useEffect(() => {
     function handleNewChat() {
       setHistory([]); setCurrent(null); setStreaming(false); setText("");
-      setActivePill(null); setAttachment(null); setAttachErr(null); setShowScrollBtn(false);
+      setActivePill(null); setAttachment(null); setAttachErr(null); setShowScrollBtn(false); setContractMode(false);
+      setConversationId(null);
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(CONV_ID_KEY);
       setTimeout(() => taRef.current?.focus(), 50);
     }
     window.addEventListener("norma-new-chat", handleNewChat);
@@ -195,7 +235,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
     const isPdf = file.type === "application/pdf" || file.name.endsWith(".pdf");
     const isDoc = file.name.endsWith(".doc") || file.name.endsWith(".docx") || file.type === "application/msword" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     if (!isTxt && !isPdf && !isDoc) { setAttachErr("Formato non supportato. Carica un PDF, TXT o Word."); return; }
-    if (isPdf) { const data = await readFileAsBase64(file); setAttachment({ type: "document", mediaType: "application/pdf", name: file.name, data }); }
+    if (isPdf) { const data = await readFileAsBase64(file); setAttachment({ type: "document", mediaType: "application/pdf", name: file.name, data }); setContractMode(true); setActivePill(null); }
     else { const textContent = await readFileAsText(file); setAttachment({ type: "document", mediaType: "text/plain", name: file.name, data: "", textContent }); }
   }
 
@@ -230,8 +270,8 @@ export default function ChatBar({ user }: { user?: User | null }) {
 
   async function handleSend() {
     if ((!text.trim() && !attachment) || sending) return;
-    const q = text.trim() || (attachment ? "Analizza: " + attachment.name : "");
-    const v = activePill !== null ? PILLS[activePill].label : null;
+    const q = text.trim() || (contractMode && attachment ? "Analizza questo contratto e produci il report completo." : attachment ? "Analizza: " + attachment.name : "");
+    const v = contractMode ? CONTRACT_VERTICAL : activePill !== null ? PILLS[activePill].label : null;
     const att = attachment;
     setSending(true); setStreaming(true);
     setCurrent({ question: q, vertical: v, text: "", sources: [], hasRag: false, attachmentName: att?.name });
@@ -265,6 +305,14 @@ export default function ChatBar({ user }: { user?: User | null }) {
               setStreaming(false);
               const msg: HistoryMsg = { id: crypto.randomUUID(), question: q, vertical: v, text: finalText, sources: finalSources, hasRag: finalHasRag, ts: Date.now(), attachmentName: att?.name };
               setHistory((prev) => { const next = [...prev, msg]; saveHistory(next); return next; });
+              if (user?.id) {
+                saveMessageToDB(user.id, conversationId, msg).then((newConvId) => {
+                  if (newConvId && newConvId !== conversationId) {
+                    setConversationId(newConvId);
+                    localStorage.setItem(CONV_ID_KEY, newConvId);
+                  }
+                });
+              }
               setCurrent(null);
             } else if (event.type === "error") { setCurrent((p) => p ? { ...p, text: p.text || "Errore. Riprova." } : null); setStreaming(false); }
           } catch { }
@@ -292,11 +340,30 @@ export default function ChatBar({ user }: { user?: User | null }) {
         style={{ background: "radial-gradient(circle, rgba(220,80,40,0.20) 0%, rgba(180,50,20,0.08) 40%, transparent 70%)", filter: "blur(60px)" }}
       />
       {!hasConversation && (
-        <div className="flex-1 flex flex-col items-center justify-center pointer-events-none select-none z-10" style={{ paddingBottom: inputHeight }} suppressHydrationWarning>
-          <div className="font-serif text-[32px] md:text-[48px] tracking-[-2px] mb-[6px]">
-            Norma<span className="text-accent">AI</span>
-          </div>
-          <div className="text-[14px] text-[#666] italic">La norma è uguale per tutti.</div>
+        <div className="flex-1 flex flex-col items-center justify-center z-10" style={{ paddingBottom: inputHeight }} suppressHydrationWarning>
+          {!contractMode ? (
+            <div className="flex flex-col items-center pointer-events-none select-none">
+              <div className="font-serif text-[32px] md:text-[48px] tracking-[-2px] mb-[6px]">
+                Norma<span className="text-accent">AI</span>
+              </div>
+              <div className="text-[14px] text-[#666] italic mb-6">La norma è uguale per tutti.</div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center max-w-[480px] px-4">
+              <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
+                <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-accent fill-none stroke-[1.5]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
+              </div>
+              <div className="text-cream text-[18px] font-semibold mb-2">Analisi Contratto</div>
+              <div className="text-[#666] text-[13px] text-center leading-[1.6]">
+                Carica un contratto PDF e NormaAI produrrà un report completo con rischi, clausole mancanti e conformità alla legge italiana.
+              </div>
+              <div className="mt-4 flex gap-2 flex-wrap justify-center">
+                {["Contratto di fornitura", "NDA", "Contratto di lavoro", "Appalto", "Licenza software"].map(t => (
+                  <span key={t} className="text-[11px] text-[#555] bg-[#161616] border border-[#222] px-3 py-1 rounded-full">{t}</span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -374,7 +441,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
 
           <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl overflow-hidden transition-colors duration-200 focus-within:border-[#444] shadow-lg">
             <textarea ref={taRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} rows={1}
-              placeholder={hasConversation ? "Fai un'altra domanda…" : "Che problema hai oggi?"}
+              placeholder={hasConversation ? "Fai un'altra domanda…" : contractMode ? "Carica il contratto PDF o fai una domanda specifica…" : "Che problema hai oggi?"}
               className="w-full px-5 pt-4 pb-2 bg-transparent border-none outline-none text-cream text-[15px] min-h-[48px] placeholder:text-[#555] resize-none"
             />
             <div className="flex items-center gap-4 px-4 pb-3 pt-1">
@@ -395,14 +462,33 @@ export default function ChatBar({ user }: { user?: User | null }) {
             </div>
           </div>
 
-          {!hasConversation && (
-            <div className="flex gap-[7px] mt-[14px] overflow-x-auto md:flex-wrap md:justify-center pb-1 scrollbar-hide">
-              {PILLS.map((pill, i) => (
-                <button key={i} onClick={() => handlePill(i)} title={pill.hint}
-                  className={"flex items-center gap-[6px] bg-[#141414] border border-[#222] text-[#888] px-[14px] py-[7px] rounded-full text-[12.5px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#3a3a3a] hover:text-cream hover:bg-[#1c1c1c] shrink-0" + (activePill === i ? " !border-accent !text-cream !bg-[#E8340A18]" : "")}>
-                  {pill.label}
-                </button>
-              ))}
+          {!hasConversation && !contractMode && (
+            <div className="mt-[14px] space-y-2">
+              {/* Contract analysis CTA */}
+              <button
+                onClick={() => { setContractMode(true); setActivePill(null); docRef.current?.click(); }}
+                className="w-full flex items-center gap-3 px-4 py-[10px] bg-accent/5 border border-accent/20 rounded-xl text-[13px] text-accent hover:bg-accent/10 hover:border-accent/40 transition-all duration-150 cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 stroke-accent fill-none stroke-[1.8]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span className="font-medium">Analisi Contratto</span>
+                <span className="text-[11px] text-accent/60 ml-auto">Carica PDF →</span>
+              </button>
+              {/* Vertical pills */}
+              <div className="flex gap-[7px] overflow-x-auto md:flex-wrap md:justify-center pb-1 scrollbar-hide">
+                {PILLS.map((pill, i) => (
+                  <button key={i} onClick={() => handlePill(i)} title={pill.hint}
+                    className={"flex items-center gap-[6px] bg-[#141414] border border-[#222] text-[#888] px-[14px] py-[7px] rounded-full text-[12.5px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#3a3a3a] hover:text-cream hover:bg-[#1c1c1c] shrink-0" + (activePill === i ? " !border-accent !text-cream !bg-[#E8340A18]" : "")}>
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {contractMode && !hasConversation && (
+            <div className="mt-[14px] flex items-center gap-2 px-4 py-[10px] bg-accent/5 border border-accent/20 rounded-xl">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 stroke-accent fill-none stroke-[1.8]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+              <span className="text-[12.5px] text-accent font-medium">Modalità Analisi Contratto attiva</span>
+              <button onClick={() => { setContractMode(false); setAttachment(null); }} className="ml-auto text-[11px] text-[#555] hover:text-[#888] bg-transparent border-none cursor-pointer">✕ Annulla</button>
             </div>
           )}
 

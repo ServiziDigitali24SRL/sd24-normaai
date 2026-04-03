@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,12 +13,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // Log to console (visible in Vercel logs)
-    console.log(`[INVEST LEAD] ${new Date().toISOString()} | ${name} | ${email} | ${phone}`);
+    const { error } = await supabase.from("invest_leads").insert({ name, email, phone });
+    if (error) {
+      console.error("[INVEST LEAD] Supabase error:", error.message);
+      return NextResponse.json({ error: "Failed to save" }, { status: 500 });
+    }
 
-    // TODO: save to Supabase invest_leads table or send to Brevo/email
-    // For now just log — data visible in Vercel function logs
-
+    console.log(`[INVEST LEAD] saved: ${email}`);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
