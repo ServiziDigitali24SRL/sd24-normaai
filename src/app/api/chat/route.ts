@@ -498,36 +498,29 @@ ${CITATION_RULES}${followUp}${proponi}
 // ── Embedding (VPS 768 dim, fallback OpenAI 1536) ─────────────────────────────
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
-  // Prova VPS locale (768 dim — matching corpus)
+  // Prova VPS locale (384 dim — matching corpus)
   try {
+    console.log(`[EMBED] calling VPS: ${EMBED_VPS_URL}/embed`);
     const res = await fetch(`${EMBED_VPS_URL}/embed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ input: text }),
       signal: AbortSignal.timeout(8000),
     });
+    console.log(`[EMBED] VPS status: ${res.status}`);
     if (res.ok) {
-      const { data } = await res.json();
-      return data?.[0]?.embedding ?? null;
+      const json = await res.json();
+      const emb = json?.data?.[0]?.embedding ?? null;
+      console.log(`[EMBED] VPS ok, dims=${emb?.length ?? "null"}`);
+      return emb;
+    } else {
+      const body = await res.text();
+      console.error(`[EMBED] VPS non-ok: ${res.status} ${body.slice(0, 200)}`);
     }
-  } catch (e) { console.error("[EMBED] VPS error:", e) }
+  } catch (e) { console.error("[EMBED] VPS error:", String(e)) }
 
-  // Fallback OpenAI (solo se corpus è ancora a 1536 dim)
-  if (OPENAI_API_KEY) {
-    try {
-      const res = await fetch("https://api.openai.com/v1/embeddings", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "text-embedding-3-small", input: text }),
-        signal: AbortSignal.timeout(6000),
-      });
-      if (res.ok) {
-        const { data } = await res.json();
-        return data?.[0]?.embedding ?? null;
-      }
-    } catch { /* ignorato */ }
-  }
-
+  // Fallback OpenAI — corpus è 384d, questo genererà 1536d → RAG non funzionerà
+  console.warn("[EMBED] VPS fallito, skip OpenAI (dim mismatch 1536 vs 384)");
   return null;
 }
 
@@ -565,9 +558,15 @@ async function searchSupabase(embedding: number[], verticale?: string): Promise<
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) return [];
-    return await res.json() as SupabaseChunk[];
-  } catch { return []; }
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[RAG] Supabase RPC error: ${res.status} ${body.slice(0, 300)}`);
+      return [];
+    }
+    const rows = await res.json() as SupabaseChunk[];
+    console.log(`[RAG] Supabase returned ${rows.length} chunks`);
+    return rows;
+  } catch (e) { console.error("[RAG] searchSupabase exception:", String(e)); return []; }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
