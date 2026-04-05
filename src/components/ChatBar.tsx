@@ -146,6 +146,8 @@ function CollapsibleText({ text }: { text: string }) {
 }
 
 export default function ChatBar({ user }: { user?: User | null }) {
+  const userRole = user?.user_metadata?.role as string | undefined;
+  const isProfessionista = userRole === "professionista";
   const [text, setText] = useState("");
   const [activePill, setActivePill] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
@@ -481,25 +483,29 @@ export default function ChatBar({ user }: { user?: User | null }) {
 
           {!hasConversation && !contractMode && (
             <div className="mt-[14px] space-y-2">
-              {/* Contract analysis CTA */}
-              <button
-                onClick={() => { setContractMode(true); setActivePill(null); docRef.current?.click(); }}
-                className="w-full flex items-center gap-3 px-4 py-[10px] bg-accent/5 border border-accent/20 rounded-xl text-[13px] text-accent hover:bg-accent/10 hover:border-accent/40 transition-all duration-150 cursor-pointer"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 stroke-accent fill-none stroke-[1.8]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                <span className="font-medium">Analisi Contratto</span>
-                <span className="text-[11px] text-accent/60 ml-auto">Carica PDF →</span>
-              </button>
-              {/* Bozze pills */}
-              <div className="flex gap-[7px] overflow-x-auto pb-1 scrollbar-hide">
-                <span className="text-[11px] text-[#444] shrink-0 flex items-center pr-1">Genera →</span>
-                {BOZZE.map((b, i) => (
-                  <button key={i} onClick={() => handleBozza(i)} title={b.placeholder}
-                    className={"flex items-center gap-[5px] bg-[#141414] border border-[#222] text-[#888] px-[12px] py-[6px] rounded-full text-[12px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#3a3a3a] hover:text-cream hover:bg-[#1c1c1c] shrink-0" + (activeBozza === i ? " !border-accent !text-cream !bg-[#E8340A18]" : "")}>
-                    <span>{b.icon}</span>{b.label}
-                  </button>
-                ))}
-              </div>
+              {/* Contract analysis CTA — solo professionista */}
+              {isProfessionista && (
+                <button
+                  onClick={() => { setContractMode(true); setActivePill(null); docRef.current?.click(); }}
+                  className="w-full flex items-center gap-3 px-4 py-[10px] bg-accent/5 border border-accent/20 rounded-xl text-[13px] text-accent hover:bg-accent/10 hover:border-accent/40 transition-all duration-150 cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 stroke-accent fill-none stroke-[1.8]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span className="font-medium">Analisi Contratto</span>
+                  <span className="text-[11px] text-accent/60 ml-auto">Carica PDF →</span>
+                </button>
+              )}
+              {/* Bozze pills — solo professionista */}
+              {isProfessionista && (
+                <div className="flex gap-[7px] overflow-x-auto pb-1 scrollbar-hide">
+                  <span className="text-[11px] text-[#444] shrink-0 flex items-center pr-1">Genera →</span>
+                  {BOZZE.map((b, i) => (
+                    <button key={i} onClick={() => handleBozza(i)} title={b.placeholder}
+                      className={"flex items-center gap-[5px] bg-[#141414] border border-[#222] text-[#888] px-[12px] py-[6px] rounded-full text-[12px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#3a3a3a] hover:text-cream hover:bg-[#1c1c1c] shrink-0" + (activeBozza === i ? " !border-accent !text-cream !bg-[#E8340A18]" : "")}>
+                      <span>{b.icon}</span>{b.label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {/* Vertical pills */}
               <p className="text-[11px] text-[#444] text-center mb-[6px] tracking-wide uppercase">Scegli il professionista, poi scrivi</p>
               <div className="flex gap-[7px] overflow-x-auto md:flex-wrap md:justify-center pb-1 scrollbar-hide">
