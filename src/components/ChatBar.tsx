@@ -14,6 +14,13 @@ const PILLS = [
 
 const CONTRACT_VERTICAL = "Analisi Contratto";
 
+const BOZZE = [
+  { label: "Parere Legale", icon: "⚖️", placeholder: "Descrivi il fatto su cui vuoi il parere (es. 'Il mio cliente è stato licenziato senza preavviso dopo 5 anni...')" },
+  { label: "Email Professionale", icon: "📧", placeholder: "Descrivi l'email da redigere (es. 'Diffida a pagare fattura di €8.000 scaduta da 60 giorni...')" },
+  { label: "Memoria Difensiva", icon: "📋", placeholder: "Descrivi la questione processuale (es. 'Comparsa di risposta: il convenuto nega di aver firmato il contratto...')" },
+  { label: "Bozza Contratto", icon: "📝", placeholder: "Descrivi il contratto da redigere (es. 'Contratto di fornitura software SaaS annuale B2B con limitazione responsabilità...')" },
+];
+
 interface Source { id: string; titolo: string; fonte: string; url: string; tipo: string }
 
 export interface HistoryMsg {
@@ -150,6 +157,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
   const [attachErr, setAttachErr] = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [contractMode, setContractMode] = useState(false);
+  const [activeBozza, setActiveBozza] = useState<number | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputHeight, setInputHeight] = useState(0);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -216,7 +224,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
   useEffect(() => {
     function handleNewChat() {
       setHistory([]); setCurrent(null); setStreaming(false); setText("");
-      setActivePill(null); setAttachment(null); setAttachErr(null); setShowScrollBtn(false); setContractMode(false);
+      setActivePill(null); setAttachment(null); setAttachErr(null); setShowScrollBtn(false); setContractMode(false); setActiveBozza(null);
       setConversationId(null);
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(CONV_ID_KEY);
@@ -265,17 +273,26 @@ export default function ChatBar({ user }: { user?: User | null }) {
   function handlePill(idx: number) {
     if (activePill === idx) { setActivePill(null); return; }
     setActivePill(idx);
+    setActiveBozza(null);
+    setTimeout(() => taRef.current?.focus(), 0);
+  }
+
+  function handleBozza(idx: number) {
+    if (activeBozza === idx) { setActiveBozza(null); return; }
+    setActiveBozza(idx);
+    setActivePill(null);
+    setContractMode(false);
     setTimeout(() => taRef.current?.focus(), 0);
   }
 
   async function handleSend() {
     if ((!text.trim() && !attachment) || sending) return;
     const q = text.trim() || (contractMode && attachment ? "Analizza questo contratto e produci il report completo." : attachment ? "Analizza: " + attachment.name : "");
-    const v = contractMode ? CONTRACT_VERTICAL : activePill !== null ? PILLS[activePill].label : null;
+    const v = contractMode ? CONTRACT_VERTICAL : activeBozza !== null ? BOZZE[activeBozza].label : activePill !== null ? PILLS[activePill].label : null;
     const att = attachment;
     setSending(true); setStreaming(true);
     setCurrent({ question: q, vertical: v, text: "", sources: [], hasRag: false, attachmentName: att?.name });
-    setText(""); setActivePill(null); setAttachment(null); setAttachErr(null);
+    setText(""); setActivePill(null); setActiveBozza(null); setAttachment(null); setAttachErr(null);
     try {
       const conversationHistory = history.slice(-4).flatMap((msg) => ([
         { role: "user" as const, content: msg.question },
@@ -441,7 +458,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
 
           <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl overflow-hidden transition-colors duration-200 focus-within:border-[#444] shadow-lg">
             <textarea ref={taRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} rows={1}
-              placeholder={hasConversation ? "Fai un'altra domanda…" : contractMode ? "Carica il contratto PDF o fai una domanda specifica…" : "Che problema hai oggi?"}
+              placeholder={hasConversation ? "Fai un'altra domanda…" : contractMode ? "Carica il contratto PDF o fai una domanda specifica…" : activeBozza !== null ? BOZZE[activeBozza].placeholder : activePill !== null ? `Fai una domanda a ${PILLS[activePill].label}…` : "Che problema hai oggi?"}
               className="w-full px-5 pt-4 pb-2 bg-transparent border-none outline-none text-cream text-[15px] min-h-[48px] placeholder:text-[#555] resize-none"
             />
             <div className="flex items-center gap-4 px-4 pb-3 pt-1">
@@ -473,6 +490,16 @@ export default function ChatBar({ user }: { user?: User | null }) {
                 <span className="font-medium">Analisi Contratto</span>
                 <span className="text-[11px] text-accent/60 ml-auto">Carica PDF →</span>
               </button>
+              {/* Bozze pills */}
+              <div className="flex gap-[7px] overflow-x-auto pb-1 scrollbar-hide">
+                <span className="text-[11px] text-[#444] shrink-0 flex items-center pr-1">Genera →</span>
+                {BOZZE.map((b, i) => (
+                  <button key={i} onClick={() => handleBozza(i)} title={b.placeholder}
+                    className={"flex items-center gap-[5px] bg-[#141414] border border-[#222] text-[#888] px-[12px] py-[6px] rounded-full text-[12px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#3a3a3a] hover:text-cream hover:bg-[#1c1c1c] shrink-0" + (activeBozza === i ? " !border-accent !text-cream !bg-[#E8340A18]" : "")}>
+                    <span>{b.icon}</span>{b.label}
+                  </button>
+                ))}
+              </div>
               {/* Vertical pills */}
               <div className="flex gap-[7px] overflow-x-auto md:flex-wrap md:justify-center pb-1 scrollbar-hide">
                 {PILLS.map((pill, i) => (

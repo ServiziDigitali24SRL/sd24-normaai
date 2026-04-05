@@ -24,6 +24,7 @@ const ALL_ITEMS: { id: string; label: string; section: string; icon: React.React
   { id: "whatsapp",        section: "Comunicazione", label: "WhatsApp",             icon: <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg> },
   { id: "telegram",        section: "Comunicazione", label: "Telegram",             icon: <svg viewBox="0 0 24 24"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> },
   { id: "analisi-doc",     section: "Strumenti AI",  label: "Analisi documenti",    icon: <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> },
+  { id: "parcelle",        section: "Strumenti AI",  label: "Calcolatore Parcelle", icon: <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> },
   { id: "alert-normativo", section: "Strumenti AI",  label: "Alert normativo",      icon: <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg> },
   { id: "scadenze",        section: "Strumenti AI",  label: "Scadenze automatiche", icon: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
   { id: "confronta",       section: "Strumenti AI",  label: "Confronta contratti",  icon: <svg viewBox="0 0 24 24"><polyline points="16,3 21,3 21,8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21,16 21,21 16,21"/><line x1="15" y1="15" x2="21" y2="21"/></svg> },
@@ -56,7 +57,7 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
   // Chiude sidebar su mobile dopo click nav
   function navClick(fn: () => void) {
     fn();
-    if (typeof window !== "undefined" && window.innerWidth < 768) onToggle();
+    if (typeof window !== "undefined" && window.innerWidth < 1024) onToggle();
   }
 
   return (
@@ -70,7 +71,7 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
             <div className="font-serif text-[21px] tracking-[-0.5px]">Norma<span className="text-accent">AI</span></div>
             <div className="text-[10.5px] text-[#555] mt-[2px] italic">La norma è uguale per tutti.</div>
           </div>
-          <button onClick={onToggle} className="md:hidden mt-1 w-7 h-7 flex items-center justify-center text-[#555] hover:text-cream rounded-md hover:bg-white/[0.05] transition-all shrink-0" aria-label="Chiudi menu">
+          <button onClick={onToggle} className="lg:hidden mt-1 w-7 h-7 flex items-center justify-center text-[#555] hover:text-cream rounded-md hover:bg-white/[0.05] transition-all shrink-0" aria-label="Chiudi menu">
             <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none stroke-[2]">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -84,6 +85,14 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
           <NavItem onClick={() => navClick(() => onOpenModal("progetti"))} icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>} label="Progetti" onAdd={() => onOpenModal("nuovo-progetto")} />
           <NavItem onClick={() => navClick(() => onOpenModal("archivio"))} icon={<svg viewBox="0 0 24 24"><polyline points="21,8 21,21 3,21 3,8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>} label="Archivio" onAdd={() => onOpenModal("nuovo-archivio")} />
           {user && <NavItem onClick={() => navClick(() => onOpenModal("professionisti"))} icon={<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>} label="I tuoi professionisti" />}
+          {user && userRole === "professionista" && (
+            <NavItem
+              onClick={() => navClick(() => onOpenModal("dashboard"))}
+              icon={<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>}
+              label="Dashboard Lead"
+              highlight
+            />
+          )}
 
           {user && (
             <>
@@ -101,7 +110,7 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
               <NavItem onClick={() => navClick(() => onOpenModal("cittadino"))} icon={<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>} label="Login Cittadino" />
               <NavItem onClick={() => navClick(() => onOpenModal("impresa"))} icon={<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></svg>} label="Login Impresa" />
               <Divider />
-              <NavItem onClick={() => navClick(() => onOpenModal("investi"))} highlight icon={<svg viewBox="0 0 24 24" className="!stroke-none !fill-gold"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>} label="Investi in NormaAI" />
+              <NavItem onClick={() => navClick(() => onOpenModal("investi"))} icon={<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>} label="Investi in NormaAI" />
               <NavItem onClick={() => navClick(() => onOpenModal("come-funziona"))} icon={<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>} label="Come funziona" />
               <NavItem onClick={() => navClick(() => onOpenModal("developer"))} icon={<svg viewBox="0 0 24 24"><polyline points="16,18 22,12 16,6" /><polyline points="8,6 2,12 8,18" /></svg>} label="API Sviluppatori" />
               <NavItem onClick={() => navClick(() => router.push("/guide"))} icon={<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>} label="Guide gratuite" />
@@ -117,7 +126,7 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
           {user ? (
             <>
               <NavItem onClick={() => navClick(() => onOpenModal("bug"))} icon={bugIcon} label="Segnala un bug" />
-              <UserFooter userName={userName} userEmail={user.email || ""} roleLabel={roleLabel} onLogout={onLogout} />
+              <UserFooter userName={userName} userEmail={user.email || ""} roleLabel={roleLabel} onLogout={onLogout} onOpenModal={onOpenModal} />
             </>
           ) : (
             <div className="px-[18px] py-[14px] text-[10px] text-[#444]">Servizi Digitali 24 S.R.L.</div>
@@ -126,7 +135,7 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
       </div>
 
       {/* Mobile backdrop — FIX: z-[89] sotto sidebar */}
-      {isOpen && <div className="fixed inset-0 bg-black/50 z-[89] md:hidden" onClick={onToggle} />}
+      {isOpen && <div className="fixed inset-0 bg-black/50 z-[89] lg:hidden" onClick={onToggle} />}
     </>
   );
 }
@@ -172,7 +181,7 @@ function ToolsMenu({ toggles, onToggle }: { toggles: Record<string, boolean>; on
   );
 }
 
-function UserFooter({ userName, userEmail, roleLabel, onLogout }: { userName: string; userEmail: string; roleLabel: string | null; onLogout: () => void }) {
+function UserFooter({ userName, userEmail, roleLabel, onLogout, onOpenModal }: { userName: string; userEmail: string; roleLabel: string | null; onLogout: () => void; onOpenModal: (id: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -185,6 +194,7 @@ function UserFooter({ userName, userEmail, roleLabel, onLogout }: { userName: st
       {open && (
         <div className="absolute bottom-full left-0 w-full mb-[2px] bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden z-50">
           <div className="px-4 pt-3 pb-2 text-[11px] text-[#666] truncate border-b border-[#252525]">{userEmail}</div>
+          <MenuBtn onClick={() => { setOpen(false); onOpenModal("profilo-ai"); }} icon={<svg viewBox="0 0 24 24"><path d="M12 5a3 3 0 00-5.997.125 4 4 0 00-2.526 5.77 4 4 0 00.556 6.588A4 4 0 1012 18z" fill="none" stroke="currentColor" strokeWidth="2"/><path d="M12 5a3 3 0 015.997.125 4 4 0 012.526 5.77 4 4 0 01-.556 6.588A4 4 0 1112 18z" fill="none" stroke="currentColor" strokeWidth="2"/></svg>} label="Il mio profilo AI" sub="Personalizzazione intelligente" />
           <MenuBtn onClick={() => setOpen(false)} icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" /></svg>} label="Il mio piano" sub={roleLabel === "Cittadino" ? "9€/mese" : roleLabel === "Impresa" ? "149€/mese" : roleLabel === "Professionista" ? "299€/mese" : undefined} />
           <div className="flex items-center justify-between px-4 py-[9px]"><span className="text-[13px] text-[#999]">Tema</span><CinematicThemeSwitcher /></div>
           <div className="h-px bg-[#252525] mx-2" />

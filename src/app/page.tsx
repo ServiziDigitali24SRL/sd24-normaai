@@ -31,6 +31,10 @@ import ModalProgetti from "@/components/modals/ModalProgetti";
 import ModalNuovoProgetto from "@/components/modals/ModalNuovoProgetto";
 import ModalArchivio from "@/components/modals/ModalArchivio";
 import ModalNuovoArchivio from "@/components/modals/ModalNuovoArchivio";
+import ModalProfilo from "@/components/modals/ModalProfilo";
+import ModalParcelle from "@/components/modals/ModalParcelle";
+import ModalDashboard from "@/components/modals/ModalDashboard";
+import ModalAnalisiDoc from "@/components/modals/ModalAnalisiDoc";
 
 function CheckoutToastHandler({ onToast, onGmailToast }: { onToast: (t: "success" | "cancel" | null) => void; onGmailToast: (t: "connected" | "error" | null) => void }) {
   const searchParams = useSearchParams();
@@ -54,7 +58,8 @@ type ModalId =
   | "cronologia" | "developer" | "bug" | "formazione" | "professionisti"
   | "gmail" | "gdrive" | "dropbox" | "onedrive" | "outlook"
   | "docusign" | "adobesign" | "whatsapp" | "telegram"
-  | "progetti" | "nuovo-progetto" | "archivio" | "nuovo-archivio" | null;
+  | "progetti" | "nuovo-progetto" | "archivio" | "nuovo-archivio" | "profilo-ai"
+  | "parcelle" | "dashboard" | "analisi-doc" | null;
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<ModalId>(null);
@@ -83,6 +88,7 @@ export default function Home() {
   async function handleLogout() {
     await supabase.auth.signOut();
     setUser(null);
+    window.location.href = "/";
   }
 
   const userRole = user?.user_metadata?.role as string | undefined;
@@ -94,8 +100,8 @@ export default function Home() {
     if (saved !== null) {
       setSidebarOpen(saved === "true");
     } else {
-      // FIX: aperta su desktop (>=768px), chiusa su mobile
-      setSidebarOpen(window.innerWidth >= 768);
+      // aperta solo su desktop largo (>=1024px), chiusa su tablet e mobile
+      setSidebarOpen(window.innerWidth >= 1024);
     }
     const onSbChange = (e: Event) => setSidebarOpen((e as CustomEvent<boolean>).detail);
     window.addEventListener("sb-toggle", onSbChange);
@@ -130,7 +136,7 @@ export default function Home() {
       <Sidebar onOpenModal={openModal} isOpen={sidebarOpen} onToggle={toggleSidebar} user={user} onLogout={handleLogout} />
 
       {/* Main content — FIX: margin solo desktop */}
-      <div className={`flex flex-col h-screen overflow-hidden transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "md:ml-[240px] ml-0" : "ml-0"}`}>
+      <div className={`flex flex-col h-screen overflow-hidden transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
 
         {/* Topbar — FIX: z-[100] sopra la sidebar */}
         <div className="flex items-center px-4 py-3 border-b border-[#1a1a1a] bg-[#0D0D0D] sticky top-0 z-[100]">
@@ -145,14 +151,14 @@ export default function Home() {
           </button>
 
           {/* FIX: logo sempre visibile su mobile */}
-          <div className={`font-serif text-[17px] tracking-[-0.5px] mr-auto transition-all duration-[250ms] overflow-hidden ${sidebarOpen ? "md:w-0 md:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
+          <div className={`font-serif text-[17px] tracking-[-0.5px] mr-auto transition-all duration-[250ms] overflow-hidden ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
             Norma<span className="text-accent">AI</span>
           </div>
 
           {user ? (
             <div className="flex items-center gap-3 ml-auto">
               {/* FIX: nome+ruolo solo desktop */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden lg:flex items-center gap-2">
                 <div className="flex flex-col">
                   <span className="text-[12px] text-cream leading-tight">{userName}</span>
                   {roleLabel && <span className="text-[10px] text-[#666] leading-tight">{roleLabel}</span>}
@@ -161,13 +167,13 @@ export default function Home() {
               <div className="w-7 h-7 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-[11px] font-semibold text-accent uppercase shrink-0">
                 {userName.charAt(0)}
               </div>
-              <button onClick={handleLogout} className="hidden md:block text-[11px] text-[#555] hover:text-accent border border-[#252525] hover:border-accent/30 bg-transparent rounded-md px-2 py-1 transition-colors duration-150">
+              <button onClick={handleLogout} className="hidden lg:block text-[11px] text-[#555] hover:text-accent border border-[#252525] hover:border-accent/30 bg-transparent rounded-md px-2 py-1 transition-colors duration-150">
                 Esci
               </button>
             </div>
           ) : (
             <>
-              <span className="hidden md:block text-[12px] text-[#555] mr-[10px] ml-auto">
+              <span className="hidden lg:block text-[12px] text-[#555] mr-[10px] ml-auto">
                 Sei un professionista?
               </span>
               {/* FIX: CTA più grande + copy "gratis" + glow */}
@@ -220,6 +226,10 @@ export default function Home() {
       <ModalNuovoProgetto open={activeModal === "nuovo-progetto"} onClose={closeModal} onCreated={() => openModal("progetti")} />
       <ModalArchivio open={activeModal === "archivio"} onClose={closeModal} onNuovo={() => openModal("nuovo-archivio")} />
       <ModalNuovoArchivio open={activeModal === "nuovo-archivio"} onClose={closeModal} onCreated={() => openModal("archivio")} />
+      <ModalProfilo open={activeModal === "profilo-ai"} onClose={closeModal} user={user} />
+      <ModalParcelle open={activeModal === "parcelle"} onClose={closeModal} />
+      <ModalDashboard open={activeModal === "dashboard"} onClose={closeModal} user={user} />
+      <ModalAnalisiDoc open={activeModal === "analisi-doc"} onClose={closeModal} />
     </>
   );
 }

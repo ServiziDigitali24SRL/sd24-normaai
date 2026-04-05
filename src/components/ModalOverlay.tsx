@@ -5,6 +5,7 @@ interface ModalOverlayProps {
   onClose: () => void;
   children: React.ReactNode;
   wide?: boolean;
+  maxWidth?: string;
 }
 
 export default function ModalOverlay({
@@ -12,6 +13,7 @@ export default function ModalOverlay({
   onClose,
   children,
   wide,
+  maxWidth,
 }: ModalOverlayProps) {
   if (!open) return null;
 
@@ -24,7 +26,7 @@ export default function ModalOverlay({
     >
       <div
         className={`bg-[#131313] border border-[#252525] rounded-[18px] w-full relative max-h-[92vh] overflow-y-auto ${
-          wide ? "max-w-[560px]" : "max-w-[440px]"
+          maxWidth ?? (wide ? "max-w-[560px]" : "max-w-[440px]")
         }`}
       >
         {children}
