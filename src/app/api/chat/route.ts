@@ -1,110 +1,573 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import * as fs from "fs";
-import * as path from "path";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-// Dev fallback: carica .env.local se ANTHROPIC_API_KEY non è ancora in process.env
-// (capita quando il server viene avviato prima che il file esista)
-if (!process.env.ANTHROPIC_API_KEY) {
-  try {
-    const envPath = path.join(process.cwd(), ".env.local");
-    const lines = fs.readFileSync(envPath, "utf-8").split("\n");
-    for (const line of lines) {
-      const match = line.match(/^([^#\s][^=]*)=(.*)$/);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        if (!process.env[key]) process.env[key] = value;
-      }
-    }
-  } catch { /* .env.local non trovato — ignorato */ }
-}
-
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
-// ── Per-category system prompts ──────────────────────────────────────────────
+// Embedding: VPS locale (768 dim) con fallback OpenAI (1536 dim — legacy)
+const EMBED_VPS_URL  = process.env.EMBED_VPS_URL  || "http://89.167.123.25:8765";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY  || "";
 
-const SYSTEM_PROMPTS: Record<string, string> = {
-  Avvocato: `Sei NormaAI, l'assistente AI specializzato nella normativa italiana.
-Stai assistendo un cittadino che ha una domanda su diritto civile, penale o amministrativo.
-Rispondi in modo chiaro e comprensibile, senza gergo tecnico eccessivo. Spiega cosa dice la legge in parole semplici, poi cita la norma di riferimento.
-Indica sempre: cosa può fare il cittadino concretamente, entro quali termini, e se serve rivolgersi a un avvocato.
-Cita le fonti normative specifiche (es. art. 1453 c.c., D.Lgs. 231/2001 art. 5) ma spiegane il significato pratico.`,
+// ── FEATURE 1: Versioning ─────────────────────────────────────────────────────
+// Il filtro only_vigente=true nell'RPC esclude automaticamente le norme abrogate/
+// superseded. Non serve fare nulla di esplicito nel route.
 
-  Commercialista: `Sei NormaAI, l'assistente AI specializzato nella normativa fiscale italiana.
-Stai assistendo un cittadino che ha una domanda su tasse, dichiarazioni, partita IVA, detrazioni o adempimenti fiscali.
-Rispondi in modo chiaro e pratico. Spiega cosa deve fare il cittadino, le scadenze da rispettare e le conseguenze di eventuali errori.
-Cita le fonti normative (TUIR, IVA, circolari Agenzia delle Entrate) ma rendile comprensibili.
-Se il caso è complesso, suggerisci di rivolgersi a un commercialista.`,
+// ── FEATURE 2: User Profiling — System Prompt Builder ────────────────────────
 
-  "Consulente del Lavoro": `Sei NormaAI, l'assistente AI specializzato nel diritto del lavoro italiano.
-Stai assistendo un cittadino (lavoratore o datore di lavoro) che ha una domanda su busta paga, licenziamento, ferie, malattia, CCNL, contributi INPS o INAIL.
-Rispondi in modo diretto e concreto: cosa spetta al cittadino, cosa può fare, entro quando.
-Cita le norme rilevanti (Statuto dei Lavoratori, D.Lgs. 81/2015, CCNL applicabili) spiegandone il significato pratico.
-Se il caso richiede un professionista, indicalo chiaramente.`,
+interface UserProfile {
+  ruolo: string;
+  nome?: string;
+  studio?: string;
+  citta?: string;
+  specializzazioni: string[];
+  settori_cliente: string[];
+  preferenze: { verbosita: string; citazioni: string };
+  ultime_query: Array<{ query: string; verticale: string; timestamp: string }>;
+  piano: string;
+}
 
-  "Ingegnere/Geometra": `Sei NormaAI, l'assistente AI specializzato nella normativa edilizia e urbanistica italiana.
-Stai assistendo un cittadino che ha una domanda su lavori in casa, permessi edilizi, abusi, ristrutturazioni o normative tecniche.
-Rispondi in modo pratico: quale titolo abilitativo serve (CILA, SCIA, permesso di costruire), quali sono le sanzioni, cosa può fare il cittadino.
-Cita le norme rilevanti (DPR 380/2001, normative regionali, D.Lgs. 81/2008) in modo comprensibile.
-Se il caso richiede un tecnico abilitato, indicalo.`,
+async function loadUserProfile(userId: string): Promise<UserProfile | null> {
+  if (!userId || !SUPABASE_URL || !SUPABASE_KEY) return null;
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/profili_utenti?user_id=eq.${userId}&select=*`,
+      {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+        signal: AbortSignal.timeout(3000),
+      }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows?.[0] ?? null;
+  } catch { return null; }
+}
 
-  "Consulente Finanziario": `Sei NormaAI, l'assistente AI specializzato nella normativa finanziaria e bancaria italiana.
-Stai assistendo un cittadino che ha una domanda su investimenti, conti correnti, mutui, assicurazioni, tutele del consumatore finanziario o obblighi di trasparenza.
-Rispondi in modo chiaro e concreto: quali sono i diritti del cittadino, cosa può pretendere dalla banca o dall'intermediario, come tutelarsi.
-Cita le norme rilevanti (TUF, TUB, MiFID II, regolamenti Consob/Banca d'Italia) spiegandole in parole semplici.
-Ricorda sempre che non stai fornendo consulenza finanziaria personalizzata.`,
+async function updateProfileAfterQuery(
+  userId: string,
+  query: string,
+  verticale: string
+): Promise<void> {
+  if (!userId || !SUPABASE_URL || !SUPABASE_KEY) return;
+  try {
+    // Fetch current profile
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/profili_utenti?user_id=eq.${userId}&select=ultime_query,query_count`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!rows?.[0]) return;
 
-  "Analisi Contratto": `Sei NormaAI Contract Analyzer, un agente legale AI specializzato nell'analisi di contratti commerciali italiani.
+    const existing: Array<{ query: string; verticale: string; timestamp: string }> =
+      rows[0].ultime_query ?? [];
+    const newEntry = { query: query.slice(0, 120), verticale, timestamp: new Date().toISOString() };
+    const updated = [newEntry, ...existing].slice(0, 20); // max 20 entries
 
-Il tuo compito è analizzare il contratto allegato e produrre un report strutturato con esattamente queste 5 sezioni:
+    await fetch(`${SUPABASE_URL}/rest/v1/profili_utenti?user_id=eq.${userId}`, {
+      method: "PATCH",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ultime_query: updated, query_count: (rows[0].query_count ?? 0) + 1 }),
+    });
+  } catch { /* silent */ }
+}
 
-## 🔍 Tipo di contratto
-Identifica il tipo (es. contratto di fornitura, NDA, contratto di lavoro, appalto, licenza software...) e le parti coinvolte.
+function buildProfileBlock(profile: UserProfile): string {
+  if (!profile) return "";
 
-## ⚠️ Rischi identificati
-Elenca i rischi legali concreti per il cliente, con riferimento normativo specifico. Usa formato:
-- **[ALTO/MEDIO/BASSO]** Descrizione rischio → Norma violata o applicabile (es. art. 1341 c.c.)
+  const ultimiArgomenti = profile.ultime_query
+    .slice(0, 5)
+    .map((q) => `• ${q.query} [${q.verticale}]`)
+    .join("\n");
 
-## 📋 Clausole mancanti
-Elenca le clausole che dovrebbero esserci ma mancano (es. limitazione responsabilità, foro competente, GDPR, recesso, penali). Per ognuna indica perché è importante e la norma di riferimento.
-
-## ✅ Conformità legge italiana
-Verifica la conformità alle principali norme applicabili (Codice Civile, GDPR se dati personali, Codice del Consumo se B2C, D.Lgs. 231/2001 se responsabilità aziendale). Indica: CONFORME / NON CONFORME / DA VERIFICARE per ciascuna.
-
-## 💡 Raccomandazioni
-Massimo 5 azioni concrete che l'azienda deve fare prima di firmare, in ordine di priorità.
-
----
-REGOLE:
-- Cita sempre articoli specifici (es. art. 1229 c.c. — nullità clausole di irresponsabilità)
-- Sii diretto e operativo, non generico
-- Se una clausola è ambigua, segnalala come rischio
-- Usa i documenti normativi forniti dal corpus per le citazioni`,
-};
-
-const DEFAULT_SYSTEM_PROMPT = `Sei NormaAI, l'assistente AI specializzato nella normativa italiana.
-Rispondi con precisione giuridica, citando le fonti normative rilevanti quando disponibili.
-Struttura le risposte in modo chiaro e professionale. Indica sempre la fonte normativa specifica (legge, decreto, articolo).
-Se non hai informazioni sufficienti, indica chiaramente i limiti della risposta.`;
-
-// ── Behavioral rules appended to every system prompt ─────────────────────────
-
-function getBehavioralRules(turnNumber: number): string {
-  const proponiProfessionista = turnNumber >= 2
-    ? `\n- Hai già avuto ${turnNumber} scambi con il cittadino. Se la situazione è ancora complessa o delicata, DEVI proporre alla fine della risposta: "**Vuoi che ti aiuti a trovare un professionista che possa assisterti direttamente?** Può esaminare il tuo caso e decidere se accettare l'incarico." — attendi la sua risposta (sì/no).`
+  const specs = profile.specializzazioni.length
+    ? `Specializzato in: ${profile.specializzazioni.join(", ")}.`
     : "";
+
+  const settori = profile.settori_cliente.length
+    ? `Clientela principalmente in: ${profile.settori_cliente.join(", ")}.`
+    : "";
+
+  const verbosita =
+    profile.preferenze?.verbosita === "sintetico"
+      ? "Preferisce risposte concise e operative."
+      : profile.preferenze?.verbosita === "dettagliato"
+      ? "Preferisce risposte dettagliate con tutti i riferimenti normativi."
+      : "";
+
+  const citazioni =
+    profile.preferenze?.citazioni === "complete"
+      ? "Riportare sempre l'articolo completo o il comma rilevante."
+      : "";
 
   return `
 ────────────────────────────────────────
-REGOLE COMPORTAMENTALI:
-- Cita sempre gli articoli e le norme con riferimento preciso (es. art. 2118 c.c., art. 7 L. 300/1970, D.Lgs. 81/2015 art. 18). Non usare mai percentuali o punteggi di confidenza.
-- Alla fine di ogni risposta, poni UNA domanda specifica e mirata per capire meglio la situazione concreta del cittadino (es. "Da quanto tempo lavori in questa azienda?", "Hai già ricevuto contestazioni scritte?").${proponiProfessionista}
+PROFILO UTENTE:
+Ruolo: ${profile.ruolo}${profile.nome ? ` — ${profile.nome}` : ""}${profile.studio ? `, ${profile.studio}` : ""}${profile.citta ? ` (${profile.citta})` : ""}
+${specs}
+${settori}
+${verbosita} ${citazioni}
+${ultimiArgomenti ? `Argomenti recenti di interesse:\n${ultimiArgomenti}` : ""}
+Adatta la risposta a questo profilo professionale: usa il linguaggio tecnico appropriato, cita norme pertinenti al suo settore, non spiegare concetti base che un ${profile.ruolo} conosce già.
+────────────────────────────────────────`.trim();
+}
+
+// ── FEATURE 3: Relationship Graph — Chain Retrieval ──────────────────────────
+
+interface GraphRelation {
+  norma_da: string;
+  norma_a: string;
+  tipo: string;
+  descrizione: string;
+  hop: number;
+}
+
+async function getRelatedNorms(urns: string[]): Promise<GraphRelation[]> {
+  if (!urns.length || !SUPABASE_URL || !SUPABASE_KEY) return [];
+  const results: GraphRelation[] = [];
+
+  for (const urn of urns.slice(0, 3)) { // max 3 URN per query
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_norma_chain`, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ start_urn: urn, max_hops: 2 }),
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!res.ok) continue;
+      const chain: GraphRelation[] = await res.json();
+      results.push(...chain);
+    } catch { /* silent */ }
+  }
+
+  return results.slice(0, 15); // max 15 relazioni totali
+}
+
+function buildGraphBlock(relations: GraphRelation[]): string {
+  if (!relations.length) return "";
+
+  const byType: Record<string, string[]> = {};
+  for (const r of relations) {
+    if (!byType[r.tipo]) byType[r.tipo] = [];
+    const desc = r.descrizione ? ` (${r.descrizione})` : "";
+    byType[r.tipo].push(`${r.norma_da} → ${r.norma_a}${desc}`);
+  }
+
+  const lines = Object.entries(byType).map(
+    ([tipo, items]) => `**${tipo.toUpperCase()}:** ${items.join(" | ")}`
+  );
+
+  return `
+────────────────────────────────────────
+CATENA NORMATIVA (relazioni rilevate):
+${lines.join("\n")}
+Tieni conto di queste relazioni nella risposta: se citi una norma che è stata modificata o abrogata, segnalalo esplicitamente.
+────────────────────────────────────────`.trim();
+}
+
+// ── FEATURE 11: Citation Formatter ───────────────────────────────────────────
+// Iniettata nelle behavioral rules — standard citazione giuridica italiana.
+
+const CITATION_RULES = `
+FORMATO CITAZIONI (obbligatorio):
+- Leggi: L. 300/1970 art. 7  |  D.Lgs. 81/2015 art. 18 co. 1
+- Codici: art. 2118 c.c.  |  art. 575 c.p.  |  art. 163 c.p.c.
+- Decreti: DPR 380/2001 art. 3  |  D.M. 14/01/2008 §4.2
+- Regolamenti UE: Reg. UE 2016/679 (GDPR) art. 6  |  Reg. UE 1215/2012 art. 4
+- Cassazione: Cass. sez. lav. n. 12345/2024  |  Cass. S.U. n. 9999/2023
+- Corte Cost.: Corte Cost. sent. n. 234/2022
+Mai scrivere "la legge prevede che" senza citare l'articolo preciso.`.trim();
+
+// ── FEATURE 13: Judicial Precedent Enrichment ────────────────────────────────
+// Query parallela sul corpus cassazione — restituisce sentenze rilevanti.
+
+interface CassazioneChunk {
+  id: string;
+  chunk: string;
+  titolo: string;
+  fonte: string;
+  url: string;
+  similarity: number;
+}
+
+async function getPrecedentiCassazione(
+  question: string,
+  verticale?: string
+): Promise<CassazioneChunk[]> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return [];
+  try {
+    const embedding = await generateEmbedding(question);
+    if (!embedding) return [];
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        query_embedding: embedding,
+        match_count: 4,
+        match_threshold: 0.30,
+        filter_verticale: "cassazione",
+        only_vigente: false, // sentenze non hanno status vigente
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return [];
+    return await res.json() as CassazioneChunk[];
+  } catch { return []; }
+}
+
+function buildPrecedentsBlock(precedents: CassazioneChunk[]): string {
+  if (!precedents.length) return "";
+  const lines = precedents.map((p, i) =>
+    `[Precedente ${i + 1}] ${p.titolo || "Sentenza"}\n${p.chunk.slice(0, 400)}...`
+  );
+  return `────────────────────────────────────────
+PRECEDENTI GIURISPRUDENZIALI (Cassazione):
+
+${lines.join("\n\n---\n\n")}
+────────────────────────────────────────
+Se pertinenti, cita questi precedenti nel formato standard (Cass. sez. X n. YYYY/AAAA).`.trim();
+}
+
+// ── FEATURE 5: Audit Trail — log ogni risposta ────────────────────────────────
+
+async function logAuditTrail(
+  userId: string | null,
+  sessioneId: string,
+  query: string,
+  risposta: string,
+  sources: Source[],
+  hasGraph: boolean,
+  hasProfilo: boolean,
+  latenzaMs: number
+): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/audit_risposte`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        user_id: userId || null,
+        sessione_id: sessioneId,
+        query: query.slice(0, 500),
+        risposta: risposta.slice(0, 2000),
+        fonti_usate: sources.map((s) => ({ id: s.id, titolo: s.titolo, fonte: s.fonte })),
+        graph_usato: hasGraph,
+        profilo_usato: hasProfilo,
+        modello_ai: "claude-sonnet-4-6",
+        latenza_ms: latenzaMs,
+      }),
+    });
+  } catch { /* silent */ }
+}
+
+// ── FEATURE 12: Jurisdictional Layering — regione nel profilo ───────────────
+// Aggiunge filtro regionale nella build del profilo se disponibile.
+
+function buildJurisdictionalBlock(profile: UserProfile): string {
+  const regione = (profile.preferenze as Record<string, string>)?.regione;
+  if (!regione) return "";
+  return `Normativa regionale prioritaria: ${regione}. Se disponibile nel corpus, cita prima la normativa regionale applicabile prima di quella nazionale generica.`;
+}
+
+// ── Per-category base system prompts ─────────────────────────────────────────
+
+const SYSTEM_PROMPTS: Record<string, string> = {
+  Avvocato: `Sei NormaAI, assistente AI di diritto italiano specializzato per studi legali e professionisti forensi.
+Rispondi con rigore giuridico: cita articoli, commi, versioni vigenti. Usa il linguaggio tecnico corretto.
+Per ogni questione indica: norma applicabile (es. art. 1453 c.c.), orientamento giurisprudenziale prevalente (Cassazione, Corte Cost.), e rischio pratico per il cliente.
+Non semplificare eccessivamente — l'utente è un professionista del diritto.`,
+
+  Commercialista: `Sei NormaAI, assistente AI di fiscalità e diritto tributario italiano per dottori commercialisti e revisori.
+Rispondi con precisione tecnica: cita TUIR, IVA, OIC, circolari Agenzia Entrate, pronunce della Cassazione tributaria.
+Indica scadenze, sanzioni, e comportamento da adottare in dichiarazione. L'utente è un professionista — non serve spiegare l'IVA da zero.`,
+
+  "Consulente del Lavoro": `Sei NormaAI, assistente AI di diritto del lavoro per consulenti del lavoro e HR manager.
+Rispondi con precisione: Statuto Lavoratori, D.Lgs. 81/2015, CCNL applicabili al settore del cliente, circolari INPS/INAIL.
+Indica sempre il CCNL rilevante se disponibile nel profilo, le tutele applicabili e il percorso procedurale corretto.`,
+
+  "Ingegnere/Geometra": `Sei NormaAI, assistente AI di normativa tecnica ed edilizia per professionisti abilitati.
+Cita con precisione: DPR 380/2001, NTC 2018, D.Lgs. 81/2008, UNI/CEI applicabili, normativa regionale se pertinente.
+Indica il titolo abilitativo corretto, i rischi di inosservanza, e le sanzioni previste.`,
+
+  "Consulente Finanziario": `Sei NormaAI, assistente AI di normativa finanziaria e bancaria per consulenti finanziari e funzionari di banca.
+Cita: TUF, TUB, MiFID II, Regolamenti Consob/Banca d'Italia, EMIR, UCITS.
+Indica gli obblighi di condotta, i requisiti di trasparenza e le conseguenze sanzionatorie.`,
+
+  "Parere Legale": `Sei NormaAI Drafter, assistente AI per la redazione di pareri legali italiani.
+
+Produci un parere legale strutturato con queste sezioni obbligatorie:
+
+## 📋 Fatto
+Sintesi dei fatti giuridicamente rilevanti esposti dall'assistito.
+
+## ❓ Questione Giuridica
+La domanda di diritto da risolvere, formulata con precisione tecnica.
+
+## ⚖️ Analisi Giuridica
+- Normativa applicabile (cita articoli esatti: art. X, L./D.Lgs./c.c./c.p.)
+- Orientamento giurisprudenziale prevalente (Cassazione, Corte Cost. se pertinente)
+- Eventuali orientamenti contrari o dubbi interpretativi
+
+## 📌 Conclusioni
+Risposta diretta e motivata. Il parere deve essere inequivocabile.
+
+## 💡 Raccomandazioni operative
+Max 3 azioni concrete in ordine di priorità.
+
+STILE: Italiano forense formale. Terza persona. Cita sempre articoli e sentenze specifiche. Sii preciso — chi legge è un professionista.`,
+
+  "Email Professionale": `Sei NormaAI Writer, assistente per la comunicazione legale professionale italiana.
+
+Redigi email professionali per avvocati: diffide, richieste di adempimento, comunicazioni a parti avverse, risposte a clienti, PEC formali.
+
+OUTPUT OBBLIGATORIO:
+
+## 📧 Oggetto
+[L'oggetto completo, formale]
+
+## Corpo del messaggio
+[Il testo completo dell'email, pronto per essere inviato. Inizia direttamente con "Egregio/Gentile..." senza preamboli]
+
+---
+
+## 📝 Note di personalizzazione
+Elementi specifici da adattare ([NOME], [DATA], [IMPORTO], ecc.)
+
+STILE: Formale, preciso, giuridicamente corretto. Usa le formule dell'uso forense italiano. Distingui tra comunicazioni stragiudiziali (più dirette) e PEC ufficiali (più solenni).`,
+
+  "Memoria Difensiva": `Sei NormaAI Redattore Forense, assistente per la redazione di atti processuali civili italiani.
+
+Produci bozze di atti processuali (memorie difensive, comparse di risposta, atti di citazione, memorie conclusionali).
+
+STRUTTURA OBBLIGATORIA:
+
+## FATTO
+Ricostruzione cronologica dei fatti, con riferimenti documentali (doc. n. X allegato).
+
+## IN DIRITTO
+1. [Prima questione giuridica]
+   - Norma: art. X [nome legge]
+   - Giurisprudenza: Cass. sez. X n. YYYY/AAAA — [massima]
+2. [Seconda questione] etc.
+
+## CONCLUSIONI
+*Voglia l'Onorevole Tribunale / Corte, contrariis reiectis, così giudicare:*
+[Richieste formulate nel corretto stile]
+
+STILE: Forense italiano. Terza persona. "L'Odierno difensore", "Parte attrice/convenuta". Clausole in maiuscoletto. Cita sempre le norme processuali (c.p.c.) e sostanziali. Segnala con [DA VERIFICARE] i punti che richiedono riscontro documentale.`,
+
+  "Bozza Contratto": `Sei NormaAI Contract Drafter, assistente per la redazione di contratti commerciali italiani.
+
+Produci bozze contrattuali complete e conformi al Codice Civile italiano.
+
+STRUTTURA OBBLIGATORIA:
+
+## CONTRATTO DI [TIPO]
+*Tra [PARTE A] e [PARTE B]*
+
+**Art. 1 — Parti**
+**Art. 2 — Oggetto**
+**Art. 3 — Corrispettivo e pagamento**
+**Art. 4 — Durata e recesso** (con termini preavviso)
+**Art. 5 — Obblighi delle parti**
+**Art. 6 — Limitazione di responsabilità** (art. 1229 c.c.)
+**Art. 7 — Riservatezza e GDPR** (art. 28 Reg. UE 679/2016 se applicabile)
+**Art. 8 — Forza maggiore**
+**Art. 9 — Clausola penale** (art. 1382 c.c.) se appropriata
+**Art. 10 — Foro competente e legge applicabile** (Italia)
+**Art. 11 — Disposizioni finali** (integrità, modifiche scritte, nullità parziale)
+
+STILE: Linguaggio contrattuale italiano formale. Clausole chiare e non ambigue. Evidenzia [DA PERSONALIZZARE] per ogni campo da adattare al caso specifico. Avvisa se servono clausole specifiche di settore.`,
+
+  "Parcelle Forensi": `Sei NormaAI Parcellometro, strumento per il calcolo delle parcelle forensi secondo il DM 55/2014 aggiornato dal DM 144/2022.
+
+Quando l'utente fornisce tipo di pratica, fase, valore della causa — calcola il range di onorari secondo le tabelle vigenti.
+
+OUTPUT:
+
+## 📊 Calcolo Parcella DM 55/2014
+
+**Tipo pratica:** [tipo] | **Fase:** [fase] | **Valore:** €[valore]
+**Scaglione DM 55/2014:** [scaglione applicabile]
+
+### Onorari per fase (valori di riferimento):
+| Fase | Minimo | Medio | Massimo |
+|------|--------|-------|---------|
+| [fase 1] | €X | €Y | €Z |
+| [eventuali altre fasi] | ... | ... | ... |
+
+**Totale onorario stimato:** da **€[min]** a **€[max]**
+
+### Accessori obbligatori:
+- CPA 4% sull'onorario
+- IVA 22% sul totale imponibile
+- Contributo unificato: €[importo] (tabella DPR 115/2002)
+
+### 📋 Base normativa:
+DM 55/2014, Tabella [X], come modificato dal DM 144/2022. Il giudice può liquidare tra minimo e massimo tenendo conto di complessità, urgenza e risultato (art. 4, DM 55/2014).
+
+IMPORTANTE: Se il valore della causa è indeterminabile, applica i parametri "valore indeterminato" del DM. Segnala sempre che si tratta di una stima orientativa.`,
+
+  "Analisi Documento": `Sei NormaAI Doc Analyzer, agente legale AI per l'analisi di documenti giuridici italiani.
+
+Analizza il documento allegato e produci un report strutturato con queste sezioni:
+
+## 📄 Natura del documento
+Tipo di documento, parti coinvolte, oggetto e contesto giuridico. Data e provenienza se presenti.
+
+## ⚖️ Contenuto giuridico principale
+Elementi normativi rilevanti, clausole chiave, obblighi, diritti e termini economici.
+
+## ⚠️ Criticità e rischi
+Per ogni criticità: **[ALTO/MEDIO/BASSO]** Descrizione → norma di riferimento (es. art. 1341 c.c., art. 28 GDPR).
+
+## ✅ Conformità normativa
+Valuta conformità rispetto alla normativa applicabile. CONFORME / NON CONFORME / DA VERIFICARE.
+
+## 💡 Raccomandazioni
+Max 5 azioni concrete in ordine di priorità. Sii diretto e operativo.
+
+REGOLE: cita sempre articoli specifici. Se il documento è in italiano, rispondi in italiano. Se trovi una domanda specifica nella richiesta, rispondi a quella in aggiunta al report.`,
+
+  "Analisi Contratto": `Sei NormaAI Contract Analyzer, agente legale AI per l'analisi di contratti commerciali italiani.
+
+Produci un report strutturato con esattamente queste 5 sezioni:
+
+## 🔍 Tipo di contratto
+Identifica il tipo e le parti coinvolte.
+
+## ⚠️ Rischi identificati
+Per ogni rischio: **[ALTO/MEDIO/BASSO]** Descrizione → Norma violata (es. art. 1341 c.c.)
+
+## 📋 Clausole mancanti
+Clausole assenti con motivazione giuridica (GDPR, limitazione responsabilità, foro, recesso, penali).
+
+## ✅ Conformità legge italiana
+CONFORME / NON CONFORME / DA VERIFICARE per: c.c., GDPR, Codice Consumo, D.Lgs. 231/2001.
+
+## 💡 Raccomandazioni
+Max 5 azioni concrete in ordine di priorità prima della firma.
+
+REGOLE: cita sempre articoli specifici. Sii diretto e operativo. Segnala ogni ambiguità come rischio.`,
+};
+
+const DEFAULT_SYSTEM_PROMPT = `Sei NormaAI, assistente AI specializzato nella normativa italiana per professionisti.
+Rispondi con precisione giuridica: cita articoli, commi, versioni vigenti, orientamento giurisprudenziale.
+Struttura le risposte per un professionista — conciso, tecnico, operativo.`;
+
+// ── Behavioral rules ──────────────────────────────────────────────────────────
+
+function getBehavioralRules(turnNumber: number, hasProfilo: boolean): string {
+  const proponi = turnNumber >= 2
+    ? `\n- Hai già avuto ${turnNumber} scambi. Se il caso è ancora aperto, proponi: "**Vuoi che ti aiuti a trovare un professionista che possa assisterti direttamente?**"`
+    : "";
+
+  const followUp = hasProfilo
+    ? ""
+    : `\n- Poni UNA domanda specifica di approfondimento alla fine.`;
+
+  return `
+────────────────────────────────────────
+REGOLE:
+- Se una norma citata è stata modificata o abrogata di recente, segnalalo con ⚠️.
+- Non usare mai percentuali o punteggi di confidenza.
+${CITATION_RULES}${followUp}${proponi}
 ────────────────────────────────────────`;
+}
+
+// ── Embedding (VPS 768 dim, fallback OpenAI 1536) ─────────────────────────────
+
+async function generateEmbedding(text: string): Promise<number[] | null> {
+  // Prova VPS locale (768 dim — matching corpus)
+  try {
+    const res = await fetch(`${EMBED_VPS_URL}/embed`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: text }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.ok) {
+      const { data } = await res.json();
+      return data?.[0]?.embedding ?? null;
+    }
+  } catch (e) { console.error("[EMBED] VPS error:", e) }
+
+  // Fallback OpenAI (solo se corpus è ancora a 1536 dim)
+  if (OPENAI_API_KEY) {
+    try {
+      const res = await fetch("https://api.openai.com/v1/embeddings", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "text-embedding-3-small", input: text }),
+        signal: AbortSignal.timeout(6000),
+      });
+      if (res.ok) {
+        const { data } = await res.json();
+        return data?.[0]?.embedding ?? null;
+      }
+    } catch { /* ignorato */ }
+  }
+
+  return null;
+}
+
+// ── Supabase search (con versioning) ─────────────────────────────────────────
+
+interface SupabaseChunk {
+  id: string;
+  chunk: string;
+  titolo: string;
+  fonte: string;
+  tipo: string;
+  url: string;
+  urn: string;
+  status: string;
+  similarity: number;
+}
+
+async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
+  try {
+    const body: Record<string, unknown> = {
+      query_embedding: embedding,
+      match_count: 8,
+      match_threshold: 0.20,
+      only_vigente: true, // FEATURE 1: solo norme vigenti
+    };
+    if (verticale) body.filter_verticale = verticale;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return [];
+    return await res.json() as SupabaseChunk[];
+  } catch { return []; }
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -118,81 +581,23 @@ function getVerticale(vertical: string | null): string | undefined {
     "Ingegnere/Geometra": "tecnico",
     "Consulente Finanziario": "finanziario",
     "Analisi Contratto": "avvocato",
+    "Parere Legale": "avvocato",
+    "Email Professionale": "avvocato",
+    "Memoria Difensiva": "avvocato",
+    "Bozza Contratto": "avvocato",
+    "Parcelle Forensi": "avvocato",
+    "Analisi Documento": "avvocato",
   };
   return map[vertical];
 }
 
 function getAnthropic(): Anthropic {
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) {
-    console.error("[NormaAI] ANTHROPIC_API_KEY not found in env. Available keys:", Object.keys(process.env).filter(k => k.includes("ANTHROPIC") || k.includes("NEXT")));
-    throw new Error("ANTHROPIC_API_KEY not configured");
-  }
+  if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
   return new Anthropic({ apiKey: key });
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface RagResult {
-  id: string;
-  titolo: string;
-  chunk: string;
-  fonte: string;
-  tipo: string;
-  data: string;
-  url: string;
-  score: number;
-}
-
-interface SupabaseChunk {
-  id: string;
-  chunk: string;
-  titolo: string;
-  fonte: string;
-  tipo: string;
-  verticale: string;
-  url: string;
-  similarity: number;
-}
-
-async function generateEmbedding(text: string): Promise<number[] | null> {
-  if (!OPENAI_API_KEY) return null;
-  try {
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
-      method: "POST",
-      headers: { "Authorization": `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "text-embedding-3-small", input: text }),
-      signal: AbortSignal.timeout(6000),
-    });
-    if (!res.ok) return null;
-    const { data } = await res.json();
-    return data?.[0]?.embedding ?? null;
-  } catch { return null; }
-}
-
-async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
-  try {
-    const body: Record<string, unknown> = {
-      query_embedding: embedding,
-      match_count: 6,
-      match_threshold: 0.20,
-    };
-    if (verticale) body.filter_verticale = verticale;
-
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
-      method: "POST",
-      headers: {
-        "apikey": SUPABASE_KEY,
-        "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!res.ok) return [];
-    return await res.json() as SupabaseChunk[];
-  } catch { return []; }
-}
 
 interface Source {
   id: string;
@@ -200,14 +605,15 @@ interface Source {
   fonte: string;
   url: string;
   tipo: string;
+  status?: string;
 }
 
 interface Attachment {
   type: "document" | "image";
   mediaType: string;
   name: string;
-  data: string;         // base64 for PDF / images
-  textContent?: string; // plain text for .txt files
+  data: string;
+  textContent?: string;
 }
 
 interface ConversationTurn {
@@ -219,25 +625,15 @@ interface ConversationTurn {
 
 function buildUserContent(question: string, attachment?: Attachment) {
   if (!attachment) return question;
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const blocks: any[] = [];
 
   if (attachment.type === "image") {
-    blocks.push({
-      type: "image",
-      source: { type: "base64", media_type: attachment.mediaType, data: attachment.data },
-    });
+    blocks.push({ type: "image", source: { type: "base64", media_type: attachment.mediaType, data: attachment.data } });
   } else if (attachment.mediaType === "application/pdf") {
-    blocks.push({
-      type: "document",
-      source: { type: "base64", media_type: "application/pdf", data: attachment.data },
-    });
+    blocks.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: attachment.data } });
   } else if (attachment.textContent) {
-    blocks.push({
-      type: "text",
-      text: `Documento allegato "${attachment.name}":\n---\n${attachment.textContent}\n---\n\n`,
-    });
+    blocks.push({ type: "text", text: `Documento allegato "${attachment.name}":\n---\n${attachment.textContent}\n---\n\n` });
   }
 
   blocks.push({ type: "text", text: question });
@@ -245,20 +641,41 @@ function buildUserContent(question: string, attachment?: Attachment) {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limiting: 20/min autenticati, 5/min anonimi
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const { question, vertical, userId, attachment, conversationHistory, turnNumber } = await req.json();
+
+  const rateLimitKey = userId || `ip:${clientIp}`;
+  const maxReq = userId ? 20 : 5;
+  const { allowed, remaining } = rateLimit(rateLimitKey, maxReq, 60_000);
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: "Troppe richieste. Riprova tra un minuto.", remaining }), {
+      status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60" },
+    });
+  }
 
   if (!question?.trim()) {
     return new Response(JSON.stringify({ error: "question is required" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
+      status: 400, headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Input validation: max 10KB per messaggio
+  if (question.length > 10000) {
+    return new Response(JSON.stringify({ error: "Messaggio troppo lungo (max 10.000 caratteri)" }), {
+      status: 400, headers: { "Content-Type": "application/json" },
     });
   }
 
   const currentTurn: number = typeof turnNumber === "number" ? turnNumber : 0;
 
-  // 1. RAG — embedding + Supabase hybrid_search ────────────────────────────
+  // 1. Carica profilo utente (FEATURE 2) ─────────────────────────────────────
+  const profile = userId ? await loadUserProfile(userId) : null;
+
+  // 2. RAG — embedding + Supabase (con versioning filter, FEATURE 1) ─────────
   let ragContext = "";
   let sources: Source[] = [];
+  let chunkUrns: string[] = [];
 
   try {
     const embedding = await generateEmbedding(question);
@@ -267,9 +684,7 @@ export async function POST(req: NextRequest) {
       const chunks = await searchSupabase(embedding, verticale);
       if (chunks.length > 0) {
         ragContext = chunks
-          .map((c, i) => {
-            return `[Fonte ${i + 1}] ${c.titolo || "Normativa"} (${c.fonte || "corpus"})\n${c.chunk}`;
-          })
+          .map((c, i) => `[Fonte ${i + 1}] ${c.titolo || "Normativa"} (${c.fonte || "corpus"})\n${c.chunk}`)
           .join("\n\n---\n\n");
         sources = chunks.map((c) => ({
           id: String(c.id),
@@ -277,28 +692,51 @@ export async function POST(req: NextRequest) {
           fonte: c.fonte || "normattiva",
           url: c.url || "",
           tipo: c.tipo || "normativa",
+          status: c.status || "vigente",
         }));
+        chunkUrns = chunks.map((c) => c.urn).filter(Boolean) as string[];
       }
     }
-  } catch {
-    // RAG unavailable — Claude risponde dalla sua conoscenza
-  }
+  } catch { /* RAG unavailable */ }
 
-  // 2. Build system prompt ───────────────────────────────────────────────────
-  const basePrompt =
-    (vertical && SYSTEM_PROMPTS[vertical]) || DEFAULT_SYSTEM_PROMPT;
+  // 3. Graph traversal + Judicial precedents — tutti i pro ────────────────
+  let graphContext = "";
+  let precedentsContext = "";
 
-  const behavioralRules = getBehavioralRules(currentTurn);
+  const [relations, precedents] = await Promise.all([
+    chunkUrns.length > 0 ? getRelatedNorms(chunkUrns) : Promise.resolve([]),
+    getPrecedentiCassazione(question, getVerticale(vertical ?? null)),
+  ]);
 
-  const fullSystem = ragContext
-    ? `${basePrompt}${behavioralRules}\n\n────────────────────────────────────────\nDOCUMENTI NORMATIVI RECUPERATI DAL CORPUS NORMAAI:\n\n${ragContext}\n────────────────────────────────────────\n\nBasa la risposta prioritariamente su questi documenti. Cita le fonti come [Fonte N] con il riferimento normativo esatto (articolo, legge, decreto). Non citare mai percentuali o punteggi.`
-    : `${basePrompt}${behavioralRules}\n\n⚠️ Il corpus normativo non è al momento raggiungibile. Rispondi basandoti sulla tua conoscenza della normativa italiana, specificando che la risposta non è stata verificata sul corpus aggiornato di NormaAI.`;
+  if (relations.length > 0) graphContext = buildGraphBlock(relations);
+  if (precedents.length > 0) precedentsContext = buildPrecedentsBlock(precedents);
 
-  // 3. Build messages array (multi-turn) ────────────────────────────────────
+  // 4. Build system prompt ──────────────────────────────────────────────────
+  const basePrompt = (vertical && SYSTEM_PROMPTS[vertical]) || DEFAULT_SYSTEM_PROMPT;
+  const profileBlock = profile
+    ? [buildProfileBlock(profile), buildJurisdictionalBlock(profile)].filter(Boolean).join("\n")
+    : "";
+  const behavioralRules = getBehavioralRules(currentTurn, !!profile);
+
+  const contextSection = ragContext
+    ? [
+        "────────────────────────────────────────",
+        "DOCUMENTI NORMATIVI (corpus NormaAI, solo norme vigenti):\n",
+        ragContext,
+        "────────────────────────────────────────",
+        "Basa la risposta su questi documenti. Cita come [Fonte N] con l'articolo e la norma esatta. Non citare mai punteggi.",
+        graphContext,
+        precedentsContext,
+      ].filter(Boolean).join("\n\n")
+    : `⚠️ Corpus non raggiungibile. Rispondi dalla tua conoscenza, specificando che non è stata verificata sul corpus NormaAI aggiornato.`;
+
+  const fullSystem = [basePrompt, profileBlock, behavioralRules, contextSection]
+    .filter(Boolean)
+    .join("\n\n");
+
+  // 5. Build messages (multi-turn) ──────────────────────────────────────────
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages: any[] = [];
-
-  // Add previous conversation turns (max last 4 = 2 exchanges) truncated
   const history: ConversationTurn[] = Array.isArray(conversationHistory)
     ? conversationHistory.slice(-4)
     : [];
@@ -306,43 +744,42 @@ export async function POST(req: NextRequest) {
   for (const turn of history) {
     messages.push({
       role: turn.role,
-      content: turn.role === "assistant"
-        ? turn.content.slice(0, 1000) // truncate long past responses
-        : turn.content,
+      content: turn.role === "assistant" ? turn.content.slice(0, 1000) : turn.content,
     });
   }
+  messages.push({ role: "user", content: buildUserContent(question, attachment) });
 
-  // Add current user message
-  messages.push({
-    role: "user",
-    content: buildUserContent(question, attachment),
-  });
+  // 6. Update profile async (FEATURE 2 — non bloccante) ────────────────────
+  if (userId && profile) {
+    updateProfileAfterQuery(userId, question, vertical || "generale").catch(() => {});
+  }
 
-  // 4. Stream Claude response ────────────────────────────────────────────────
+  // 7. Stream Claude response + Audit trail ───────────────────────────────
+  const sessioneId = `${userId || "anon"}-${Date.now()}`;
+  const t0 = Date.now();
+
   const stream = new ReadableStream({
     async start(controller) {
       const enc = new TextEncoder();
       const send = (obj: unknown) =>
         controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
-      // First event: sources metadata
-      send({ type: "sources", sources, hasRag: ragContext.length > 0 });
+      send({ type: "sources", sources, hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0 });
 
+      let fullResponse = "";
       try {
         const anthropic = getAnthropic();
         const anthropicStream = await anthropic.messages.create({
           model: "claude-sonnet-4-6",
-          max_tokens: 1500,
+          max_tokens: (vertical && ["Parere Legale", "Memoria Difensiva", "Bozza Contratto", "Analisi Documento", "Analisi Contratto"].includes(vertical)) ? 4096 : 2000,
           system: fullSystem,
           messages,
           stream: true,
         });
 
         for await (const event of anthropicStream) {
-          if (
-            event.type === "content_block_delta" &&
-            event.delta.type === "text_delta"
-          ) {
+          if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+            fullResponse += event.delta.text;
             send({ type: "text", text: event.delta.text });
           }
           if (event.type === "message_stop") {
@@ -353,6 +790,17 @@ export async function POST(req: NextRequest) {
         send({ type: "error", message: String(err) });
       } finally {
         controller.close();
+        // F5: Audit trail — async, non blocca la risposta
+        logAuditTrail(
+          userId || null,
+          sessioneId,
+          question,
+          fullResponse,
+          sources,
+          graphContext.length > 0,
+          !!profile,
+          Date.now() - t0
+        ).catch(() => {});
       }
     },
   });
