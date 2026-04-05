@@ -711,7 +711,7 @@ export async function POST(req: NextRequest) {
         graphContext,
         precedentsContext,
       ].filter(Boolean).join("\n\n")
-    : `⚠️ Corpus non raggiungibile. Rispondi dalla tua conoscenza, specificando che non è stata verificata sul corpus NormaAI aggiornato.`;
+    : ``;
 
   const fullSystem = [basePrompt, profileBlock, behavioralRules, contextSection]
     .filter(Boolean)
