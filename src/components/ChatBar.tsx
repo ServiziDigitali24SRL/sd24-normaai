@@ -501,6 +501,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
                 ))}
               </div>
               {/* Vertical pills */}
+              <p className="text-[11px] text-[#444] text-center mb-[6px] tracking-wide uppercase">Scegli il professionista, poi scrivi</p>
               <div className="flex gap-[7px] overflow-x-auto md:flex-wrap md:justify-center pb-1 scrollbar-hide">
                 {PILLS.map((pill, i) => (
                   <button key={i} onClick={() => handlePill(i)} title={pill.hint}
