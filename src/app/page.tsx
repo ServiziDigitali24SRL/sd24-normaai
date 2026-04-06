@@ -129,6 +129,9 @@ export default function Home() {
 
   return (
     <>
+      {/* H1 visivamente nascosta ma presente per SEO e screen reader */}
+      <h1 className="sr-only">NormaAI — AI normativo italiano: cerca leggi, normative e sentenze</h1>
+
       <Suspense fallback={null}>
         <CheckoutToastHandler onToast={setCheckoutToast} onGmailToast={setGmailToast} />
       </Suspense>

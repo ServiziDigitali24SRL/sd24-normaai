@@ -81,11 +81,11 @@ export default function ModalImpresa({ open, onClose }: Props) {
       <div className="p-7">
         <ModalClose onClose={onClose} />
         <ModalTitle>Accedi come Impresa</ModalTitle>
-        <ModalSub>14 giorni gratuiti, poi 49&euro;/mese &mdash; disdici quando vuoi</ModalSub>
+        <ModalSub>14 giorni gratuiti, poi 29&euro;/mese &mdash; disdici quando vuoi</ModalSub>
 
         <div className="bg-card border border-card-border rounded-xl p-[18px] mt-[14px]">
           <div className="font-serif text-[30px]">
-            <sup className="text-[14px] font-sans">&euro;</sup>49
+            <sup className="text-[14px] font-sans">&euro;</sup>29
             <sub className="text-[13px] font-sans text-[#555]">/mese</sub>
           </div>
           <div className="text-[11.5px] text-gold mt-[3px]">

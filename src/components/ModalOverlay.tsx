@@ -25,6 +25,8 @@ export default function ModalOverlay({
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         className={`bg-[#131313] border border-[#252525] rounded-[18px] w-full relative max-h-[92vh] overflow-y-auto ${
           maxWidth ?? (wide ? "max-w-[560px]" : "max-w-[440px]")
         }`}

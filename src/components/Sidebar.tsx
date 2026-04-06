@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 import CinematicThemeSwitcher from "@/components/ui/cinematic-theme-switcher";
 
@@ -113,10 +114,10 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
               <NavItem onClick={() => navClick(() => onOpenModal("investi"))} icon={<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>} label="Investi in NormaAI" />
               <NavItem onClick={() => navClick(() => onOpenModal("come-funziona"))} icon={<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>} label="Come funziona" />
               <NavItem onClick={() => navClick(() => onOpenModal("developer"))} icon={<svg viewBox="0 0 24 24"><polyline points="16,18 22,12 16,6" /><polyline points="8,6 2,12 8,18" /></svg>} label="API Sviluppatori" />
-              <NavItem onClick={() => navClick(() => router.push("/guide"))} icon={<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>} label="Guide gratuite" />
+              <NavLink href="/guide" onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 1024) onToggle(); }} icon={<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" /></svg>} label="Guide gratuite" />
               <Divider />
-              <NavItem onClick={() => navClick(() => router.push("/privacy"))} icon={<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>} label="Privacy Policy" />
-              <NavItem onClick={() => navClick(() => router.push("/termini"))} icon={<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>} label="Termini di Servizio" />
+              <NavLink href="/privacy" onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 1024) onToggle(); }} icon={<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>} label="Privacy Policy" />
+              <NavLink href="/termini" onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 1024) onToggle(); }} icon={<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14,2 14,8 20,8" /></svg>} label="Termini di Servizio" />
               <NavItem onClick={() => navClick(() => onOpenModal("bug"))} icon={bugIcon} label="Segnala un bug" />
             </>
           )}
@@ -195,7 +196,7 @@ function UserFooter({ userName, userEmail, roleLabel, onLogout, onOpenModal }: {
         <div className="absolute bottom-full left-0 w-full mb-[2px] bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-2xl overflow-hidden z-50">
           <div className="px-4 pt-3 pb-2 text-[11px] text-[#666] truncate border-b border-[#252525]">{userEmail}</div>
           <MenuBtn onClick={() => { setOpen(false); onOpenModal("profilo-ai"); }} icon={<svg viewBox="0 0 24 24"><path d="M12 5a3 3 0 00-5.997.125 4 4 0 00-2.526 5.77 4 4 0 00.556 6.588A4 4 0 1012 18z" fill="none" stroke="currentColor" strokeWidth="2"/><path d="M12 5a3 3 0 015.997.125 4 4 0 012.526 5.77 4 4 0 01-.556 6.588A4 4 0 1112 18z" fill="none" stroke="currentColor" strokeWidth="2"/></svg>} label="Il mio profilo AI" sub="Personalizzazione intelligente" />
-          <MenuBtn onClick={() => setOpen(false)} icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" /></svg>} label="Il mio piano" sub={roleLabel === "Cittadino" ? "9€/mese" : roleLabel === "Impresa" ? "149€/mese" : roleLabel === "Professionista" ? "299€/mese" : undefined} />
+          <MenuBtn onClick={() => setOpen(false)} icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" /></svg>} label="Il mio piano" sub={roleLabel === "Cittadino" ? "9€/mese" : roleLabel === "Impresa" ? "29€/mese" : roleLabel === "Professionista" ? "29€/mese" : undefined} />
           <div className="flex items-center justify-between px-4 py-[9px]"><span className="text-[13px] text-[#999]">Tema</span><CinematicThemeSwitcher /></div>
           <div className="h-px bg-[#252525] mx-2" />
           <MenuBtn onClick={() => { setOpen(false); onLogout(); }} icon={<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16,17 21,12 16,7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>} label="Esci" />
@@ -215,6 +216,19 @@ function MenuBtn({ icon, label, sub, onClick }: { icon: React.ReactNode; label: 
     <button onClick={onClick} className="flex items-center gap-[9px] px-4 py-[9px] text-[13px] text-[#999] bg-transparent border-none w-full text-left cursor-pointer hover:text-cream hover:bg-white/[0.05] transition-colors duration-150 [&_svg]:w-[14px] [&_svg]:h-[14px] [&_svg]:shrink-0 [&_svg]:stroke-current [&_svg]:fill-none [&_svg]:stroke-[2]">
       {icon}<span className="flex-1">{label}</span>{sub && <span className="text-[10px] text-[#555]">{sub}</span>}
     </button>
+  );
+}
+
+// NavLink: come NavItem ma renderizza un <a> reale per SEO crawlability
+function NavLink({ icon, label, href, onClick }: { icon: React.ReactNode; label: string; href: string; onClick?: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="flex items-center gap-[9px] px-[18px] py-[8px] text-[13px] text-[#888] no-underline hover:text-cream hover:bg-white/[0.03] transition-colors duration-150 [&_svg]:w-[14px] [&_svg]:h-[14px] [&_svg]:shrink-0 [&_svg]:stroke-current [&_svg]:fill-none [&_svg]:stroke-[2]"
+    >
+      {icon}{label}
+    </Link>
   );
 }
 
