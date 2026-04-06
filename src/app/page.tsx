@@ -35,7 +35,10 @@ import ModalProfilo from "@/components/modals/ModalProfilo";
 import ModalParcelle from "@/components/modals/ModalParcelle";
 import ModalDashboard from "@/components/modals/ModalDashboard";
 import ModalAnalisiDoc from "@/components/modals/ModalAnalisiDoc";
+import ModalConnettori from "@/components/modals/ModalConnettori";
 import CommandPalette from "@/components/CommandPalette";
+import NormaNewsTicker from "@/components/NormaNewsTicker";
+import { Bell, Settings, ChevronDown } from "lucide-react";
 
 function CheckoutToastHandler({ onToast, onGmailToast }: { onToast: (t: "success" | "cancel" | null) => void; onGmailToast: (t: "connected" | "error" | null) => void }) {
   const searchParams = useSearchParams();
@@ -60,7 +63,7 @@ type ModalId =
   | "gmail" | "gdrive" | "dropbox" | "onedrive" | "outlook"
   | "docusign" | "adobesign" | "whatsapp" | "telegram"
   | "progetti" | "nuovo-progetto" | "archivio" | "nuovo-archivio" | "profilo-ai"
-  | "parcelle" | "dashboard" | "analisi-doc" | null;
+  | "parcelle" | "dashboard" | "analisi-doc" | "connettori" | null;
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<ModalId>(null);
@@ -142,52 +145,58 @@ export default function Home() {
       {/* Main content — FIX: margin solo desktop */}
       <div className={`flex flex-col h-screen overflow-hidden transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
 
-        {/* Topbar */}
-        <div className="flex items-center px-4 py-3 border-b border-[#E5E1D8] bg-[#FAFAF8] sticky top-0 z-[100]">
-          <button
-            onClick={toggleSidebar}
-            aria-label="Mostra/nascondi sidebar"
-            className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] mr-3 rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#EFEDE8] transition-all duration-150 shrink-0"
-          >
-            <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
-            <span className="block w-5 h-[1.5px] bg-current" />
-            <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
-          </button>
-
-          {/* Logo — nascosto su desktop quando sidebar aperta */}
-          <div className={`font-serif text-[17px] tracking-[-0.5px] mr-auto transition-all duration-[250ms] overflow-hidden text-[#1a1a1a] ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
-            Norma<span className="text-accent">AI</span>
+        {/* Topbar — BrevoTopBar style */}
+        <div className="flex items-center justify-between h-14 px-5 border-b border-[#E2E2E2] bg-white sticky top-0 z-[100] shrink-0">
+          {/* Left: hamburger + logo */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleSidebar}
+              aria-label="Mostra/nascondi sidebar"
+              className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F5F3EF] transition-all duration-150 shrink-0"
+            >
+              <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
+              <span className="block w-5 h-[1.5px] bg-current" />
+              <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
+            </button>
+            <div className={`font-serif text-[17px] tracking-[-0.5px] text-[#1a1a1a] transition-all duration-[250ms] overflow-hidden ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
+              Norma<span className="text-accent">AI</span>
+            </div>
           </div>
 
+          {/* Right: actions */}
           {user ? (
-            <div className="flex items-center gap-3 ml-auto">
-              <div className="hidden lg:flex items-center gap-2">
-                <div className="flex flex-col">
-                  <span className="text-[12px] text-[#1a1a1a] leading-tight">{userName}</span>
-                  {roleLabel && <span className="text-[10px] text-[#8A8682] leading-tight">{roleLabel}</span>}
+            <div className="flex items-center gap-4">
+              <Bell className="w-[18px] h-[18px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" />
+              <Settings className="w-[18px] h-[18px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" onClick={() => openModal("profilo-ai")} />
+              <div
+                className="flex items-center gap-2 cursor-pointer group"
+                onClick={() => openModal("profilo-ai")}
+              >
+                <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[11px] font-bold text-white uppercase shrink-0">
+                  {userName.charAt(0) || "U"}
                 </div>
+                <div className="hidden lg:flex flex-col">
+                  <span className="text-[13px] text-[#1b1b1b] leading-tight">{userName}</span>
+                  {roleLabel && <span className="text-[10px] text-[#6b6b6b] leading-tight">{roleLabel}</span>}
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-[#6b6b6b] hidden lg:block group-hover:text-[#1a1a1a] transition-colors" />
               </div>
-              <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-[11px] font-semibold text-accent uppercase shrink-0">
-                {userName.charAt(0)}
-              </div>
-              <button onClick={handleLogout} className="hidden lg:block text-[11px] text-[#6B6763] hover:text-accent border border-[#D5D0C8] hover:border-accent/30 bg-transparent rounded-md px-2 py-1 transition-colors duration-150">
-                Esci
-              </button>
             </div>
           ) : (
-            <>
-              <span className="hidden lg:block text-[12px] text-[#6B6763] mr-[10px] ml-auto">
-                Sei un professionista?
-              </span>
+            <div className="flex items-center gap-3">
+              <span className="hidden lg:block text-[13px] text-[#6B6763]">Sei un professionista?</span>
               <button
                 onClick={() => openModal("professionista")}
-                className="bg-accent border-none text-white py-[9px] px-[18px] rounded-lg text-[13px] font-semibold transition-colors duration-150 hover:bg-accent-hover shrink-0 ml-auto md:ml-0 shadow-[0_0_12px_rgba(232,52,10,0.20)]"
+                className="bg-accent border-none text-white py-[7px] px-[16px] rounded-lg text-[13px] font-semibold transition-colors duration-150 hover:bg-accent-hover shadow-[0_0_12px_rgba(232,52,10,0.20)]"
               >
                 Accedi gratis
               </button>
-            </>
+            </div>
           )}
         </div>
+
+        {/* News ticker — VoyageAI style */}
+        <NormaNewsTicker />
 
         {/* Main chat area */}
         <RuixenMoonChat user={user} />
@@ -234,6 +243,7 @@ export default function Home() {
       <ModalParcelle open={activeModal === "parcelle"} onClose={closeModal} />
       <ModalDashboard open={activeModal === "dashboard"} onClose={closeModal} user={user} />
       <ModalAnalisiDoc open={activeModal === "analisi-doc"} onClose={closeModal} />
+      <ModalConnettori open={activeModal === "connettori"} onClose={closeModal} onOpenModal={openModal} />
     </>
   );
 }
