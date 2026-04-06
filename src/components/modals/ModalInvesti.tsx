@@ -74,7 +74,7 @@ export default function ModalInvesti({ open, onClose }: Props) {
             <Pillar
               icon="💶"
               title="Revenue da giorno 1"
-              body="Modello freemium + lead marketplace. Il professionista abbonato paga €29/mese e compra lead. Nessun cap fisso."
+              body="Modello subscription + wallet lead. Cittadino €9/mese, Impresa €29/mese, Professionista €29/mese + lead dal wallet (€75/€150, senza scadenza)."
             />
             <Pillar
               icon="🚀"

@@ -197,10 +197,11 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                 <div className="text-[12px] text-gold mb-[6px]">
                   &#10022; 14 giorni gratuiti
                 </div>
-                <div className="flex gap-2">
-                  <LeadPill value="€49" label="Lead Privato" />
-                  <LeadPill value="€99" label="Lead Impresa" />
+                <div className="flex gap-2 flex-wrap">
+                  <LeadPill value="€75" label="Lead Privato" />
+                  <LeadPill value="€150" label="Lead Impresa" />
                 </div>
+                <div className="text-[10.5px] text-[#555] mt-1">Scalati dal wallet · crediti senza scadenza</div>
               </div>
             </div>
 

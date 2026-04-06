@@ -183,13 +183,14 @@ export default function DashboardPage() {
 // ─── PROFESSIONISTA ──────────────────────────────────────────────────────────
 
 function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: User; supabase: ReturnType<typeof createClient>; piano: string; categoria?: string }) {
-  type Tab = "lead" | "miei" | "strumenti" | "abbonamento";
+  type Tab = "lead" | "miei" | "strumenti" | "wallet" | "abbonamento";
   const [tab, setTab] = useState<Tab>("lead");
   const [leads, setLeads] = useState<Lead[]>([]);
   const [acquistati, setAcquistati] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const walletCrediti: number = (user.user_metadata?.wallet_crediti as number) ?? 0;
 
   useEffect(() => {
     async function fetchLeads() {
@@ -209,19 +210,25 @@ function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: U
   }, [user.id]);
 
   async function buyLead(lead: Lead) {
+    const prezzo = lead.prezzo ?? (lead.tipo === "impresa" ? LEAD_PREZZI.impresa : LEAD_PREZZI.privato);
+    if (walletCrediti < prezzo) {
+      showToast(`Crediti insufficienti. Ricarica il wallet (servono €${prezzo}).`);
+      setTab("wallet");
+      return;
+    }
     setBuyingId(lead.id);
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/wallet/acquista-lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ leadId: lead.id, userId: user.id, tipo: "lead", importo: lead.prezzo }),
+        body: JSON.stringify({ leadId: lead.id, userId: user.id, importo: prezzo }),
       });
       if (res.ok) {
-        const { url } = await res.json();
-        if (url) { window.location.href = url; return; }
+        showToast("Lead acquistato! Vai su 'I miei lead' per i contatti.");
+        setLeads(p => p.filter(l => l.id !== lead.id));
+        return;
       }
-      showToast("Lead riservato. Verrai contattato per il pagamento.");
-      setLeads(p => p.filter(l => l.id !== lead.id));
+      showToast("Errore nell'acquisto. Riprova tra poco.");
     } catch { showToast("Errore. Riprova tra poco."); }
     finally { setBuyingId(null); }
   }
@@ -232,15 +239,17 @@ function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: U
     { id: "lead",       label: "Lead disponibili", badge: leads.length || undefined },
     { id: "miei",       label: "I miei lead",      badge: acquistati.length || undefined },
     { id: "strumenti",  label: "Strumenti" },
+    { id: "wallet",     label: "Wallet" },
     { id: "abbonamento",label: "Abbonamento" },
   ];
 
   return (
     <div>
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-4 gap-3 mb-6">
         <StatCard label="Lead disponibili" value={loading ? "…" : String(leads.length)} color="text-accent" />
         <StatCard label="Lead acquistati"  value={loading ? "…" : String(acquistati.length)} color="text-green-400" />
+        <StatCard label="Crediti wallet"   value={`€${walletCrediti}`} color="text-yellow-400" />
         <StatCard label="Piano attivo"     value={piano} color="text-[#888]" />
       </div>
 
@@ -290,6 +299,9 @@ function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: U
           ))}
         </div>
       )}
+
+      {/* Wallet */}
+      {tab === "wallet" && <WalletSection walletCrediti={walletCrediti} />}
 
       {/* Abbonamento */}
       {tab === "abbonamento" && <AbbonamentoSection piano={piano} ruolo="professionista" categoria={categoria} />}
@@ -421,6 +433,7 @@ const FEATURES: Record<string, string[]> = {
 };
 
 const PREZZI: Record<string, string> = { privato: "9", impresa: "29", professionista: "29" };
+const LEAD_PREZZI = { privato: 75, impresa: 150 };
 
 function AbbonamentoSection({ piano, ruolo, categoria }: { piano: string; ruolo: string; categoria?: string }) {
   const features = FEATURES[ruolo] ?? FEATURES.privato;
@@ -467,14 +480,81 @@ function AbbonamentoSection({ piano, ruolo, categoria }: { piano: string; ruolo:
       {/* Lead pricing — solo professionista */}
       {ruolo === "professionista" && (
         <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-4">
-          <h3 className="text-[13px] text-cream font-medium mb-3">Lead — prezzi</h3>
+          <h3 className="text-[13px] text-cream font-medium mb-3">Lead — prezzi dal wallet</h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-[12.5px]"><span className="text-[#888]">Lead privato (persona fisica)</span><span className="text-cream font-medium">€49</span></div>
-            <div className="flex justify-between text-[12.5px]"><span className="text-[#888]">Lead impresa / società</span><span className="text-cream font-medium">€99</span></div>
+            <div className="flex justify-between text-[12.5px]"><span className="text-[#888]">Lead privato (persona fisica)</span><span className="text-cream font-medium">€75</span></div>
+            <div className="flex justify-between text-[12.5px]"><span className="text-[#888]">Lead impresa / società</span><span className="text-cream font-medium">€150</span></div>
           </div>
-          <p className="text-[11px] text-[#444] mt-3">Paghi solo i lead che scegli di acquistare. Nessun obbligo.</p>
+          <p className="text-[11px] text-[#444] mt-3">I crediti si scalano dal wallet. Nessun obbligo, i crediti non scadono mai.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── WALLET ──────────────────────────────────────────────────────────────────
+
+const PACCHETTI = [
+  { crediti: 150,  prezzo: 150,  label: "Starter",  badge: null },
+  { crediti: 325,  prezzo: 300,  label: "Base",      badge: "Risparmi €25" },
+  { crediti: 700,  prezzo: 600,  label: "Pro",       badge: "Risparmi €100" },
+  { crediti: 1500, prezzo: 1200, label: "Business",  badge: "Risparmi €300" },
+];
+
+function WalletSection({ walletCrediti }: { walletCrediti: number }) {
+  async function ricarica(prezzo: number) {
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "wallet", importo: prezzo }),
+      });
+      if (res.ok) {
+        const { url } = await res.json();
+        if (url) { window.location.href = url; return; }
+      }
+    } catch { /* silent */ }
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {/* Saldo attuale */}
+      <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-5">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[13px] text-[#666]">Saldo wallet</span>
+          <span className="text-[11px] text-green-400 bg-green-500/10 border border-green-500/20 rounded-full px-2.5 py-0.5">I crediti non scadono</span>
+        </div>
+        <div className="text-cream text-[36px] font-semibold font-serif tracking-tight">
+          €{walletCrediti}
+        </div>
+        <p className="text-[12px] text-[#444] mt-1">
+          Lead privato €75 · Lead impresa €150 · Scalati automaticamente all&apos;acquisto
+        </p>
+      </div>
+
+      {/* Pacchetti ricarica */}
+      <div>
+        <h3 className="text-[13px] text-cream font-medium mb-3">Ricarica wallet</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {PACCHETTI.map(p => (
+            <button
+              key={p.prezzo}
+              onClick={() => ricarica(p.prezzo)}
+              className="bg-[#111] border border-[#1e1e1e] hover:border-[#2a2a2a] rounded-xl p-4 text-left transition-colors group"
+            >
+              <div className="flex items-start justify-between mb-1">
+                <span className="text-cream text-[13px] font-semibold">{p.label}</span>
+                {p.badge && (
+                  <span className="text-[10px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-full px-2 py-0.5">{p.badge}</span>
+                )}
+              </div>
+              <div className="text-[22px] font-semibold text-cream font-serif">€{p.prezzo}</div>
+              <div className="text-[12px] text-[#555] mt-1">{p.crediti} crediti</div>
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-[#444] mt-3">Pagamento sicuro via Stripe. I crediti non scadono mai e sono trasferibili tra device.</p>
+      </div>
     </div>
   );
 }
@@ -538,7 +618,7 @@ function LeadCard({ lead, showBuy, onBuy, buying, acquired }: { lead: Lead; show
         <div className="shrink-0 flex flex-col items-end gap-1.5">
           {showBuy && (
             <>
-              <span className="text-cream text-[16px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? 99 : 49)}</span>
+              <span className="text-cream text-[16px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? LEAD_PREZZI.impresa : LEAD_PREZZI.privato)}</span>
               <button
                 onClick={onBuy}
                 disabled={buying}

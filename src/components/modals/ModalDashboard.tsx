@@ -262,18 +262,18 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
               </div>
 
               <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-4">
-                <h3 className="text-[13px] text-cream font-medium mb-3">Lead: prezzi</h3>
+                <h3 className="text-[13px] text-cream font-medium mb-3">Lead — prezzi dal wallet</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-[12.5px]">
                     <span className="text-[#888]">Lead privato (persona fisica)</span>
-                    <span className="text-cream font-medium">€49</span>
+                    <span className="text-cream font-medium">€75</span>
                   </div>
                   <div className="flex justify-between text-[12.5px]">
                     <span className="text-[#888]">Lead impresa / società</span>
-                    <span className="text-cream font-medium">€99</span>
+                    <span className="text-cream font-medium">€150</span>
                   </div>
                 </div>
-                <p className="text-[11px] text-[#444] mt-3">Paghi solo i lead che scegli di acquistare. Nessun obbligo.</p>
+                <p className="text-[11px] text-[#444] mt-3">I crediti si scalano dal wallet. I crediti non scadono mai.</p>
               </div>
             </div>
           )}
@@ -308,7 +308,7 @@ function LeadCard({ lead, onBuy, buying, showBuy }: { lead: Lead; onBuy?: () => 
 
         {showBuy && (
           <div className="shrink-0 flex flex-col items-end gap-1.5">
-            <span className="text-cream text-[15px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? 99 : 49)}</span>
+            <span className="text-cream text-[15px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? 150 : 75)}</span>
             <button
               onClick={onBuy}
               disabled={buying}

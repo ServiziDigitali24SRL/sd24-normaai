@@ -66,9 +66,9 @@ export default function TerminiPage() {
               </tr>
             </thead>
             <tbody>
-              <Tr cells={["Privato", "Gratuito", "Query illimitate, accesso ai 5 verticali"]} />
-              <Tr cells={["Professionista", "€29/mese", "Query illimitate + profilo directory + lead"]} />
-              <Tr cells={["Impresa", "€29/mese", "Query compliance illimitate + referral"]} />
+              <Tr cells={["Cittadino", "€9/mese", "Tasse, bollette, contratti personali, accesso guidato"]} />
+              <Tr cells={["Impresa", "€29/mese", "Query compliance illimitate + referral + 5 verticali"]} />
+              <Tr cells={["Professionista", "€29/mese + wallet lead", "Query illimitate + profilo directory + acquisto lead (€75/€150)"]} />
               <Tr cells={["Developer Free", "Gratuito", "100 query/mese via API"]} />
               <Tr cells={["Developer", "€49/mese", "5.000 query/mese via API"]} />
             </tbody>
@@ -88,7 +88,7 @@ export default function TerminiPage() {
           </p>
           <p className="mb-2">
             <strong className="text-cream">5.2 Acquisto lead.</strong> I Professionisti abbonati possono acquistare Lead al prezzo
-            di €49 (lead da privato) o €99 (lead da impresa). L&apos;acquisto è definitivo.
+            di €75 (lead da privato) o €150 (lead da impresa), scalati dal wallet prepagato. L&apos;acquisto è definitivo e i crediti non scadono.
           </p>
           <p>
             <strong className="text-cream">5.3 Divieto di aggiramento.</strong> È vietato accordarsi al di fuori della piattaforma
