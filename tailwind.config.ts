@@ -10,20 +10,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#0D0D0D",
-        sidebar: "#111111",
+        // Light theme tokens
+        bg: "#F7F5F2",
+        sidebar: "#EFEDE8",
         accent: "#E8340A",
         "accent-hover": "#c42d08",
-        gold: "#F5C842",
-        card: "#181818",
-        "card-border": "#222222",
-        "input-bg": "#1c1c1c",
-        "input-border": "#252525",
-        cream: "#F0EEE8",
+        gold: "#B8860B",
+        card: "#FFFFFF",
+        "card-border": "#E5E1D8",
+        "input-bg": "#F0EDE8",
+        "input-border": "#D5D0C8",
+        cream: "#1a1a1a",      // testo principale (era il colore testo chiaro sul dark)
+        muted: "#6B6763",      // testo secondario
+        surface: "#FAFAF8",    // superfici elevate
       },
       fontFamily: {
-        serif: ["Instrument Serif", "serif"],
-        sans: ["Inter", "sans-serif"],
+        serif: ["DM Serif Display", "Georgia", "serif"],
+        sans: ["Plus Jakarta Sans", "system-ui", "sans-serif"],
       },
     },
   },

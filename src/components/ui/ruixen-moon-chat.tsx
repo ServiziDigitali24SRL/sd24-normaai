@@ -13,6 +13,10 @@ import {
   GitCompare,
   CalendarClock,
   ArrowUpIcon,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
@@ -24,6 +28,16 @@ const QUICK_ACTIONS = [
   { icon: FileSearch,     label: "Analizza documento" },
   { icon: GitCompare,     label: "Confronta contratti" },
   { icon: CalendarClock,  label: "Scadenze" },
+];
+
+const PLACEHOLDER_EXAMPLES = [
+  "Chiedimi qualcosa sulla normativa...",
+  "Come funziona il contratto a tempo determinato?",
+  "Quali sono le sanzioni per le fatture false?",
+  "Cosa dice il codice civile sul condominio?",
+  "Come si calcola il TFR?",
+  "Quando scatta l'obbligo di DURC?",
+  "Differenze tra S.r.l. e S.p.A.?",
 ];
 
 interface Source { id: string; titolo: string; fonte: string; url: string; tipo: string }
@@ -48,14 +62,14 @@ function saveHistory(items: Msg[]) {
 
 const mdComponents = {
   p: ({ children }: { children?: React.ReactNode }) => <p className="mb-3 last:mb-0">{children}</p>,
-  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-white font-semibold">{children}</strong>,
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-[#1a1a1a] font-semibold">{children}</strong>,
   ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
   ol: ({ children }: { children?: React.ReactNode }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
-  li: ({ children }: { children?: React.ReactNode }) => <li className="text-neutral-300">{children}</li>,
-  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-white text-[15px] font-semibold mb-2 mt-4">{children}</h2>,
-  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-white text-[14px] font-semibold mb-1 mt-3">{children}</h3>,
-  code: ({ children }: { children?: React.ReactNode }) => <code className="bg-neutral-800 text-[#dc5028] px-1.5 py-0.5 rounded text-[12.5px] font-mono">{children}</code>,
-  blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-[#dc5028] pl-3 text-neutral-400 italic my-3">{children}</blockquote>,
+  li: ({ children }: { children?: React.ReactNode }) => <li className="text-[#3D3A37]">{children}</li>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-[#1a1a1a] text-[15px] font-semibold mb-2 mt-4">{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-[#1a1a1a] text-[14px] font-semibold mb-1 mt-3">{children}</h3>,
+  code: ({ children }: { children?: React.ReactNode }) => <code className="bg-[#F0EDE8] text-accent px-1.5 py-0.5 rounded text-[12.5px] font-mono">{children}</code>,
+  blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-accent pl-3 text-[#6B6763] italic my-3">{children}</blockquote>,
 };
 
 export default function RuixenMoonChat({ user }: { user?: User | null }) {
@@ -66,13 +80,32 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
   const [sending, setSending] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [inputHeight, setInputHeight] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<Record<string, 1 | -1>>({});
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const [placeholderVisible, setPlaceholderVisible] = useState(true);
 
   const taRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
+  const sendingRef = useRef(sending);
+  sendingRef.current = sending;
 
   const hasConversation = history.length > 0 || current !== null;
+
+  // Placeholder rotation
+  useEffect(() => {
+    if (hasConversation) return;
+    const interval = setInterval(() => {
+      setPlaceholderVisible(false);
+      setTimeout(() => {
+        setPlaceholderIdx((i) => (i + 1) % PLACEHOLDER_EXAMPLES.length);
+        setPlaceholderVisible(true);
+      }, 300);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [hasConversation]);
 
   // Sync sidebar state for input left offset
   useEffect(() => {
@@ -111,6 +144,19 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
     return () => window.removeEventListener("norma-new-chat", handler);
   }, []);
 
+  // Command palette query event
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const q = (e as CustomEvent<string>).detail;
+      if (q && !sendingRef.current) {
+        sendQuery(q);
+      }
+    };
+    window.addEventListener("norma-cmd-query", handler);
+    return () => window.removeEventListener("norma-cmd-query", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Auto-resize textarea
   function setText(val: string) {
     setMessage(val);
@@ -122,9 +168,8 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
     }, 0);
   }
 
-  async function handleSend() {
-    const q = message.trim();
-    if (!q || sending) return;
+  async function sendQuery(q: string) {
+    if (!q.trim() || sendingRef.current) return;
     setSending(true); setStreaming(true);
     setCurrent({ question: q, text: "" });
     setText("");
@@ -167,42 +212,87 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
     } finally { setSending(false); setStreaming(false); }
   }
 
+  async function handleSend() {
+    const q = message.trim();
+    if (!q) return;
+    await sendQuery(q);
+  }
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  }
+
+  function copyMessage(id: string, text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }
+
+  function rateMessage(id: string, val: 1 | -1) {
+    setRatings((prev) => prev[id] === val ? { ...prev, [id]: undefined as any } : { ...prev, [id]: val });
   }
 
   const sidebarW = sidebarOpen ? 240 : 0;
   const canSend = message.trim().length > 0 && !sending;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#0D0D0D] relative" style={{ overflow: "clip" }}>
-      {/* Glow */}
+    <div className="flex-1 flex flex-col min-h-0 bg-[#F7F5F2] relative" style={{ overflow: "clip" }}>
+      {/* Subtle warm glow at bottom */}
       <div
-        className="absolute bottom-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full pointer-events-none z-0"
-        style={{ background: "radial-gradient(circle, rgba(220,80,40,0.20) 0%, rgba(180,50,20,0.08) 40%, transparent 70%)", filter: "blur(60px)" }}
+        className="absolute bottom-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none z-0"
+        style={{ background: "radial-gradient(circle, rgba(232,52,10,0.06) 0%, rgba(200,100,50,0.03) 50%, transparent 70%)", filter: "blur(60px)" }}
       />
 
       {/* Empty state */}
       {!hasConversation && (
         <div className="flex-1 flex flex-col items-center justify-center z-10" style={{ paddingBottom: inputHeight }}>
-          <div className="text-center mb-8 pointer-events-none select-none">
-            <h1 className="font-serif text-[32px] md:text-[48px] tracking-[-2px] mb-2 text-white">
-              Norma<span className="text-[#dc5028]">AI</span>
+          <div className="text-center mb-6 pointer-events-none select-none">
+            <h1 className="font-serif text-[36px] md:text-[52px] tracking-[-2px] mb-1 text-[#1a1a1a]">
+              Norma<span className="text-accent">AI</span>
             </h1>
-            <p className="text-neutral-400 italic text-sm">La norma è uguale per tutti.</p>
+            <p className="text-[#6B6763] italic text-sm">La norma è uguale per tutti.</p>
+          </div>
+
+          {/* Stats bar */}
+          <div className="flex items-center gap-3 mb-6 pointer-events-none select-none flex-wrap justify-center">
+            {[
+              { value: "558K+", label: "norme indicizzate" },
+              { value: "Oggi",  label: "ultimo aggiornamento" },
+              { value: "0€",    label: "per iniziare" },
+            ].map(({ value, label }) => (
+              <div key={label} className="flex items-center gap-1.5 bg-white border border-[#E5E1D8] rounded-full px-3 py-1 shadow-sm">
+                <span className="text-[12px] font-semibold text-[#1a1a1a]">{value}</span>
+                <span className="text-[11.5px] text-[#7A766F]">{label}</span>
+              </div>
+            ))}
           </div>
 
           {/* Quick actions */}
-          <div className="flex items-center justify-center flex-wrap gap-2 max-w-[640px] px-4">
+          <div className="flex items-center justify-center flex-wrap gap-2 max-w-[640px] px-4 mb-6">
             {QUICK_ACTIONS.map(({ icon: Icon, label }) => (
               <button
                 key={label}
                 onClick={() => { setText(label); setTimeout(() => taRef.current?.focus(), 0); }}
-                className="flex items-center gap-2 rounded-full border border-neutral-700 bg-black/50 text-neutral-300 hover:text-white hover:bg-neutral-800 hover:border-neutral-500 transition-all duration-150 px-4 py-[7px] text-[12.5px] cursor-pointer"
+                className="flex items-center gap-2 rounded-full border border-[#E5E1D8] bg-white text-[#3D3A37] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] hover:border-[#C8C2BA] hover:-translate-y-[1px] transition-all duration-150 px-4 py-[7px] text-[12.5px] cursor-pointer shadow-sm"
               >
-                <Icon className="w-[14px] h-[14px] shrink-0" />
+                <Icon className="w-[14px] h-[14px] shrink-0 text-[#6B6763]" />
                 <span>{label}</span>
               </button>
+            ))}
+          </div>
+
+          {/* Trust badges */}
+          <div className="flex items-center gap-2 flex-wrap justify-center pointer-events-none select-none">
+            {[
+              "🔒 Privacy garantita",
+              "📜 Legislazione italiana",
+              "⚡ Risposta in secondi",
+              "🆓 Sempre gratuito per i privati",
+            ].map((badge) => (
+              <span key={badge} className="text-[11px] text-[#7A766F] bg-[#F0EDE8] px-2.5 py-1 rounded-full">
+                {badge}
+              </span>
             ))}
           </div>
         </div>
@@ -211,51 +301,103 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
       {/* Messages */}
       {hasConversation && (
         <div ref={messagesRef} className="flex-1 overflow-y-auto min-h-0 z-10 relative" style={{ paddingBottom: inputHeight }}>
-          <div className="max-w-[768px] mx-auto px-4 md:px-6 pt-6 pb-4 flex flex-col gap-6">
+          <div className="max-w-[768px] mx-auto px-4 md:px-6 pt-6 pb-4 flex flex-col gap-8">
             {history.map((msg) => (
-              <div key={msg.id} className="flex flex-col gap-4">
-                <div>
-                  <p className="text-[11px] text-neutral-500 font-medium mb-1">Tu</p>
-                  <p className="text-white text-[14px] leading-[1.6]">{msg.question}</p>
+              <div key={msg.id} className="flex flex-col gap-5">
+                {/* User message bubble */}
+                <div className="flex justify-end">
+                  <div className="bg-white border border-[#E5E1D8] rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%] shadow-sm">
+                    <p className="text-[#1a1a1a] text-[14px] leading-[1.6]">{msg.question}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] text-[#dc5028] font-medium mb-1">NormaAI</p>
-                  <div className="text-neutral-300 text-[14px] leading-[1.75]">
+                {/* AI response */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                      <span className="text-[8px] font-bold text-accent">N</span>
+                    </div>
+                    <p className="text-[11px] text-accent font-semibold tracking-wide">NormaAI</p>
+                  </div>
+                  <div className="text-[#3D3A37] text-[14px] leading-[1.8] pl-7">
                     <ReactMarkdown components={mdComponents as any}>{msg.text}</ReactMarkdown>
-                    {!msg.hasRag && <p className="text-[11px] text-neutral-600 italic mt-2">⚠️ Risposta basata sulla conoscenza generale.</p>}
+                    {!msg.hasRag && (
+                      <p className="text-[11px] text-[#9A9690] italic mt-2 flex items-center gap-1">
+                        <span>⚠️</span> Risposta basata sulla conoscenza generale — nessun documento trovato nel corpus.
+                      </p>
+                    )}
                     {msg.sources.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {msg.sources.map((s) => (
                           <a key={s.id} href={s.url || "#"} target="_blank" rel="noopener noreferrer"
-                            className="text-[11px] text-neutral-500 border border-neutral-700 rounded-full px-3 py-1 hover:text-white hover:border-neutral-500 transition-colors">
+                            className="text-[11px] text-[#6B6763] bg-[#F0EDE8] border border-[#D8D3CC] rounded-full px-3 py-1 hover:bg-white hover:border-[#B0A898] hover:text-[#1a1a1a] transition-colors">
                             {s.titolo || s.fonte}
                           </a>
                         ))}
                       </div>
                     )}
+                    {/* Actions row */}
+                    <div className="flex items-center gap-2 mt-3 pl-0">
+                      <button
+                        onClick={() => copyMessage(msg.id, msg.text)}
+                        className="flex items-center gap-1.5 text-[11px] text-[#9A9690] hover:text-[#1a1a1a] transition-colors"
+                        title="Copia risposta"
+                      >
+                        {copiedId === msg.id ? (
+                          <Check className="w-3.5 h-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                        <span>{copiedId === msg.id ? "Copiato" : "Copia"}</span>
+                      </button>
+                      <span className="text-[#D8D3CC]">·</span>
+                      <button
+                        onClick={() => rateMessage(msg.id, 1)}
+                        className={`flex items-center gap-1 text-[11px] transition-colors ${ratings[msg.id] === 1 ? "text-green-600" : "text-[#9A9690] hover:text-green-600"}`}
+                        title="Risposta utile"
+                      >
+                        <ThumbsUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => rateMessage(msg.id, -1)}
+                        className={`flex items-center gap-1 text-[11px] transition-colors ${ratings[msg.id] === -1 ? "text-red-500" : "text-[#9A9690] hover:text-red-500"}`}
+                        title="Risposta non utile"
+                      >
+                        <ThumbsDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
+
+            {/* Streaming message */}
             {current && (
-              <div className="flex flex-col gap-4">
-                <div>
-                  <p className="text-[11px] text-neutral-500 font-medium mb-1">Tu</p>
-                  <p className="text-white text-[14px] leading-[1.6]">{current.question}</p>
+              <div className="flex flex-col gap-5">
+                <div className="flex justify-end">
+                  <div className="bg-white border border-[#E5E1D8] rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%] shadow-sm">
+                    <p className="text-[#1a1a1a] text-[14px] leading-[1.6]">{current.question}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] text-[#dc5028] font-medium mb-1">NormaAI</p>
-                  <div className="text-neutral-300 text-[14px] leading-[1.75]">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                      <span className="text-[8px] font-bold text-accent">N</span>
+                    </div>
+                    <p className="text-[11px] text-accent font-semibold tracking-wide">NormaAI</p>
+                  </div>
+                  <div className="text-[#3D3A37] text-[14px] leading-[1.8] pl-7">
                     {current.text ? (
                       <>
                         <ReactMarkdown components={mdComponents as any}>{current.text}</ReactMarkdown>
-                        {streaming && <span className="inline-block w-[2px] h-[14px] bg-[#dc5028] ml-[2px] animate-pulse align-text-bottom" />}
+                        {streaming && (
+                          <span className="inline-block w-[2px] h-[14px] bg-accent ml-[2px] animate-pulse align-text-bottom rounded-full" />
+                        )}
                       </>
                     ) : (
-                      <div className="flex items-center gap-3 text-neutral-500 py-2">
-                        <span className="flex gap-[3px]">
+                      <div className="flex items-center gap-3 text-[#9A9690] py-2">
+                        <span className="flex gap-[4px]">
                           {[0, 150, 300].map((d) => (
-                            <span key={d} className="w-[6px] h-[6px] rounded-full bg-[#dc5028]/60 animate-bounce" style={{ animationDelay: `${d}ms` }} />
+                            <span key={d} className="w-[6px] h-[6px] rounded-full bg-accent/40 animate-bounce" style={{ animationDelay: `${d}ms` }} />
                           ))}
                         </span>
                         <span className="text-[13px]">NormaAI sta elaborando…</span>
@@ -273,28 +415,36 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
       {/* Input bar — fixed bottom */}
       <div
         ref={inputRef}
-        className="fixed bottom-0 right-0 z-[50] bg-[#0D0D0D] border-t border-white/[0.06]"
+        className="fixed bottom-0 right-0 z-[50] bg-[#F7F5F2] border-t border-[#E5E1D8]"
         style={{ left: sidebarW, paddingBottom: "env(safe-area-inset-bottom, 0px)", transition: "left 250ms ease-in-out" }}
         suppressHydrationWarning
       >
         <div className="max-w-[768px] mx-auto px-4 md:px-6 pt-3 pb-3">
-          <div className="relative bg-neutral-900/80 backdrop-blur-md rounded-xl border border-neutral-700 focus-within:border-neutral-500 transition-colors">
+          <div className="relative bg-white border border-[#D5D0C8] rounded-xl focus-within:border-[#B0A898] focus-within:shadow-[0_0_0_3px_rgba(180,160,140,0.12)] transition-all shadow-sm">
             <textarea
               ref={taRef}
               value={message}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={hasConversation ? "Fai un'altra domanda…" : "Chiedimi qualcosa sulla normativa..."}
+              placeholder={
+                hasConversation
+                  ? "Fai un'altra domanda…"
+                  : (placeholderVisible ? PLACEHOLDER_EXAMPLES[placeholderIdx] : "")
+              }
               rows={1}
-              className="w-full px-4 py-3 pb-2 bg-transparent border-none outline-none text-white text-[15px] min-h-[48px] placeholder:text-neutral-500 resize-none"
+              className="w-full px-4 py-3 pb-2 bg-transparent border-none outline-none text-[#1a1a1a] text-[15px] min-h-[48px] placeholder:text-[#9A9690] resize-none transition-opacity duration-300"
               style={{ overflow: "hidden" }}
             />
-            <div className="flex items-center justify-end px-3 pb-3 pt-1">
+            <div className="flex items-center justify-between px-3 pb-3 pt-1">
+              <span className="text-[11px] text-[#9A9690]">
+                <kbd className="bg-[#F0EDE8] px-1 py-0.5 rounded text-[10px] font-mono">⌘K</kbd>{" "}
+                cerca
+              </span>
               <button
                 onClick={handleSend}
                 disabled={!canSend}
                 className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150 border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                style={{ background: canSend ? "#dc5028" : "#333" }}
+                style={{ background: canSend ? "#E8340A" : "#D5D0C8" }}
               >
                 {sending
                   ? <span className="w-[10px] h-[10px] border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -304,11 +454,11 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
             </div>
           </div>
 
-          <p className="text-center text-[11px] text-neutral-600 mt-2 pb-1">
+          <p className="text-center text-[11px] text-[#9A9690] mt-2 pb-1">
             NormaAI fornisce informazioni generali, non consulenza legale.{" "}
             <button
               onClick={() => window.dispatchEvent(new CustomEvent("norma-open-modal", { detail: "professionisti" }))}
-              className="text-[#dc5028] underline underline-offset-2 bg-transparent border-none cursor-pointer text-[11px] hover:opacity-80"
+              className="text-accent underline underline-offset-2 bg-transparent border-none cursor-pointer text-[11px] hover:opacity-80"
             >
               Trova un professionista →
             </button>

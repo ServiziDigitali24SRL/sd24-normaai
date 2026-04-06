@@ -35,6 +35,7 @@ import ModalProfilo from "@/components/modals/ModalProfilo";
 import ModalParcelle from "@/components/modals/ModalParcelle";
 import ModalDashboard from "@/components/modals/ModalDashboard";
 import ModalAnalisiDoc from "@/components/modals/ModalAnalisiDoc";
+import CommandPalette from "@/components/CommandPalette";
 
 function CheckoutToastHandler({ onToast, onGmailToast }: { onToast: (t: "success" | "cancel" | null) => void; onGmailToast: (t: "connected" | "error" | null) => void }) {
   const searchParams = useSearchParams();
@@ -141,48 +142,46 @@ export default function Home() {
       {/* Main content — FIX: margin solo desktop */}
       <div className={`flex flex-col h-screen overflow-hidden transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
 
-        {/* Topbar — FIX: z-[100] sopra la sidebar */}
-        <div className="flex items-center px-4 py-3 border-b border-[#1a1a1a] bg-[#0D0D0D] sticky top-0 z-[100]">
+        {/* Topbar */}
+        <div className="flex items-center px-4 py-3 border-b border-[#E5E1D8] bg-[#FAFAF8] sticky top-0 z-[100]">
           <button
             onClick={toggleSidebar}
             aria-label="Mostra/nascondi sidebar"
-            className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] mr-3 rounded-md text-[#555] hover:text-cream hover:bg-white/[0.05] transition-all duration-150 shrink-0"
+            className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] mr-3 rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#EFEDE8] transition-all duration-150 shrink-0"
           >
             <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
             <span className="block w-5 h-[1.5px] bg-current" />
             <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
           </button>
 
-          {/* FIX: logo sempre visibile su mobile */}
-          <div className={`font-serif text-[17px] tracking-[-0.5px] mr-auto transition-all duration-[250ms] overflow-hidden ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
+          {/* Logo — nascosto su desktop quando sidebar aperta */}
+          <div className={`font-serif text-[17px] tracking-[-0.5px] mr-auto transition-all duration-[250ms] overflow-hidden text-[#1a1a1a] ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
             Norma<span className="text-accent">AI</span>
           </div>
 
           {user ? (
             <div className="flex items-center gap-3 ml-auto">
-              {/* FIX: nome+ruolo solo desktop */}
               <div className="hidden lg:flex items-center gap-2">
                 <div className="flex flex-col">
-                  <span className="text-[12px] text-cream leading-tight">{userName}</span>
-                  {roleLabel && <span className="text-[10px] text-[#666] leading-tight">{roleLabel}</span>}
+                  <span className="text-[12px] text-[#1a1a1a] leading-tight">{userName}</span>
+                  {roleLabel && <span className="text-[10px] text-[#8A8682] leading-tight">{roleLabel}</span>}
                 </div>
               </div>
-              <div className="w-7 h-7 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-[11px] font-semibold text-accent uppercase shrink-0">
+              <div className="w-7 h-7 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-[11px] font-semibold text-accent uppercase shrink-0">
                 {userName.charAt(0)}
               </div>
-              <button onClick={handleLogout} className="hidden lg:block text-[11px] text-[#555] hover:text-accent border border-[#252525] hover:border-accent/30 bg-transparent rounded-md px-2 py-1 transition-colors duration-150">
+              <button onClick={handleLogout} className="hidden lg:block text-[11px] text-[#6B6763] hover:text-accent border border-[#D5D0C8] hover:border-accent/30 bg-transparent rounded-md px-2 py-1 transition-colors duration-150">
                 Esci
               </button>
             </div>
           ) : (
             <>
-              <span className="hidden lg:block text-[12px] text-[#555] mr-[10px] ml-auto">
+              <span className="hidden lg:block text-[12px] text-[#6B6763] mr-[10px] ml-auto">
                 Sei un professionista?
               </span>
-              {/* FIX: CTA più grande + copy "gratis" + glow */}
               <button
                 onClick={() => openModal("professionista")}
-                className="bg-accent border-none text-white py-[9px] px-[18px] rounded-lg text-[13px] font-semibold transition-colors duration-150 hover:bg-accent-hover shrink-0 ml-auto md:ml-0 shadow-[0_0_16px_rgba(232,52,10,0.25)]"
+                className="bg-accent border-none text-white py-[9px] px-[18px] rounded-lg text-[13px] font-semibold transition-colors duration-150 hover:bg-accent-hover shrink-0 ml-auto md:ml-0 shadow-[0_0_12px_rgba(232,52,10,0.20)]"
               >
                 Accedi gratis
               </button>
@@ -194,14 +193,16 @@ export default function Home() {
         <RuixenMoonChat user={user} />
       </div>
 
+      <CommandPalette />
+
       {checkoutToast && (
-        <div className={`fixed top-4 right-4 z-[600] px-5 py-3 rounded-xl text-[13px] font-medium shadow-lg transition-all ${checkoutToast === "success" ? "bg-[#0d1f0d] border border-[#1a3a1a] text-[#4caf50]" : "bg-[#1f0d0d] border border-[#3a1a1a] text-[#f44]"}`}>
+        <div className={`fixed top-4 right-4 z-[600] px-5 py-3 rounded-xl text-[13px] font-medium shadow-[0_4px_16px_rgba(0,0,0,0.10)] border transition-all ${checkoutToast === "success" ? "bg-[#f0faf0] border-[#c3e6c3] text-[#1e7a1e]" : "bg-[#fef2f2] border-[#fcc] text-[#c00]"}`}>
           {checkoutToast === "success" ? "✓ Abbonamento attivato! Benvenuto su NormaAI." : "Pagamento annullato. Nessun addebito."}
         </div>
       )}
 
       {gmailToast && (
-        <div className={`fixed top-4 right-4 z-[600] px-5 py-3 rounded-xl text-[13px] font-medium shadow-lg transition-all ${gmailToast === "connected" ? "bg-[#0d1f0d] border border-[#1a3a1a] text-[#4caf50]" : "bg-[#1f0d0d] border border-[#3a1a1a] text-[#f44]"}`}>
+        <div className={`fixed top-4 right-4 z-[600] px-5 py-3 rounded-xl text-[13px] font-medium shadow-[0_4px_16px_rgba(0,0,0,0.10)] border transition-all ${gmailToast === "connected" ? "bg-[#f0faf0] border-[#c3e6c3] text-[#1e7a1e]" : "bg-[#fef2f2] border-[#fcc] text-[#c00]"}`}>
           {gmailToast === "connected" ? "✓ Gmail connessa. Puoi analizzare la tua corrispondenza." : "Errore connessione Gmail. Riprova."}
         </div>
       )}
