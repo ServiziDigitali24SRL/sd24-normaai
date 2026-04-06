@@ -86,12 +86,12 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
           <NavItem onClick={() => navClick(() => onOpenModal("progetti"))} icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>} label="Progetti" onAdd={() => onOpenModal("nuovo-progetto")} />
           <NavItem onClick={() => navClick(() => onOpenModal("archivio"))} icon={<svg viewBox="0 0 24 24"><polyline points="21,8 21,21 3,21 3,8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>} label="Archivio" onAdd={() => onOpenModal("nuovo-archivio")} />
           {user && <NavItem onClick={() => navClick(() => onOpenModal("professionisti"))} icon={<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>} label="I tuoi professionisti" />}
-          {user && userRole === "professionista" && (
-            <NavItem
-              onClick={() => navClick(() => onOpenModal("dashboard"))}
+          {user && (
+            <NavLink
+              href="/dashboard"
+              onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 1024) onToggle(); }}
               icon={<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>}
-              label="Dashboard Lead"
-              highlight
+              label="Dashboard"
             />
           )}
 

@@ -83,9 +83,7 @@ export async function middleware(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      const loginUrl = new URL("/login", req.url);
-      loginUrl.searchParams.set("redirect", req.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL("/", req.url));
     }
   }
 
