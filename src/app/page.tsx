@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
 import Sidebar from "@/components/Sidebar";
-import ChatBar from "@/components/ChatBar";
+import RuixenMoonChat from "@/components/ui/ruixen-moon-chat";
 import ModalCittadino from "@/components/modals/ModalCittadino";
 import ModalImpresa from "@/components/modals/ModalImpresa";
 import ModalProfessionista from "@/components/modals/ModalProfessionista";
@@ -190,8 +190,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* Main chat area — ChatBar è flex child diretto, nessun wrapper */}
-        <ChatBar user={user} />
+        {/* Main chat area */}
+        <RuixenMoonChat user={user} />
       </div>
 
       {checkoutToast && (
