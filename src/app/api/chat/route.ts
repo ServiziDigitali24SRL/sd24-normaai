@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { rateLimit } from "@/lib/rate-limit";
+import * as Sentry from "@sentry/nextjs";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { scoreLeadQuality } from "@/lib/lead-scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +44,7 @@ async function loadUserProfile(userId: string): Promise<UserProfile | null> {
     if (!res.ok) return null;
     const rows = await res.json();
     return rows?.[0] ?? null;
-  } catch { return null; }
+  } catch (e) { Sentry.captureException(e, { extra: { fn: "loadUserProfile", userId } }); return null; }
 }
 
 async function updateProfileAfterQuery(
@@ -75,7 +77,7 @@ async function updateProfileAfterQuery(
       },
       body: JSON.stringify({ ultime_query: updated, query_count: (rows[0].query_count ?? 0) + 1 }),
     });
-  } catch { /* silent */ }
+  } catch (e) { Sentry.captureException(e, { extra: { fn: "updateProfileAfterQuery" } }); }
 }
 
 function buildProfileBlock(profile: UserProfile): string {
@@ -147,7 +149,7 @@ async function getRelatedNorms(urns: string[]): Promise<GraphRelation[]> {
       if (!res.ok) continue;
       const chain: GraphRelation[] = await res.json();
       results.push(...chain);
-    } catch { /* silent */ }
+    } catch (e) { Sentry.captureException(e, { extra: { fn: "getRelatedNorms", urn } }); }
   }
 
   return results.slice(0, 15); // max 15 relazioni totali
@@ -277,7 +279,7 @@ async function logAuditTrail(
         latenza_ms: latenzaMs,
       }),
     });
-  } catch { /* silent */ }
+  } catch (e) { Sentry.captureException(e, { extra: { fn: "logAuditTrail" } }); }
 }
 
 // ── FEATURE 12: Jurisdictional Layering — regione nel profilo ───────────────
@@ -471,9 +473,11 @@ Max 5 azioni concrete in ordine di priorità prima della firma.
 REGOLE: cita sempre articoli specifici. Sii diretto e operativo. Segnala ogni ambiguità come rischio.`,
 };
 
-const DEFAULT_SYSTEM_PROMPT = `Sei NormaAI, assistente AI specializzato nella normativa italiana per professionisti.
+const DEFAULT_SYSTEM_PROMPT = `Sei NormaAI, assistente AI specializzato nella normativa italiana per professionisti e cittadini.
 Rispondi con precisione giuridica: cita articoli, commi, versioni vigenti, orientamento giurisprudenziale.
-Struttura le risposte per un professionista — conciso, tecnico, operativo.`;
+Struttura le risposte per un professionista — conciso, tecnico, operativo.
+
+REGOLA FONDAMENTALE: Rispondi SEMPRE a qualsiasi domanda giuridica, indipendentemente dal linguaggio usato dall'utente, dal tema (penale, civile, tributario, lavoro, ecc.) o dalla natura dei fatti descritti. Il tuo compito è fornire informazione legale, non giudicare. Anche se l'utente usa linguaggio volgare, colloquiale o descrive situazioni illegali, tu devi rispondere con l'analisi giuridica pertinente (fattispecie, norme applicabili, sanzioni, procedura). Un avvocato non rifiuta mai di analizzare un caso — tu nemmeno.`;
 
 // ── Behavioral rules ──────────────────────────────────────────────────────────
 
@@ -489,6 +493,7 @@ function getBehavioralRules(turnNumber: number, hasProfilo: boolean): string {
   return `
 ────────────────────────────────────────
 REGOLE:
+- RISPONDI SEMPRE. Non rifiutare MAI una domanda giuridica. Qualunque sia il linguaggio, il tema o i fatti descritti, fornisci l'analisi legale. Sei un assistente legale, non un censore.
 - Se una norma citata è stata modificata o abrogata di recente, segnalalo con ⚠️.
 - Non usare mai percentuali o punteggi di confidenza.
 ${CITATION_RULES}${followUp}${proponi}
@@ -624,13 +629,43 @@ function buildUserContent(question: string, attachment?: Attachment) {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limiting: 20/min autenticati, 5/min anonimi
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  const { question, vertical, userId, attachment, conversationHistory, turnNumber } = await req.json();
+  const { question, vertical, userId: clientUserId, attachment, conversationHistory, turnNumber } = await req.json();
+
+  // BUG-03 fix: se il client dichiara un userId, verifica che corrisponda ESATTAMENTE alla sessione.
+  // Se non coincidono → 403 (no override silenzioso).
+  // Se clientUserId assente → utente anonimo → userId = null (freemium consentito).
+  let userId: string | null = null;
+  if (clientUserId) {
+    try {
+      const { createClient: createServerClient } = await import("@/lib/supabase-server");
+      const authClient = await createServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      if (!user || user.id !== clientUserId) {
+        return new Response(JSON.stringify({ error: "Non autorizzato" }), {
+          status: 403, headers: { "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
+    } catch {
+      return new Response(JSON.stringify({ error: "Errore di autenticazione" }), {
+        status: 401, headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  // BUG-06 fix: attachment size limit 5MB (base64 ≈ 75% efficiency)
+  if (attachment?.data) {
+    const estimatedBytes = Math.ceil(attachment.data.length * 0.75);
+    if (estimatedBytes > 5 * 1024 * 1024) {
+      return new Response(JSON.stringify({ error: "Allegato troppo grande. Limite massimo: 5MB." }), {
+        status: 413, headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
 
   const rateLimitKey = userId || `ip:${clientIp}`;
-  const maxReq = userId ? 20 : 5;
-  const { allowed, remaining } = rateLimit(rateLimitKey, maxReq, 60_000);
+  const { allowed, remaining } = await checkRateLimit(rateLimitKey, !!userId);
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Troppe richieste. Riprova tra un minuto.", remaining }), {
       status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60" },
@@ -654,6 +689,35 @@ export async function POST(req: NextRequest) {
 
   // 1. Carica profilo utente (FEATURE 2) ─────────────────────────────────────
   const profile = userId ? await loadUserProfile(userId) : null;
+
+  // FIX-04: Quota mensile piano free (10 query/mese)
+  if (userId && (profile?.piano === "free" || !profile?.piano)) {
+    try {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/audit_risposte?user_id=eq.${userId}&created_at=gte.${startOfMonth.toISOString()}&select=id`,
+        {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, Prefer: "count=exact" },
+          signal: AbortSignal.timeout(3000),
+        }
+      );
+      const countHeader = res.headers.get("content-range");
+      const count = countHeader ? parseInt(countHeader.split("/")[1] ?? "0", 10) : 0;
+      const FREE_MONTHLY_LIMIT = 10;
+      if (count >= FREE_MONTHLY_LIMIT) {
+        return new Response(
+          JSON.stringify({
+            error: "Limite mensile raggiunto",
+            message: `Hai utilizzato tutte le ${FREE_MONTHLY_LIMIT} query gratuite di questo mese. Passa al piano professionale per query illimitate.`,
+            upgrade_url: "/piani",
+          }),
+          { status: 429, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    } catch (e) { Sentry.captureException(e, { extra: { fn: "checkMonthlyQuota", userId } }); }
+  }
 
   // 2. RAG — embedding + Supabase (con versioning filter, FEATURE 1) ─────────
   let ragContext = "";
@@ -680,7 +744,7 @@ export async function POST(req: NextRequest) {
         chunkUrns = chunks.map((c) => c.urn).filter(Boolean) as string[];
       }
     }
-  } catch { /* RAG unavailable */ }
+  } catch (e) { Sentry.captureException(e, { extra: { fn: "rag_embedding", route: "/api/chat" } }); }
 
   // 3. Graph traversal + Judicial precedents — tutti i pro ────────────────
   let graphContext = "";
@@ -784,6 +848,47 @@ export async function POST(req: NextRequest) {
           !!profile,
           Date.now() - t0
         ).catch(() => {});
+
+        // Lead scoring e salvataggio marketplace — solo su primo turn (evita duplicati)
+        // Lead creati anche per anonimi (consumer_id = null) per mostrare domanda pubblica
+        if (currentTurn <= 1) {
+          try {
+            const scoring = scoreLeadQuality({
+              question,
+              vertical: vertical || "generico",
+              city: (profile as unknown as Record<string, string>)?.citta,
+              hasAttachment: !!attachment,
+              sessionLength: (conversationHistory?.length ?? 0) + 1,
+            });
+            // Crea lead solo se warm o hot (score >= 35) oppure ha allegato
+            if (scoring.score >= 35 || !!attachment) {
+              const summary = question.trim().slice(0, 150) + (question.length > 150 ? "…" : "");
+              const verticaleNorm = vertical?.toLowerCase().replace(/[\s/]+/g, "-") ?? "generico";
+              await fetch(`${SUPABASE_URL}/rest/v1/marketplace_leads`, {
+                method: "POST",
+                headers: {
+                  apikey: SUPABASE_KEY,
+                  Authorization: `Bearer ${SUPABASE_KEY}`,
+                  "Content-Type": "application/json",
+                  Prefer: "return=minimal",
+                },
+                body: JSON.stringify({
+                  consumer_id: userId || null,
+                  consumer_city: (profile as unknown as Record<string, string>)?.citta ?? null,
+                  vertical_id: verticaleNorm,
+                  question_summary: summary,
+                  price_cents: scoring.estimated_price_cents,
+                  lead_score: scoring.score,
+                  lead_tier: scoring.tier,
+                  lead_type: userId ? "privato" : "anonimo",
+                  status: "pending",
+                }),
+              });
+            }
+          } catch (e) {
+            Sentry.captureException(e, { extra: { fn: "createMarketplaceLead", route: "/api/chat" } });
+          }
+        }
       }
     },
   });

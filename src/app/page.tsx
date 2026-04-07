@@ -36,9 +36,43 @@ import ModalParcelle from "@/components/modals/ModalParcelle";
 import ModalDashboard from "@/components/modals/ModalDashboard";
 import ModalAnalisiDoc from "@/components/modals/ModalAnalisiDoc";
 import ModalConnettori from "@/components/modals/ModalConnettori";
+import ModalPiani from "@/components/modals/ModalPiani";
 import CommandPalette from "@/components/CommandPalette";
 import NormaNewsTicker from "@/components/NormaNewsTicker";
 import { Bell, Settings, ChevronDown } from "lucide-react";
+
+function LeadCounterBanner({ onCTA }: { onCTA: () => void }) {
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/leads/preview")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.count != null) setCount(d.count); })
+      .catch(() => {});
+  }, []);
+
+  if (count === null || count === 0) return null;
+
+  return (
+    <div className="w-full bg-[#FFFBF0] border-b border-[#FFE08A] px-4 py-2 flex items-center justify-center gap-3 text-[12.5px]">
+      <span className="text-[#9B6B00]">
+        ⚡ <strong>{count}</strong> {count === 1 ? "persona sta cercando" : "persone stanno cercando"} consulenza legale questa settimana
+      </span>
+      <a
+        href="/leads/preview"
+        className="text-[#9B6B00] underline underline-offset-2 hover:text-[#6B4A00] transition-colors font-medium"
+      >
+        Vedi i lead disponibili →
+      </a>
+      <button
+        onClick={onCTA}
+        className="ml-1 text-white bg-[#E8340A] px-3 py-1 rounded-md text-[11.5px] font-semibold hover:bg-[#c82d08] transition-colors"
+      >
+        Accedi come professionista
+      </button>
+    </div>
+  );
+}
 
 function CheckoutToastHandler({ onToast, onGmailToast }: { onToast: (t: "success" | "cancel" | null) => void; onGmailToast: (t: "connected" | "error" | null) => void }) {
   const searchParams = useSearchParams();
@@ -63,7 +97,7 @@ type ModalId =
   | "gmail" | "gdrive" | "dropbox" | "onedrive" | "outlook"
   | "docusign" | "adobesign" | "whatsapp" | "telegram"
   | "progetti" | "nuovo-progetto" | "archivio" | "nuovo-archivio" | "profilo-ai"
-  | "parcelle" | "dashboard" | "analisi-doc" | "connettori" | null;
+  | "parcelle" | "dashboard" | "analisi-doc" | "connettori" | "piani" | null;
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<ModalId>(null);
@@ -73,11 +107,22 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const supabase = useMemo(() => createClient(), []); // FIX: memoizzato
 
+  const router = useRouter();
+
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user;
+      setUser(u);
+      // Nessun redirect automatico: il professionista può usare la chat
+    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       if (event === "SIGNED_IN" && session?.user) {
+        // Professionista → dashboard
+        if (session.user.user_metadata?.role === "professionista") {
+          router.replace("/dashboard");
+          return;
+        }
         const key = `norma-onboarding-${session.user.id}`;
         if (!localStorage.getItem(key)) {
           localStorage.setItem(key, "1");
@@ -123,7 +168,8 @@ export default function Home() {
     setSidebarOpen((prev) => {
       const next = !prev;
       localStorage.setItem("sb-open", String(next));
-      window.dispatchEvent(new CustomEvent("sb-toggle", { detail: next }));
+      // dispatch outside the setState updater to avoid setState-during-render
+      setTimeout(() => window.dispatchEvent(new CustomEvent("sb-toggle", { detail: next })), 0);
       return next;
     });
   }, []);
@@ -146,13 +192,13 @@ export default function Home() {
       <div className={`flex flex-col h-screen overflow-hidden transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
 
         {/* Topbar — BrevoTopBar style */}
-        <div className="flex items-center justify-between h-14 px-5 border-b border-[#E2E2E2] bg-white sticky top-0 z-[100] shrink-0">
-          {/* Left: hamburger + logo */}
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between h-14 px-4 border-b border-[#E5E1D8] bg-white sticky top-0 z-[100] shrink-0 shadow-[0_1px_0_#E5E1D8]">
+          {/* Left: hamburger + logo + new chat */}
+          <div className="flex items-center gap-2">
             <button
               onClick={toggleSidebar}
               aria-label="Mostra/nascondi sidebar"
-              className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F5F3EF] transition-all duration-150 shrink-0"
+              className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all duration-150 shrink-0"
             >
               <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
               <span className="block w-5 h-[1.5px] bg-current" />
@@ -161,45 +207,83 @@ export default function Home() {
             <div className={`font-serif text-[17px] tracking-[-0.5px] text-[#1a1a1a] transition-all duration-[250ms] overflow-hidden ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
               Norma<span className="text-accent">AI</span>
             </div>
+            {/* New chat button — always visible */}
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("norma-new-chat"))}
+              className="hidden sm:flex items-center gap-1.5 ml-1 h-7 px-3 rounded-full text-[11.5px] text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] border border-[#E5E1D8] transition-all duration-150"
+              title="Nuova chat"
+            >
+              <svg viewBox="0 0 24 24" className="w-3 h-3 stroke-current fill-none stroke-[2.5]">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              <span>Nuova chat</span>
+            </button>
           </div>
+
+          {/* Center: cmd+k search pill */}
+          <button
+            onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true }))}
+            className="hidden md:flex items-center gap-2 h-8 px-4 rounded-full border border-[#E5E1D8] bg-[#FAFAF8] hover:bg-[#F0EDE8] hover:border-[#C8C2BA] transition-all duration-150 cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 stroke-[#9A9690] fill-none stroke-[2]">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span className="text-[12px] text-[#9A9690]">Cerca normativa…</span>
+            <span className="text-[10px] text-[#B0A898] bg-white border border-[#E5E1D8] px-1.5 py-0.5 rounded font-mono ml-1">⌘K</span>
+          </button>
 
           {/* Right: actions */}
           {user ? (
-            <div className="flex items-center gap-4">
-              <Bell className="w-[18px] h-[18px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" />
-              <Settings className="w-[18px] h-[18px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" onClick={() => openModal("profilo-ai")} />
+            <div className="flex items-center gap-3">
+              <Bell className="w-[17px] h-[17px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" />
+              <Settings className="w-[17px] h-[17px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" onClick={() => openModal("profilo-ai")} />
               <div
                 className="flex items-center gap-2 cursor-pointer group"
                 onClick={() => openModal("profilo-ai")}
               >
-                <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[11px] font-bold text-white uppercase shrink-0">
+                <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[11px] font-bold text-white uppercase shrink-0 ring-2 ring-accent/20">
                   {userName.charAt(0) || "U"}
                 </div>
                 <div className="hidden lg:flex flex-col">
-                  <span className="text-[13px] text-[#1b1b1b] leading-tight">{userName}</span>
+                  <span className="text-[13px] text-[#1b1b1b] leading-tight font-medium">{userName}</span>
                   {roleLabel && <span className="text-[10px] text-[#6b6b6b] leading-tight">{roleLabel}</span>}
                 </div>
                 <ChevronDown className="w-3.5 h-3.5 text-[#6b6b6b] hidden lg:block group-hover:text-[#1a1a1a] transition-colors" />
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
-              <span className="hidden lg:block text-[13px] text-[#6B6763]">Sei un professionista?</span>
+            <div className="flex items-center gap-2">
+              <a
+                href="/leads/preview"
+                className="hidden md:flex items-center gap-1 text-[12px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border border-[#E5E1D8] rounded-lg py-[6px] px-3 hover:bg-[#F0EDE8]"
+              >
+                <span>👥</span>
+                <span>Lead questa settimana</span>
+              </a>
+              <button
+                onClick={() => openModal("cittadino")}
+                className="hidden sm:block text-[12.5px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border-none cursor-pointer py-[6px] px-3"
+              >
+                Accedi
+              </button>
               <button
                 onClick={() => openModal("professionista")}
-                className="bg-accent border-none text-white py-[7px] px-[16px] rounded-lg text-[13px] font-semibold transition-colors duration-150 hover:bg-accent-hover shadow-[0_0_12px_rgba(232,52,10,0.20)]"
+                className="bg-accent border-none text-white py-[7px] px-[14px] rounded-lg text-[13px] font-semibold transition-all duration-150 hover:bg-accent-hover shadow-[0_2px_10px_rgba(232,52,10,0.25)] active:scale-95"
               >
-                Accedi gratis
+                Inizia gratis
               </button>
             </div>
           )}
         </div>
 
+        {/* Lead counter banner — visibile solo se non loggato */}
+        {!user && <LeadCounterBanner onCTA={() => openModal("professionista")} />}
+
         {/* News ticker — VoyageAI style */}
         <NormaNewsTicker />
 
         {/* Main chat area */}
-        <RuixenMoonChat user={user} />
+        <RuixenMoonChat user={user} onOpenModal={openModal} />
       </div>
 
       <CommandPalette />
@@ -244,6 +328,7 @@ export default function Home() {
       <ModalDashboard open={activeModal === "dashboard"} onClose={closeModal} user={user} />
       <ModalAnalisiDoc open={activeModal === "analisi-doc"} onClose={closeModal} />
       <ModalConnettori open={activeModal === "connettori"} onClose={closeModal} onOpenModal={openModal} />
+      <ModalPiani open={activeModal === "piani"} onClose={closeModal} onOpenModal={openModal} />
     </>
   );
 }
