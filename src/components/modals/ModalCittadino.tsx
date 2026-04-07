@@ -48,15 +48,8 @@ export default function ModalCittadino({ open, onClose }: Props) {
     if (error) {
       setError(error.message);
     } else if (data.user) {
-      // Create Stripe checkout
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: "price_cittadino", userId: data.user.id, email }),
-      });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-      else onClose();
+      // Piano Privato è gratuito — nessun checkout Stripe
+      onClose();
     }
     setLoading(false);
   }

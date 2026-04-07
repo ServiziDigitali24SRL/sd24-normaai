@@ -84,7 +84,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: "price_professionista",
+          plan: "professionista",
           userId: data.user.id,
           email,
         }),
@@ -122,7 +122,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
       </div>
 
       {/* Body */}
-      <div className="px-6 py-5">
+      <div className="px-6 py-5 overflow-y-auto max-h-[calc(100vh-180px)]">
         {/* STEP 1 — Category selection */}
         {step === 1 && (
           <div>

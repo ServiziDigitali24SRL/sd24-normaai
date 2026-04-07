@@ -72,11 +72,13 @@ export default function ModalDeveloper({ open, onClose }: Props) {
   const [freeEmail, setFreeEmail] = useState("");
   const [freeSent, setFreeSent] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
 
   function handleClose() {
     setLoadingPlan(null);
     setFreeEmail("");
     setFreeSent(false);
+    setError("");
     onClose();
   }
 
@@ -100,14 +102,20 @@ export default function ModalDeveloper({ open, onClose }: Props) {
     if (!freeEmail.trim()) return;
     setLoadingPlan("free");
     try {
-      await fetch("/api/developer-waitlist", {
+      const res = await fetch("/api/developer-waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: freeEmail, plan: "free" }),
       });
-    } catch { /* silent */ }
+      if (res.ok) {
+        setFreeSent(true);
+      } else {
+        setError("Errore nell'invio. Riprova tra qualche istante.");
+      }
+    } catch {
+      setError("Connessione non disponibile. Riprova.");
+    }
     setLoadingPlan(null);
-    setFreeSent(true);
   }
 
   function copyCode() {
@@ -190,6 +198,9 @@ export default function ModalDeveloper({ open, onClose }: Props) {
                   )}
                   {plan.id === "free" && freeSent && (
                     <p className="text-[12px] text-accent mt-3">✓ Chiave API inviata via email</p>
+                  )}
+                  {plan.id === "free" && error && (
+                    <p className="text-[12px] text-red-400 mt-2">{error}</p>
                   )}
                 </div>
 

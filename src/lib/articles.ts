@@ -558,43 +558,6 @@ export const ARTICLES: Article[] = [
     legge: "Artt. 459-564 c.c., D.Lgs. 346/1990 (imposta successione)",
     image: img("famiglia", 1), datePublished: "2026-03-28", dateModified: "2026-03-28",
   },
-  // ── LAVORO extra ──────────────────────────────────────────────────────────
-  {
-    slug: "dimissioni-come-darle",
-    title: "Come dare le dimissioni: procedura e preavviso",
-    category: "lavoro", categoryLabel: CAT.lavoro,
-    tldr: "Le dimissioni vanno date online tramite il portale del Ministero del Lavoro (modulo telematico). Il preavviso è stabilito dal CCNL — se non lo rispetti devi un'indennità sostitutiva.",
-    intro: "Dal 2016 le dimissioni volontarie devono essere presentate tramite procedura telematica, pena l'inefficacia. Non basta più una semplice lettera firmata.",
-    sections: [
-      { heading: "La procedura telematica obbligatoria", body: "Dal 12 marzo 2016 (D.Lgs. 151/2015) le dimissioni devono essere trasmesse tramite il portale cliclavoro.gov.it o tramite un CAF/consulente del lavoro abilitato. Serve lo SPID o la CIE. Il modulo va compilato e inviato entro 7 giorni dalla data di dimissioni scelta." },
-      { heading: "Il preavviso: quanto dura", body: "Il periodo di preavviso dipende dal CCNL applicato e dall'anzianità di servizio. In genere:\n• Operai/impiegati con anzianità < 5 anni: 10-30 giorni\n• Quadri/dirigenti: 3-6 mesi\n\nPuoi accordarti con il datore per ridurlo o azzerarlo (dimissioni per mutuo consenso). Se non rispetti il preavviso, il datore può trattenere l'equivalente dalla liquidazione." },
-      { heading: "Dimissioni per giusta causa", body: "Se sei tu a dimetterti per un comportamento grave del datore (es. mancato pagamento stipendi, mobbing, demansionamento), hai diritto a dimetterti con effetto immediato senza preavviso e senza penali. Hai anche diritto alla NASpI (disoccupazione)." },
-    ],
-    faqs: [
-      { q: "Posso revocare le dimissioni?", a: "Sì, entro 7 giorni dalla trasmissione del modulo telematico (art. 26 D.Lgs. 151/2015). Oltre quel termine, le dimissioni sono irrevocabili salvo accordo con il datore." },
-      { q: "Ho diritto alla disoccupazione dopo le dimissioni?", a: "In generale no, salvo dimissioni per giusta causa (es. mancato stipendio) o dimissioni durante il periodo di maternità/paternità entro un anno dalla nascita del figlio." },
-    ],
-    legge: "Art. 26 D.Lgs. 151/2015, D.M. 15 dicembre 2015",
-    image: img("lavoro", 2), datePublished: "2026-03-28", dateModified: "2026-03-28",
-  },
-  {
-    slug: "mobbing-come-riconoscerlo",
-    title: "Mobbing: come riconoscerlo e cosa fare",
-    category: "lavoro", categoryLabel: CAT.lavoro,
-    tldr: "Il mobbing è una condotta sistematica e prolungata che mira a escludere o danneggiare il lavoratore. Per essere riconosciuto serve una serie di atti reiterati nel tempo, non episodi isolati. Va provato con documentazione scritta.",
-    intro: "Il mobbing non ha una definizione legislativa precisa in Italia, ma la giurisprudenza lo ha definito come un insieme di comportamenti ostili reiterati che danneggiano la salute e la carriera del lavoratore.",
-    sections: [
-      { heading: "Cosa si intende per mobbing", body: "La Cassazione (sent. n. 3785/2009) definisce il mobbing come una condotta del datore o di colleghi caratterizzata da:\n• **Sistematicità:** atti ripetuti nel tempo (almeno 6 mesi secondo la giurisprudenza prevalente)\n• **Intenzionalità:** scopo di isolare, danneggiare o espellere il lavoratore\n• **Lesività:** danno concreto alla salute psico-fisica, alla carriera o all'immagine\n\nEpisodi singoli, anche gravi, non costituiscono mobbing ma possono essere illeciti a sé." },
-      { heading: "Atti tipici di mobbing", body: "• Demansionamento improvviso (assegnazione di mansioni dequalificanti)\n• Isolamento fisico o relazionale (spostamento in uffici isolati, esclusione da riunioni)\n• Controllo esasperato e contestazioni disciplinari strumentali\n• Diffamazione e calunnie tra colleghi\n• Negazione di ferie, permessi, formazione\n• Pressioni per le dimissioni" },
-      { heading: "Come documentare il mobbing", body: "La prova è l'ostacolo principale. Raccogliere:\n1. Email, messaggi, comunicazioni scritte con date\n2. Testimonianze di colleghi (anche dichiarazioni scritte)\n3. Certificati medici che attestino il danno psico-fisico\n4. Eventuale denuncia al medico del lavoro aziendale o INAIL\n5. Resoconti scritti degli episodi con data, ora, testimoni" },
-    ],
-    faqs: [
-      { q: "Posso denunciare il mobbing?", a: "Sì: penalmente (art. 610 c.p. — violenza privata, o art. 572 c.p. per mobbing familiare), civilmente (art. 2087 c.c. obbligo di sicurezza del datore), o avanti al giudice del lavoro per danno biologico e professionale." },
-      { q: "Ho diritto all'INAIL per il mobbing?", a: "Dal 2017 l'INAIL riconosce il danno psichico da mobbing come infortunio sul lavoro se documentato. Presenta denuncia tramite il tuo medico di fiducia." },
-    ],
-    legge: "Art. 2087 c.c., D.Lgs. 81/2008, Cass. n. 3785/2009",
-    image: img("lavoro", 3), datePublished: "2026-03-28", dateModified: "2026-03-28",
-  },
   {
     slug: "maternita-paternita-lavoro",
     title: "Congedo di maternità e paternità: diritti e durata",

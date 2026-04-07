@@ -45,7 +45,7 @@ function LeadCounterBanner({ onCTA }: { onCTA: () => void }) {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch("/api/leads/preview")
+    fetch("/api/leads/preview", { next: { revalidate: 300 } } as RequestInit)
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.count != null) setCount(d.count); })
       .catch(() => {});

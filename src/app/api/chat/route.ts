@@ -10,7 +10,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 // Embedding: VPS locale (384 dim fastembed) — nessun fallback (corpus è 384d)
-const EMBED_VPS_URL  = process.env.EMBED_VPS_URL  || "http://89.167.123.25:8765";
+const EMBED_VPS_URL  = process.env.EMBED_VPS_URL;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY  || "";
 
 // ── FEATURE 1: Versioning ─────────────────────────────────────────────────────
