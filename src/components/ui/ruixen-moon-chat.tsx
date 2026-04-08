@@ -18,7 +18,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Paperclip,
-  Image,
+  Camera,
   Mic,
   MicOff,
   X,
@@ -523,7 +523,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
                 title="Allega immagine"
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
               >
-                <Image className="w-4 h-4" />
+                <Camera className="w-4 h-4" />
               </button>
               <button
                 onClick={toggleRecording}
