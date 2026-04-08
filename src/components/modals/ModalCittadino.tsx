@@ -28,6 +28,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
   const [error, setError] = useState("");
   const [consentPrivacy, setConsentPrivacy] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const supabase = createClient();
 
   async function handleLogin() {
@@ -40,6 +41,21 @@ export default function ModalCittadino({ open, onClose }: Props) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setError("Email o password non corretti.");
     else onClose();
+    setLoading(false);
+  }
+
+  async function handleForgotPassword() {
+    if (!email.trim()) {
+      setError("Inserisci la tua email per ricevere il link di reset.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) setError("Errore nell'invio dell'email. Riprova.");
+    else setResetSent(true);
     setLoading(false);
   }
 
@@ -144,6 +160,19 @@ export default function ModalCittadino({ open, onClose }: Props) {
             <FormInput type="email" placeholder="nome@email.it" value={email} onChange={setEmail} />
             <FormLabel>Password</FormLabel>
             <FormInput type="password" placeholder="••••••••" value={password} onChange={setPassword} />
+            {resetSent ? (
+              <div className="text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mt-3">
+                Email inviata! Controlla la tua casella e segui il link per reimpostare la password.
+              </div>
+            ) : (
+              <button
+                onClick={handleForgotPassword}
+                className="text-[11.5px] text-accent hover:underline mt-1 mb-1 block"
+                type="button"
+              >
+                Hai dimenticato la password?
+              </button>
+            )}
             <BtnPrimary onClick={handleLogin}>
               {loading ? "Accesso..." : "Accedi"}
             </BtnPrimary>
