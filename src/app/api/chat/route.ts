@@ -678,8 +678,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const rateLimitKey = userId || `ip:${clientIp}`;
-  const { allowed, remaining } = rateLimit(rateLimitKey, !!userId ? 100 : 20, 60_000);
+  const rateLimitKey = userId ? `user:${userId}` : `ip:${clientIp}`;
+  const { allowed, remaining } = await rateLimit(rateLimitKey, !!userId ? 100 : 20, 60_000);
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Troppe richieste. Riprova tra un minuto.", remaining }), {
       status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60" },
