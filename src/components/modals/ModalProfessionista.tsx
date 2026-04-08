@@ -35,6 +35,9 @@ export default function ModalProfessionista({ open, onClose }: Props) {
   const [ordine, setOrdine] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [consentPrivacy, setConsentPrivacy] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
+  const [consentLeadMarketplace, setConsentLeadMarketplace] = useState(false);
   const supabase = createClient();
 
   function reset() {
@@ -46,6 +49,9 @@ export default function ModalProfessionista({ open, onClose }: Props) {
     setName("");
     setOrdine("");
     setError("");
+    setConsentPrivacy(false);
+    setConsentMarketing(false);
+    setConsentLeadMarketplace(false);
   }
 
   function handleClose() {
@@ -75,8 +81,17 @@ export default function ModalProfessionista({ open, onClose }: Props) {
       setError("La password deve essere di almeno 8 caratteri.");
       return;
     }
+    if (!consentPrivacy) {
+      setError("Devi accettare Privacy Policy e Termini per procedere.");
+      return;
+    }
+    if (!consentLeadMarketplace) {
+      setError("Devi accettare il trattamento dati per il marketplace lead.");
+      return;
+    }
     setLoading(true);
     setError("");
+    const consentTimestamp = new Date().toISOString();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -86,6 +101,11 @@ export default function ModalProfessionista({ open, onClose }: Props) {
           role: "professionista",
           categoria: selected,
           ordine,
+          consent_privacy_policy: true,
+          consent_terms: true,
+          consent_marketing: consentMarketing,
+          consent_lead_marketplace: consentLeadMarketplace,
+          consent_timestamp: consentTimestamp,
         },
       },
     });
@@ -290,6 +310,48 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                 <FormInput placeholder="es. Ordine Avvocati Milano" value={ordine} onChange={setOrdine} />
                 <FormLabel>Password</FormLabel>
                 <FormInput type="password" placeholder="Crea una password sicura" value={password} onChange={setPassword} />
+
+                {/* GDPR Consents */}
+                <div className="mt-4 space-y-3">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentPrivacy}
+                      onChange={(e) => setConsentPrivacy(e.target.checked)}
+                      className="mt-[2px] shrink-0 accent-[#E8340A]"
+                    />
+                    <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                      * Ho letto e accetto la{" "}
+                      <a href="/privacy" target="_blank" className="text-accent hover:underline">Privacy Policy</a>
+                      {" "}e i{" "}
+                      <a href="/termini" target="_blank" className="text-accent hover:underline">Termini di Servizio</a>.
+                      Acconsento al trattamento dei miei dati personali. (obbligatorio)
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentLeadMarketplace}
+                      onChange={(e) => setConsentLeadMarketplace(e.target.checked)}
+                      className="mt-[2px] shrink-0 accent-[#E8340A]"
+                    />
+                    <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                      * Acconsento alla ricezione di lead qualificati tramite il marketplace NormaAI e al relativo trattamento dati. (obbligatorio per professionisti)
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentMarketing}
+                      onChange={(e) => setConsentMarketing(e.target.checked)}
+                      className="mt-[2px] shrink-0 accent-[#E8340A]"
+                    />
+                    <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                      Acconsento a ricevere comunicazioni email su novità, offerte e aggiornamenti normativi. (opzionale)
+                    </span>
+                  </label>
+                </div>
+
                 <BtnPrimary onClick={handleRegister}>
                   {loading ? "Registrazione..." : "Inizia 14 giorni gratis"}
                 </BtnPrimary>

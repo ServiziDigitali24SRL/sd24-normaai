@@ -27,6 +27,8 @@ export default function ModalImpresa({ open, onClose }: Props) {
   const [piva, setPiva] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [consentPrivacy, setConsentPrivacy] = useState(false);
+  const [consentMarketing, setConsentMarketing] = useState(false);
   const supabase = createClient();
 
   async function handleLogin() {
@@ -51,8 +53,13 @@ export default function ModalImpresa({ open, onClose }: Props) {
       setError("La password deve essere di almeno 8 caratteri.");
       return;
     }
+    if (!consentPrivacy) {
+      setError("Devi accettare Privacy Policy e Termini per procedere.");
+      return;
+    }
     setLoading(true);
     setError("");
+    const consentTimestamp = new Date().toISOString();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -61,6 +68,10 @@ export default function ModalImpresa({ open, onClose }: Props) {
           ragione_sociale: ragioneSociale,
           p_iva: piva,
           role: "impresa",
+          consent_privacy_policy: true,
+          consent_terms: true,
+          consent_marketing: consentMarketing,
+          consent_timestamp: consentTimestamp,
         },
       },
     });
@@ -140,6 +151,37 @@ export default function ModalImpresa({ open, onClose }: Props) {
             <FormInput type="email" placeholder="admin@azienda.it" value={email} onChange={setEmail} />
             <FormLabel>Password</FormLabel>
             <FormInput type="password" placeholder="Crea una password" value={password} onChange={setPassword} />
+
+            {/* GDPR Consents */}
+            <div className="mt-4 space-y-3">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentPrivacy}
+                  onChange={(e) => setConsentPrivacy(e.target.checked)}
+                  className="mt-[2px] shrink-0 accent-[#E8340A]"
+                />
+                <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                  * Ho letto e accetto la{" "}
+                  <a href="/privacy" target="_blank" className="text-accent hover:underline">Privacy Policy</a>
+                  {" "}e i{" "}
+                  <a href="/termini" target="_blank" className="text-accent hover:underline">Termini di Servizio</a>.
+                  Acconsento al trattamento dei miei dati personali. (obbligatorio)
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentMarketing}
+                  onChange={(e) => setConsentMarketing(e.target.checked)}
+                  className="mt-[2px] shrink-0 accent-[#E8340A]"
+                />
+                <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                  Acconsento a ricevere comunicazioni email su novità, aggiornamenti normativi e offerte. (opzionale)
+                </span>
+              </label>
+            </div>
+
             <BtnPrimary onClick={handleRegister}>
               {loading ? "Registrazione..." : "Inizia 14 giorni gratis"}
             </BtnPrimary>
