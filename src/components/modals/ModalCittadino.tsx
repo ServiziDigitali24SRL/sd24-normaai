@@ -44,8 +44,21 @@ export default function ModalCittadino({ open, onClose }: Props) {
   }
 
   async function handleRegister() {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Tutti i campi sono obbligatori.");
+    if (!name.trim()) {
+      setError("Inserisci il tuo nome.");
+      return;
+    }
+    if (!email.trim()) {
+      setError("Inserisci la tua email.");
+      return;
+    }
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(email.trim())) {
+      setError("Inserisci un'email valida.");
+      return;
+    }
+    if (!password.trim()) {
+      setError("Inserisci una password.");
       return;
     }
     if (password.length < 8) {

@@ -11,7 +11,7 @@ interface Props {
   user: User | null;
 }
 
-type Tab = "lead" | "acquistati" | "abbonamento";
+type Tab = "lead" | "acquistati" | "abbonamento" | "wallet";
 
 interface Lead {
   id: string;
@@ -54,6 +54,10 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
   const [loading, setLoading] = useState(false);
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [walletCredits, setWalletCredits] = useState<number | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoError, setPromoError] = useState<string | null>(null);
   const supabase = createClient();
 
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.nome || user?.email?.split("@")[0] || "";
@@ -63,6 +67,7 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
   useEffect(() => {
     if (!open || !user) return;
     fetchLeads();
+    fetchWallet();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, user]);
 
@@ -91,6 +96,45 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
       // Tabella non ancora creata — silent fail, mostra empty state
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchWallet() {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("wallet_credits")
+        .eq("id", user.id)
+        .single();
+      setWalletCredits(data?.wallet_credits ?? 0);
+    } catch {
+      setWalletCredits(0);
+    }
+  }
+
+  async function redeemPromo() {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError(null);
+    try {
+      const res = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPromoError(data.error || "Codice non valido.");
+      } else {
+        setPromoCode("");
+        setWalletCredits(data.new_balance);
+        showToast(data.message);
+      }
+    } catch {
+      setPromoError("Errore di rete. Riprova.");
+    } finally {
+      setPromoLoading(false);
     }
   }
 
@@ -168,6 +212,9 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
           <button className={tabClass("lead")} onClick={() => setTab("lead")}>Lead disponibili {leads.length > 0 && <span className="ml-1 text-[10px] bg-accent/20 text-accent rounded-full px-1.5 py-0.5">{leads.length}</span>}</button>
           <button className={tabClass("acquistati")} onClick={() => setTab("acquistati")}>I miei lead</button>
           <button className={tabClass("abbonamento")} onClick={() => setTab("abbonamento")}>Abbonamento</button>
+          <button className={tabClass("wallet")} onClick={() => setTab("wallet")}>
+            Wallet {walletCredits !== null && <span className="ml-1 text-[10px] bg-green-500/20 text-green-400 rounded-full px-1.5 py-0.5">€{(walletCredits / 100).toFixed(0)}</span>}
+          </button>
         </div>
 
         {/* Content */}
@@ -274,6 +321,64 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
                   </div>
                 </div>
                 <p className="text-[11px] text-[#444] mt-3">I crediti si scalano dal wallet. I crediti non scadono mai.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Wallet */}
+          {!loading && tab === "wallet" && (
+            <div className="space-y-4">
+              {/* Saldo */}
+              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-5">
+                <div className="text-[12px] text-[#555] mb-1">Saldo wallet</div>
+                <div className="text-[32px] font-semibold text-green-400 leading-tight">
+                  €{walletCredits !== null ? (walletCredits / 100).toFixed(2) : "—"}
+                </div>
+                <p className="text-[11px] text-[#444] mt-2">I crediti non scadono mai. Si scalano automaticamente all&apos;acquisto dei lead.</p>
+              </div>
+
+              {/* Codice promozionale */}
+              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-5">
+                <h3 className="text-[13px] text-cream font-medium mb-1">Codice promozionale</h3>
+                <p className="text-[12px] text-[#555] mb-4">Hai un codice promo? Inseriscilo qui per aggiungere crediti al tuo wallet.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={promoCode}
+                    onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(null); }}
+                    onKeyDown={(e) => e.key === "Enter" && redeemPromo()}
+                    placeholder="Es. LAUNCH50"
+                    className="flex-1 bg-[#141414] border border-[#2a2a2a] rounded-lg px-3 py-2 text-[13px] text-cream placeholder-[#444] focus:outline-none focus:border-accent/50 font-mono tracking-wider uppercase"
+                    disabled={promoLoading}
+                  />
+                  <button
+                    onClick={redeemPromo}
+                    disabled={promoLoading || !promoCode.trim()}
+                    className="px-4 py-2 bg-accent text-black text-[12.5px] font-semibold rounded-lg hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
+                  >
+                    {promoLoading ? (
+                      <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin inline-block" />
+                    ) : "Applica"}
+                  </button>
+                </div>
+                {promoError && (
+                  <p className="text-[12px] text-red-400 mt-2">{promoError}</p>
+                )}
+              </div>
+
+              {/* Prezzi lead */}
+              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-4">
+                <h3 className="text-[13px] text-cream font-medium mb-3">Prezzi lead</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[12.5px]">
+                    <span className="text-[#888]">Lead privato (persona fisica)</span>
+                    <span className="text-cream font-medium">€75</span>
+                  </div>
+                  <div className="flex justify-between text-[12.5px]">
+                    <span className="text-[#888]">Lead impresa / società</span>
+                    <span className="text-cream font-medium">€150</span>
+                  </div>
+                </div>
               </div>
             </div>
           )}

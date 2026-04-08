@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createAdmin } from "@supabase/supabase-js";
+import { resolveOAuthToken, updateOAuthToken } from "@/lib/vault";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
   // Get tokens
   const { data: tokenRow } = await admin
     .from("user_dropbox_tokens")
-    .select("access_token, refresh_token, token_expiry")
+    .select("access_token, refresh_token, token_expiry, vault_access_token_id, vault_refresh_token_id")
     .eq("user_id", user.id)
     .single();
 
@@ -53,26 +54,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dropbox non connesso" }, { status: 401 });
   }
 
-  let accessToken = tokenRow.access_token;
+  let accessToken = await resolveOAuthToken(admin, tokenRow.vault_access_token_id, tokenRow.access_token);
+  if (!accessToken) {
+    return NextResponse.json({ error: "Token Dropbox non leggibile, riconnetti" }, { status: 401 });
+  }
 
   // Refresh token if expired
   const isExpired = tokenRow.token_expiry && new Date(tokenRow.token_expiry) <= new Date();
-  if (isExpired && tokenRow.refresh_token) {
-    const newToken = await refreshAccessToken(tokenRow.refresh_token);
-    if (!newToken) {
-      return NextResponse.json({ error: "Sessione Dropbox scaduta. Riconnetti il tuo account." }, { status: 401 });
+  if (isExpired) {
+    const refreshToken = await resolveOAuthToken(admin, tokenRow.vault_refresh_token_id, tokenRow.refresh_token);
+    if (refreshToken) {
+      const newToken = await refreshAccessToken(refreshToken);
+      if (!newToken) {
+        return NextResponse.json({ error: "Sessione Dropbox scaduta. Riconnetti il tuo account." }, { status: 401 });
+      }
+      accessToken = newToken;
+      await updateOAuthToken(admin, "user_dropbox_tokens", "user_id", user.id,
+        tokenRow.vault_access_token_id,
+        newToken,
+        { token_expiry: new Date(Date.now() + 4 * 3600 * 1000).toISOString(), updated_at: new Date().toISOString() }
+      );
     }
-    accessToken = newToken;
-
-    // Update token in DB
-    await admin
-      .from("user_dropbox_tokens")
-      .update({
-        access_token: newToken,
-        token_expiry: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", user.id);
   }
 
   // Search Dropbox

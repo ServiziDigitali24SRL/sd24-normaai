@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
+import { createClient as createAdmin } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveOAuthToken } from "@/lib/vault";
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +34,14 @@ export async function GET() {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  // Get Telegram token
-  const { data: tokenRecord } = await supabase
+  // Get Telegram token (via vault)
+  const admin = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { data: tokenRecord } = await admin
     .from("user_telegram_tokens")
-    .select("bot_token")
+    .select("bot_token, vault_bot_token_id")
     .eq("user_id", user.id)
     .single();
 
@@ -46,9 +52,14 @@ export async function GET() {
     );
   }
 
+  const botToken = await resolveOAuthToken(admin, tokenRecord.vault_bot_token_id, tokenRecord.bot_token);
+  if (!botToken) {
+    return NextResponse.json({ error: "Token Telegram non leggibile, riconnetti" }, { status: 401 });
+  }
+
   try {
     const res = await fetch(
-      `https://api.telegram.org/bot${tokenRecord.bot_token}/getUpdates?limit=100`
+      `https://api.telegram.org/bot${botToken}/getUpdates?limit=100`
     );
 
     if (!res.ok) {
@@ -132,10 +143,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  // Get Telegram token
-  const { data: tokenRecord } = await supabase
+  // Get Telegram token (via vault)
+  const admin2 = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { data: tokenRecord } = await admin2
     .from("user_telegram_tokens")
-    .select("bot_token")
+    .select("bot_token, vault_bot_token_id")
     .eq("user_id", user.id)
     .single();
 
@@ -146,10 +161,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const botTokenPost = await resolveOAuthToken(admin2, tokenRecord.vault_bot_token_id, tokenRecord.bot_token);
+  if (!botTokenPost) {
+    return NextResponse.json({ error: "Token Telegram non leggibile, riconnetti" }, { status: 401 });
+  }
+
   try {
     // Fetch updates and filter by chat
     const res = await fetch(
-      `https://api.telegram.org/bot${tokenRecord.bot_token}/getUpdates?limit=100`
+      `https://api.telegram.org/bot${botTokenPost}/getUpdates?limit=100`
     );
 
     if (!res.ok) {

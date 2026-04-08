@@ -28,6 +28,7 @@ export default function CookieBanner() {
       timestamp: new Date().toISOString(),
     };
     localStorage.setItem("cookie-consent", JSON.stringify(full));
+    window.dispatchEvent(new Event("cookie-consent-updated"));
     setVisible(false);
     setShowCustomize(false);
   }

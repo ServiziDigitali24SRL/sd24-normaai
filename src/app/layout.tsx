@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
+import PlausibleAnalytics from "@/components/PlausibleAnalytics";
 import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
@@ -85,6 +86,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           {children}
           <CookieBanner />
+          <PlausibleAnalytics />
         </ThemeProvider>
       </body>
     </html>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
+import { resolveOAuthToken, updateOAuthToken } from "@/lib/vault";
 
 export const dynamic = "force-dynamic";
 
@@ -55,10 +56,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  // Get Gmail token
-  const { data: tokenRecord } = await supabase
+  // Get Gmail token (admin per accedere a vault_*_id)
+  const admin = createAdmin(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { data: tokenRecord } = await admin
     .from("user_gmail_tokens")
-    .select("access_token, refresh_token, token_expiry")
+    .select("id, access_token, refresh_token, token_expiry, vault_access_token_id, vault_refresh_token_id")
     .eq("user_id", user.id)
     .single();
 
@@ -66,27 +71,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Gmail non connessa" }, { status: 400 });
   }
 
-  let accessToken = tokenRecord.access_token;
+  let accessToken = await resolveOAuthToken(admin, tokenRecord.vault_access_token_id, tokenRecord.access_token);
+  if (!accessToken) {
+    return NextResponse.json({ error: "Token Gmail non leggibile, riconnetti" }, { status: 401 });
+  }
 
   // Refresh if expired
   if (tokenRecord.token_expiry && new Date(tokenRecord.token_expiry) < new Date()) {
-    if (tokenRecord.refresh_token) {
-      const newToken = await refreshAccessToken(tokenRecord.refresh_token);
+    const refreshToken = await resolveOAuthToken(admin, tokenRecord.vault_refresh_token_id, tokenRecord.refresh_token);
+    if (refreshToken) {
+      const newToken = await refreshAccessToken(refreshToken);
       if (!newToken) {
         return NextResponse.json({ error: "Token Gmail scaduto, riconnetti" }, { status: 401 });
       }
       accessToken = newToken;
-
-      // Update token in DB
-      const admin = createAdmin(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      await updateOAuthToken(admin, "user_gmail_tokens", "id", tokenRecord.id,
+        tokenRecord.vault_access_token_id,
+        newToken,
+        { token_expiry: new Date(Date.now() + 3600 * 1000).toISOString(), updated_at: new Date().toISOString() }
       );
-      await admin.from("user_gmail_tokens").update({
-        access_token: newToken,
-        token_expiry: new Date(Date.now() + 3600 * 1000).toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq("user_id", user.id);
     }
   }
 
