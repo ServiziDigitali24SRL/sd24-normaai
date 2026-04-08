@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
 import {
@@ -17,6 +17,11 @@ import {
   Check,
   ThumbsUp,
   ThumbsDown,
+  Paperclip,
+  Image,
+  Mic,
+  MicOff,
+  X,
 } from "lucide-react";
 
 const QUICK_ACTIONS = [
@@ -84,11 +89,16 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
   const [ratings, setRatings] = useState<Record<string, 1 | -1>>({});
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [placeholderVisible, setPlaceholderVisible] = useState(true);
+  const [attachment, setAttachment] = useState<{ name: string; type: string; data: string } | null>(null);
+  const [recording, setRecording] = useState(false);
+  const mediaRef = useRef<MediaRecorder | null>(null);
 
   const taRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
+  const docRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
   const sendingRef = useRef(sending);
   sendingRef.current = sending;
 
@@ -213,8 +223,9 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
   }
 
   async function handleSend() {
-    const q = message.trim();
+    const q = message.trim() || (attachment ? `Analizza: ${attachment.name}` : "");
     if (!q) return;
+    setAttachment(null);
     await sendQuery(q);
   }
 
@@ -233,8 +244,59 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
     setRatings((prev) => prev[id] === val ? { ...prev, [id]: undefined as any } : { ...prev, [id]: val });
   }
 
+  function handleDocFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = (reader.result as string).split(",")[1];
+      setAttachment({ name: file.name, type: file.type || "application/octet-stream", data });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  function handleImgFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const data = (reader.result as string).split(",")[1];
+      setAttachment({ name: file.name, type: file.type, data });
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
+
+  async function toggleRecording() {
+    if (recording) {
+      mediaRef.current?.stop();
+      setRecording(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+      mr.ondataavailable = (e) => chunks.push(e.data);
+      mr.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const reader = new FileReader();
+        reader.onload = () => {
+          const data = (reader.result as string).split(",")[1];
+          setAttachment({ name: "registrazione.webm", type: "audio/webm", data });
+        };
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      mr.start();
+      mediaRef.current = mr;
+      setRecording(true);
+    } catch { }
+  }
+
   const sidebarW = sidebarOpen ? 240 : 0;
-  const canSend = message.trim().length > 0 && !sending;
+  const canSend = (message.trim().length > 0 || !!attachment) && !sending;
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#F7F5F2] relative" style={{ overflow: "clip" }}>
@@ -420,7 +482,20 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
         suppressHydrationWarning
       >
         <div className="max-w-[768px] mx-auto px-4 md:px-6 pt-3 pb-3">
+          <input ref={docRef} type="file" accept="application/pdf,text/plain,.pdf,.txt,.doc,.docx" className="hidden" onChange={handleDocFile} />
+          <input ref={imgRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImgFile} />
           <div className="relative bg-white border border-[#D5D0C8] rounded-xl focus-within:border-[#B0A898] focus-within:shadow-[0_0_0_3px_rgba(180,160,140,0.12)] transition-all shadow-sm">
+            {attachment && (
+              <div className="flex items-center gap-2 px-4 pt-2">
+                <span className="text-[11px] text-[#6B6763] bg-[#F0EDE8] border border-[#D8D3CC] rounded-full px-2.5 py-0.5 flex items-center gap-1.5 max-w-[240px] truncate">
+                  <Paperclip className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{attachment.name}</span>
+                </span>
+                <button onClick={() => setAttachment(null)} className="text-[#9A9690] hover:text-[#1a1a1a] bg-transparent border-none cursor-pointer p-0">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
             <textarea
               ref={taRef}
               value={message}
@@ -435,15 +510,35 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
               className="w-full px-4 py-3 pb-2 bg-transparent border-none outline-none text-[#1a1a1a] text-[15px] min-h-[48px] placeholder:text-[#9A9690] resize-none transition-opacity duration-300"
               style={{ overflow: "hidden" }}
             />
-            <div className="flex items-center justify-between px-3 pb-3 pt-1">
-              <span className="text-[11px] text-[#9A9690]">
-                <kbd className="bg-[#F0EDE8] px-1 py-0.5 rounded text-[10px] font-mono">⌘K</kbd>{" "}
-                cerca
+            <div className="flex items-center gap-2 px-3 pb-3 pt-1">
+              <button
+                onClick={() => docRef.current?.click()}
+                title="Allega documento"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => imgRef.current?.click()}
+                title="Allega immagine"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
+              >
+                <Image className="w-4 h-4" />
+              </button>
+              <button
+                onClick={toggleRecording}
+                title={recording ? "Ferma registrazione" : "Registra vocale"}
+                className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all border-none bg-transparent cursor-pointer ${recording ? "text-accent bg-accent/10" : "text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8]"}`}
+              >
+                {recording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+              <span className="text-[11px] text-[#C8C2BA] ml-1 hidden sm:inline">
+                <kbd className="bg-[#F0EDE8] px-1 py-0.5 rounded text-[10px] font-mono">⌘K</kbd>{" "}cerca
               </span>
               <button
                 onClick={handleSend}
                 disabled={!canSend}
-                className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150 border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150 border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{ background: canSend ? "#E8340A" : "#D5D0C8" }}
               >
                 {sending
