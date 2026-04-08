@@ -9,7 +9,7 @@ const supabase = createClient(
 export async function POST(req: NextRequest) {
   try {
     const { name, email, company, usecase } = await req.json();
-    if (!name?.trim() || !email?.trim()) {
+    if (!email?.trim()) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 

@@ -102,7 +102,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
         </div>
 
         <div className="mt-5">
-          <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={setTab} />
+          <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={(t) => { setTab(t); setError(""); }} />
         </div>
 
         {error && <div className="text-accent text-[12px] mb-2">{error}</div>}

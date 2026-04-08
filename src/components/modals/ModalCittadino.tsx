@@ -68,16 +68,15 @@ export default function ModalCittadino({ open, onClose }: Props) {
       <div className="p-7">
         <ModalClose onClose={onClose} />
         <ModalTitle>Accedi come Cittadino</ModalTitle>
-        <ModalSub>14 giorni gratuiti, poi 9&euro;/mese &mdash; disdici quando vuoi</ModalSub>
+        <ModalSub>Gratis per sempre &mdash; nessuna carta richiesta</ModalSub>
 
         {/* Plan card */}
         <div className="bg-card border border-card-border rounded-xl p-[18px] mt-[14px]">
-          <div className="font-serif text-[30px]">
-            <sup className="text-[14px] font-sans">&euro;</sup>9
-            <sub className="text-[13px] font-sans text-[#555]">/mese</sub>
+          <div className="font-serif text-[30px] text-[#1a1a1a]">
+            Gratis
           </div>
           <div className="text-[11.5px] text-gold mt-[3px]">
-            &#10022; 14 giorni gratuiti &middot; Modello Opus 4.6
+            &#10022; Sempre gratuito &middot; Nessun limite di query
           </div>
           <div className="mt-3 flex flex-col gap-[7px]">
             {feats.map((f) => (
@@ -120,10 +119,10 @@ export default function ModalCittadino({ open, onClose }: Props) {
             <FormLabel>Password</FormLabel>
             <FormInput type="password" placeholder="Crea una password" value={password} onChange={setPassword} />
             <BtnPrimary onClick={handleRegister}>
-              {loading ? "Registrazione..." : "Inizia 14 giorni gratis"}
+              {loading ? "Registrazione..." : "Crea account gratuito"}
             </BtnPrimary>
             <p className="text-[11px] text-[#444] text-center mt-[10px]">
-              Nessuna carta richiesta per il trial
+              Gratis per sempre &mdash; nessuna carta richiesta
             </p>
           </div>
         )}
