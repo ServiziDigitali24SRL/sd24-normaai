@@ -2,6 +2,9 @@
 const nextConfig = {
   compress: true,
   poweredByHeader: false,
+  compiler: {
+    removeConsole: { exclude: ["error"] },
+  },
   images: {
     remotePatterns: [
       {
@@ -33,7 +36,8 @@ const nextConfig = {
         ],
       },
       {
-        source: "/api/:path*",
+        // Tutte le API: no cache (default sicuro)
+        source: "/api/((?!leads/preview).)*",
         headers: [
           { key: "Cache-Control", value: "no-store, no-cache, must-revalidate" },
         ],

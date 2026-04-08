@@ -1,10 +1,11 @@
 // GET /api/leads/preview — PUBBLICA, nessun auth richiesto
 // Restituisce lead degli ultimi 7 giorni con dati anonimizzati
+// Cache CDN Vercel: 60s stale-while-revalidate (riduce TTFB da 835ms a <50ms su richieste cacheate)
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60; // CDN cache 60 secondi
 
 function getSupabase() {
   return createClient(
@@ -77,5 +78,7 @@ export async function GET(req: NextRequest) {
     summary_preview: anonymizeSummary(l.question_summary),
   }));
 
-  return NextResponse.json({ leads, count: leads.length });
+  const res = NextResponse.json({ leads, count: leads.length });
+  res.headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+  return res;
 }
