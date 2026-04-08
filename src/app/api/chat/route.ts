@@ -502,22 +502,36 @@ ${CITATION_RULES}${followUp}${proponi}
 ────────────────────────────────────────`;
 }
 
-// ── Embedding (VPS 384 dim fastembed) ────────────────────────────────────────
+// ── Embedding (OpenAI text-embedding-3-small, 1536 dim) ──────────────────────
+// FIX 08/04/2026: migrato da VPS fastembed 384 dim (mismatch con pgvector 1536)
+// a OpenAI direttamente. OPENAI_API_KEY già presente in env.
+
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
+  if (!OPENAI_API_KEY) {
+    console.error("[EMBED] OPENAI_API_KEY non configurata");
+    return null;
+  }
   try {
-    const res = await fetch(`${EMBED_VPS_URL}/embed`, {
+    const res = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: text }),
-      signal: AbortSignal.timeout(8000),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "text-embedding-3-small",
+        input: text.slice(0, 8000), // max token safety
+      }),
+      signal: AbortSignal.timeout(10000),
     });
     if (res.ok) {
       const json = await res.json();
       return json?.data?.[0]?.embedding ?? null;
     }
-    console.error(`[EMBED] VPS error: ${res.status}`);
-  } catch (e) { console.error("[EMBED] VPS unreachable:", String(e)) }
+    console.error(`[EMBED] OpenAI error: ${res.status}`);
+  } catch (e) { console.error("[EMBED] OpenAI unreachable:", String(e)); }
   return null;
 }
 
