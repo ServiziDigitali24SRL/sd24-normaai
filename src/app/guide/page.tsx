@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 
 export default function GuidePage() {
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-cream">
+    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       <div className="max-w-[820px] mx-auto px-6 py-12">
-        <Link href="/" className="text-[12px] text-[#555] hover:text-cream transition-colors mb-8 inline-block">
+        <Link href="/" className="text-[12px] text-[#555] hover:text-[#1a1a1a] transition-colors mb-8 inline-block">
           ← Torna a NormaAI
         </Link>
 
@@ -29,7 +29,7 @@ export default function GuidePage() {
             if (items.length === 0) return null;
             return (
               <div key={cat}>
-                <h2 className="text-[11px] uppercase tracking-[1px] text-[#555] mb-3 pb-2 border-b border-[#1a1a1a]">
+                <h2 className="text-[11px] uppercase tracking-[1px] text-[#555] mb-3 pb-2 border-b border-[#E5E1D8]">
                   {label} <span className="text-[#333] ml-1">({items.length})</span>
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -37,10 +37,10 @@ export default function GuidePage() {
                     <Link
                       key={article.slug}
                       href={`/guide/${article.slug}`}
-                      className="flex items-start gap-3 p-3 rounded-xl border border-[#1a1a1a] bg-[#0f0f0f] hover:border-[#2a2a2a] hover:bg-[#141414] transition-all group"
+                      className="flex items-start gap-3 p-3 rounded-xl border border-[#E5E1D8] bg-white hover:border-[#D5D0C8] hover:bg-white transition-all group"
                     >
                       <span className="text-accent mt-[2px] shrink-0 text-[13px]">→</span>
-                      <span className="text-[13px] text-[#999] group-hover:text-cream transition-colors leading-[1.5]">
+                      <span className="text-[13px] text-[#999] group-hover:text-[#1a1a1a] transition-colors leading-[1.5]">
                         {article.title}
                       </span>
                     </Link>
@@ -51,7 +51,7 @@ export default function GuidePage() {
           })}
         </div>
 
-        <div className="mt-12 p-5 bg-[#111] border border-[#1e1e1e] rounded-2xl text-center">
+        <div className="mt-12 p-5 bg-white border border-[#E5E1D8] rounded-2xl text-center">
           <p className="text-[13px] text-[#666] mb-3">
             Non trovi la guida che cerchi? Fai la domanda direttamente a NormaAI.
           </p>

@@ -116,15 +116,15 @@ function readFileAsText(file: File): Promise<string> {
 
 const mdComponents = {
   p: ({ children }: { children?: React.ReactNode }) => <p className="mb-3 last:mb-0">{children}</p>,
-  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-cream font-semibold">{children}</strong>,
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-[#1a1a1a] font-semibold">{children}</strong>,
   em: ({ children }: { children?: React.ReactNode }) => <em className="text-[#aaa]">{children}</em>,
   ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
   ol: ({ children }: { children?: React.ReactNode }) => <ol className="list-decimal list-inside mb-3 space-y-1">{children}</ol>,
   li: ({ children }: { children?: React.ReactNode }) => <li className="text-[#ccc]">{children}</li>,
-  h1: ({ children }: { children?: React.ReactNode }) => <h1 className="text-cream text-[16px] font-semibold mb-2 mt-4">{children}</h1>,
-  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-cream text-[15px] font-semibold mb-2 mt-4">{children}</h2>,
-  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-cream text-[14px] font-semibold mb-1 mt-3">{children}</h3>,
-  code: ({ children }: { children?: React.ReactNode }) => <code className="bg-[#1a1a1a] text-accent px-[5px] py-[1px] rounded text-[12.5px] font-mono">{children}</code>,
+  h1: ({ children }: { children?: React.ReactNode }) => <h1 className="text-[#1a1a1a] text-[16px] font-semibold mb-2 mt-4">{children}</h1>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-[#1a1a1a] text-[15px] font-semibold mb-2 mt-4">{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-[#1a1a1a] text-[14px] font-semibold mb-1 mt-3">{children}</h3>,
+  code: ({ children }: { children?: React.ReactNode }) => <code className="bg-[#F0EDE8] text-accent px-[5px] py-[1px] rounded text-[12.5px] font-mono">{children}</code>,
   blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-accent pl-3 text-[#888] italic my-3">{children}</blockquote>,
   hr: () => <hr className="border-[#222] my-4" />,
 };
@@ -352,7 +352,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
   const sidebarW = sidebarOpen ? 240 : 0;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#0D0D0D] relative" style={{ overflow: "clip" }}>
+    <div className="flex-1 flex flex-col min-h-0 bg-[#FAFAF8] relative" style={{ overflow: "clip" }}>
       {/* Glow background */}
       <div
         className="absolute bottom-[-20%] left-1/2 -translate-x-1/2 w-[800px] h-[800px] rounded-full pointer-events-none z-0"
@@ -372,13 +372,13 @@ export default function ChatBar({ user }: { user?: User | null }) {
               <div className="w-12 h-12 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center mb-4">
                 <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-accent fill-none stroke-[1.5]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
               </div>
-              <div className="text-cream text-[18px] font-semibold mb-2">Analisi Contratto</div>
+              <div className="text-[#1a1a1a] text-[18px] font-semibold mb-2">Analisi Contratto</div>
               <div className="text-[#666] text-[13px] text-center leading-[1.6]">
                 Carica un contratto PDF e NormaAI produrrà un report completo con rischi, clausole mancanti e conformità alla legge italiana.
               </div>
               <div className="mt-4 flex gap-2 flex-wrap justify-center">
                 {["Contratto di fornitura", "NDA", "Contratto di lavoro", "Appalto", "Licenza software"].map(t => (
-                  <span key={t} className="text-[11px] text-[#555] bg-[#161616] border border-[#222] px-3 py-1 rounded-full">{t}</span>
+                  <span key={t} className="text-[11px] text-[#555] bg-[#F0EDE8] border border-[#222] px-3 py-1 rounded-full">{t}</span>
                 ))}
               </div>
             </div>
@@ -393,8 +393,8 @@ export default function ChatBar({ user }: { user?: User | null }) {
               <div key={msg.id} className="flex flex-col gap-4">
                 <div>
                   <p className="text-[11px] text-[#555] font-medium mb-1">Tu</p>
-                  <p className="text-cream text-[14px] leading-[1.6]">{msg.question}</p>
-                  {msg.attachmentName && <span className="inline-block mt-1 text-[11px] text-[#555] bg-[#161616] border border-[#252525] rounded px-2 py-0.5">📎 {msg.attachmentName}</span>}
+                  <p className="text-[#1a1a1a] text-[14px] leading-[1.6]">{msg.question}</p>
+                  {msg.attachmentName && <span className="inline-block mt-1 text-[11px] text-[#555] bg-[#F0EDE8] border border-[#E5E1D8] rounded px-2 py-0.5">📎 {msg.attachmentName}</span>}
                 </div>
                 <div>
                   <p className="text-[11px] text-accent font-medium mb-1">NormaAI</p>
@@ -409,7 +409,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
               <div className="flex flex-col gap-4">
                 <div>
                   <p className="text-[11px] text-[#555] font-medium mb-1">Tu</p>
-                  <p className="text-cream text-[14px] leading-[1.6]">{current.question}</p>
+                  <p className="text-[#1a1a1a] text-[14px] leading-[1.6]">{current.question}</p>
                 </div>
                 <div>
                   <p className="text-[11px] text-accent font-medium mb-1">NormaAI</p>
@@ -440,15 +440,15 @@ export default function ChatBar({ user }: { user?: User | null }) {
       )}
 
       {hasConversation && showScrollBtn && (
-        <button onClick={scrollToBottom} className="fixed z-[60] w-8 h-8 rounded-full bg-[#1a1a1a] border border-[#333] text-[#888] hover:text-cream hover:border-accent flex items-center justify-center transition-all duration-150 shadow-lg" style={{ bottom: inputHeight + 8, left: "50%" , transform: "translateX(-50%)" }}>
+        <button onClick={scrollToBottom} className="fixed z-[60] w-8 h-8 rounded-full bg-[#F0EDE8] border border-[#D5D0C8] text-[#888] hover:text-[#1a1a1a] hover:border-accent flex items-center justify-center transition-all duration-150 shadow-lg" style={{ bottom: inputHeight + 8, left: "50%" , transform: "translateX(-50%)" }}>
           <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none stroke-[2]"><polyline points="6,9 12,15 18,9" /></svg>
         </button>
       )}
 
-      <div ref={inputRef} className="fixed bottom-0 right-0 z-[50] bg-[#0D0D0D] border-t border-[#1a1a1a]/50" style={{ left: sidebarW, paddingBottom: "env(safe-area-inset-bottom, 0px)", transition: "left 250ms ease-in-out" }} suppressHydrationWarning>
+      <div ref={inputRef} className="fixed bottom-0 right-0 z-[50] bg-[#FAFAF8] border-t border-[#E5E1D8]/50" style={{ left: sidebarW, paddingBottom: "env(safe-area-inset-bottom, 0px)", transition: "left 250ms ease-in-out" }} suppressHydrationWarning>
         <div className="max-w-[768px] mx-auto px-4 md:px-6 pt-3 pb-3">
           {attachment && (
-            <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-[#161616] border border-[#252525] rounded-xl">
+            <div className="mb-2 flex items-center gap-2 px-3 py-2 bg-[#F0EDE8] border border-[#E5E1D8] rounded-xl">
               {attachment.type === "image" && attachment.preview
                 ? <img src={attachment.preview} alt={attachment.name} className="w-8 h-8 rounded object-cover shrink-0" />
                 : <span className="text-[16px]">{attachment.mediaType === "application/pdf" ? "📄" : "📝"}</span>}
@@ -456,12 +456,12 @@ export default function ChatBar({ user }: { user?: User | null }) {
               <button onClick={() => setAttachment(null)} className="text-[#444] hover:text-[#888] transition-colors shrink-0 bg-transparent border-none cursor-pointer p-0 text-[14px] leading-none">×</button>
             </div>
           )}
-          {attachErr && <div className="mb-2 px-3 py-2 bg-[#1f0d0d] border border-[#3a1a1a] rounded-xl"><p className="text-[11.5px] text-[#f44]">{attachErr}</p></div>}
+          {attachErr && <div className="mb-2 px-3 py-2 bg-[#FEF2F2] border border-[#FCA5A5] rounded-xl"><p className="text-[11.5px] text-[#f44]">{attachErr}</p></div>}
 
-          <div className="bg-[#141414] border border-[#2a2a2a] rounded-2xl overflow-hidden transition-colors duration-200 focus-within:border-[#444] shadow-lg">
+          <div className="bg-white border border-[#D5D0C8] rounded-2xl overflow-hidden transition-colors duration-200 focus-within:border-[#C8C2BA] shadow-lg">
             <textarea ref={taRef} value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} rows={1}
               placeholder={hasConversation ? "Fai un'altra domanda…" : contractMode ? "Carica il contratto PDF o fai una domanda specifica…" : activeBozza !== null ? BOZZE[activeBozza].placeholder : activePill !== null ? `Fai una domanda a ${PILLS[activePill].label}…` : "Che problema hai oggi?"}
-              className="w-full px-5 pt-4 pb-2 bg-transparent border-none outline-none text-cream text-[15px] min-h-[48px] placeholder:text-[#555] resize-none"
+              className="w-full px-5 pt-4 pb-2 bg-transparent border-none outline-none text-[#1a1a1a] text-[15px] min-h-[48px] placeholder:text-[#9A9690] resize-none"
             />
             <div className="flex items-center gap-4 px-4 pb-3 pt-1">
               <input ref={docRef} type="file" accept="application/pdf,text/plain,.pdf,.txt,.doc,.docx" className="hidden" onChange={handleDocFile} />
@@ -500,7 +500,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
                   <span className="text-[11px] text-[#444] shrink-0 flex items-center pr-1">Genera →</span>
                   {BOZZE.map((b, i) => (
                     <button key={i} onClick={() => handleBozza(i)} title={b.placeholder}
-                      className={"flex items-center gap-[5px] bg-[#141414] border border-[#222] text-[#888] px-[12px] py-[6px] rounded-full text-[12px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#3a3a3a] hover:text-cream hover:bg-[#1c1c1c] shrink-0" + (activeBozza === i ? " !border-accent !text-cream !bg-[#E8340A18]" : "")}>
+                      className={"flex items-center gap-[5px] bg-white border border-[#222] text-[#888] px-[12px] py-[6px] rounded-full text-[12px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#C8C2BA] hover:text-[#1a1a1a] hover:bg-[#F5F3F0] shrink-0" + (activeBozza === i ? " !border-accent !text-[#1a1a1a] !bg-[#E8340A18]" : "")}>
                       <span>{b.icon}</span>{b.label}
                     </button>
                   ))}
@@ -511,7 +511,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
               <div className="flex gap-[7px] overflow-x-auto md:flex-wrap md:justify-center pb-1 scrollbar-hide">
                 {PILLS.map((pill, i) => (
                   <button key={i} onClick={() => handlePill(i)} title={pill.hint}
-                    className={"flex items-center gap-[6px] bg-[#141414] border border-[#222] text-[#888] px-[14px] py-[7px] rounded-full text-[12.5px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#3a3a3a] hover:text-cream hover:bg-[#1c1c1c] shrink-0" + (activePill === i ? " !border-accent !text-cream !bg-[#E8340A18]" : "")}>
+                    className={"flex items-center gap-[6px] bg-white border border-[#222] text-[#888] px-[14px] py-[7px] rounded-full text-[12.5px] cursor-pointer transition-all duration-150 whitespace-nowrap hover:border-[#C8C2BA] hover:text-[#1a1a1a] hover:bg-[#F5F3F0] shrink-0" + (activePill === i ? " !border-accent !text-[#1a1a1a] !bg-[#E8340A18]" : "")}>
                     {pill.label}
                   </button>
                 ))}

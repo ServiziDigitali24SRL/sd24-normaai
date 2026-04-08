@@ -137,7 +137,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
           </div>
           <div className="mt-3 flex flex-col gap-[7px]">
             {feats.map((f) => (
-              <div key={f} className="flex items-center gap-[7px] text-[12.5px] text-[#999]">
+              <div key={f} className="flex items-center gap-[7px] text-[12.5px] text-[#9A9690]">
                 <CheckIcon />
                 {f}
               </div>
@@ -198,7 +198,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
                   onChange={(e) => setConsentPrivacy(e.target.checked)}
                   className="mt-[2px] shrink-0 accent-[#E8340A]"
                 />
-                <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                   * Ho letto e accetto la{" "}
                   <a href="/privacy" target="_blank" className="text-accent hover:underline">Privacy Policy</a>
                   {" "}e i{" "}
@@ -213,7 +213,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
                   onChange={(e) => setConsentMarketing(e.target.checked)}
                   className="mt-[2px] shrink-0 accent-[#E8340A]"
                 />
-                <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                   Acconsento a ricevere comunicazioni email su novità, aggiornamenti normativi e offerte. (opzionale)
                 </span>
               </label>
@@ -222,7 +222,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
             <BtnPrimary onClick={handleRegister}>
               {loading ? "Registrazione..." : "Crea account gratuito"}
             </BtnPrimary>
-            <p className="text-[11px] text-[#444] text-center mt-[10px]">
+            <p className="text-[11px] text-[#7A766F] text-center mt-[10px]">
               Gratis per sempre &mdash; nessuna carta richiesta
             </p>
           </div>

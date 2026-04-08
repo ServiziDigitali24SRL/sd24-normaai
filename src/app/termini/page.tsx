@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 
 export default function TerminiPage() {
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-cream">
+    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       <div className="max-w-[760px] mx-auto px-6 py-12">
-        <Link href="/" className="text-[12px] text-[#555] hover:text-cream transition-colors mb-8 inline-block">
+        <Link href="/" className="text-[12px] text-[#555] hover:text-[#1a1a1a] transition-colors mb-8 inline-block">
           ← Torna a NormaAI
         </Link>
 
@@ -47,11 +47,11 @@ export default function TerminiPage() {
 
         <Section title="Art. 3 — Natura del servizio e limitazioni">
           <p className="mb-2">
-            <strong className="text-cream">3.1 Servizio informativo.</strong> NormaAI fornisce esclusivamente informazioni di carattere
+            <strong className="text-[#1a1a1a]">3.1 Servizio informativo.</strong> NormaAI fornisce esclusivamente informazioni di carattere
             generale su normativa italiana. Il Servizio <strong>NON costituisce consulenza professionale</strong> di alcun tipo.
           </p>
           <p>
-            <strong className="text-cream">3.2 Rischio AI.</strong> L&apos;utente riconosce che il sistema AI può generare risposte
+            <strong className="text-[#1a1a1a]">3.2 Rischio AI.</strong> L&apos;utente riconosce che il sistema AI può generare risposte
             imprecise, incomplete o non aggiornate (&ldquo;allucinazioni&rdquo;). Il corpus normativo è aggiornato periodicamente
             ma non garantisce copertura in tempo reale. Il Servizio è classificato come sistema AI a rischio limitato
             ai sensi del Regolamento UE 2024/1689 (AI Act).
@@ -82,16 +82,16 @@ export default function TerminiPage() {
 
         <Section title="Art. 5 — Lead marketplace">
           <p className="mb-2">
-            <strong className="text-cream">5.1 Generazione lead.</strong> Quando un Utente formula una query classificata come
+            <strong className="text-[#1a1a1a]">5.1 Generazione lead.</strong> Quando un Utente formula una query classificata come
             &ldquo;complessa&rdquo; dal sistema AI, NormaAI propone il contatto con un Professionista. Il consenso dell&apos;utente
             è richiesto prima della generazione del Lead.
           </p>
           <p className="mb-2">
-            <strong className="text-cream">5.2 Acquisto lead.</strong> I Professionisti abbonati possono acquistare Lead al prezzo
+            <strong className="text-[#1a1a1a]">5.2 Acquisto lead.</strong> I Professionisti abbonati possono acquistare Lead al prezzo
             di €75 (lead da privato) o €150 (lead da impresa), scalati dal wallet prepagato. L&apos;acquisto è definitivo e i crediti non scadono.
           </p>
           <p>
-            <strong className="text-cream">5.3 Divieto di aggiramento.</strong> È vietato accordarsi al di fuori della piattaforma
+            <strong className="text-[#1a1a1a]">5.3 Divieto di aggiramento.</strong> È vietato accordarsi al di fuori della piattaforma
             nei 12 mesi successivi al primo contatto. In caso di violazione, la Società si riserva di fatturare
             una penale pari a 10 volte il valore del Lead originale.
           </p>
@@ -143,9 +143,9 @@ export default function TerminiPage() {
           </p>
         </Section>
 
-        <div className="mt-12 pt-8 border-t border-[#1a1a1a] text-[11px] text-[#444]">
-          Servizi Digitali 24 S.R.L. · <a href="mailto:legal@normaai.it" className="hover:text-cream transition-colors">legal@normaai.it</a>
-          {" · "}<Link href="/privacy" className="hover:text-cream transition-colors">Privacy Policy</Link>
+        <div className="mt-12 pt-8 border-t border-[#E5E1D8] text-[11px] text-[#444]">
+          Servizi Digitali 24 S.R.L. · <a href="mailto:legal@normaai.it" className="hover:text-[#1a1a1a] transition-colors">legal@normaai.it</a>
+          {" · "}<Link href="/privacy" className="hover:text-[#1a1a1a] transition-colors">Privacy Policy</Link>
         </div>
       </div>
     </div>
@@ -155,7 +155,7 @@ export default function TerminiPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      <h2 className="text-[16px] font-medium text-cream mb-3 pb-2 border-b border-[#1a1a1a]">{title}</h2>
+      <h2 className="text-[16px] font-medium text-[#1a1a1a] mb-3 pb-2 border-b border-[#E5E1D8]">{title}</h2>
       <div className="text-[13px] text-[#999] leading-[1.7] space-y-2">{children}</div>
     </div>
   );
@@ -167,7 +167,7 @@ function Th({ children }: { children: React.ReactNode }) {
 
 function Tr({ cells }: { cells: string[] }) {
   return (
-    <tr className="border-b border-[#1a1a1a]">
+    <tr className="border-b border-[#E5E1D8]">
       {cells.map((c, i) => (
         <td key={i} className="py-2 pr-4 text-[#888]">{c}</td>
       ))}

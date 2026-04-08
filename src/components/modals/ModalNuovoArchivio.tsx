@@ -103,7 +103,7 @@ export default function ModalNuovoArchivio({ open, onClose, onCreated }: Props) 
               className={`px-3 py-[6px] rounded-lg text-[12px] border transition-colors duration-150 cursor-pointer ${
                 tipo === t.value
                   ? "bg-accent/15 border-accent/30 text-accent"
-                  : "bg-[#1a1a1a] border-[#252525] text-[#666] hover:border-[#333]"
+                  : "bg-[#F0EDE8] border-[#E5E1D8] text-[#6B6763] hover:border-[#D5D0C8]"
               }`}
             >
               {t.label}
@@ -117,7 +117,7 @@ export default function ModalNuovoArchivio({ open, onClose, onCreated }: Props) 
             placeholder="Scrivi il tipo..."
             value={tipoLibero}
             onChange={(e) => setTipoLibero(e.target.value)}
-            className="w-full mt-2 py-[9px] px-[13px] bg-[#1c1c1c] border border-[#252525] rounded-[9px] text-cream text-[13.5px] outline-none transition-colors duration-150 focus:border-[#3a3a3a] placeholder:text-[#3a3a3a]"
+            className="w-full mt-2 py-[9px] px-[13px] bg-[#F5F3F0] border border-[#E5E1D8] rounded-[9px] text-[#1a1a1a] text-[13.5px] outline-none transition-colors duration-150 focus:border-[#C8C2BA] placeholder:text-[#9A9690]"
           />
         )}
 
@@ -127,7 +127,7 @@ export default function ModalNuovoArchivio({ open, onClose, onCreated }: Props) 
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={3}
-          className="w-full py-[9px] px-[13px] bg-[#1c1c1c] border border-[#252525] rounded-[9px] text-cream text-[13.5px] outline-none transition-colors duration-150 focus:border-[#3a3a3a] placeholder:text-[#3a3a3a] resize-none"
+          className="w-full py-[9px] px-[13px] bg-[#F5F3F0] border border-[#E5E1D8] rounded-[9px] text-[#1a1a1a] text-[13.5px] outline-none transition-colors duration-150 focus:border-[#C8C2BA] placeholder:text-[#9A9690] resize-none"
         />
 
         {error && (

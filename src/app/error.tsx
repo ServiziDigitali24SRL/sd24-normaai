@@ -8,7 +8,7 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#0D0D0D] text-[#F0EEE8] px-6">
+    <div className="flex flex-col items-center justify-center h-screen bg-[#FAFAF8] text-[#F0EEE8] px-6">
       <h1 className="text-[48px] font-serif font-bold tracking-tight mb-2">
         Norma<span className="text-[#e8340a]">AI</span>
       </h1>

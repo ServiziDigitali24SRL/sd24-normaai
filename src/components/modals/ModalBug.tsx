@@ -52,14 +52,14 @@ export default function ModalBug({ open, onClose }: Props) {
                   <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
                 </svg>
               </div>
-              <div className="bg-[#1a1a1a] border border-[#252525] rounded-2xl rounded-tl-sm px-4 py-3 text-[13.5px] text-[#ccc] leading-[1.7]">
+              <div className="bg-[#F0EDE8] border border-[#E5E1D8] rounded-2xl rounded-tl-sm px-4 py-3 text-[13.5px] text-[#3D3A37] leading-[1.7]">
                 Ricevuto! 🙌<br />
-                <span className="text-cream">Lo aggiustiamo presto.</span> Grazie per la segnalazione — ci aiuti a migliorare NormaAI per tutti.
+                <span className="text-[#1a1a1a]">Lo aggiustiamo presto.</span> Grazie per la segnalazione — ci aiuti a migliorare NormaAI per tutti.
               </div>
             </div>
             <button
               onClick={handleClose}
-              className="w-full py-[10px] rounded-[9px] text-[13px] bg-[#1c1c1c] border border-[#252525] text-[#888] hover:border-[#3a3a3a] hover:text-cream transition-colors cursor-pointer mt-2"
+              className="w-full py-[10px] rounded-[9px] text-[13px] bg-[#F5F3F0] border border-[#E5E1D8] text-[#6B6763] hover:border-[#C8C2BA] hover:text-[#1a1a1a] transition-colors cursor-pointer mt-2"
             >
               Chiudi
             </button>
@@ -73,9 +73,9 @@ export default function ModalBug({ open, onClose }: Props) {
                   <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
                 </svg>
               </div>
-              <div className="bg-[#1a1a1a] border border-[#252525] rounded-2xl rounded-tl-sm px-4 py-3 text-[13.5px] text-[#ccc] leading-[1.7]">
+              <div className="bg-[#F0EDE8] border border-[#E5E1D8] rounded-2xl rounded-tl-sm px-4 py-3 text-[13.5px] text-[#3D3A37] leading-[1.7]">
                 Ciao! Hai trovato qualcosa che non funziona?<br />
-                <span className="text-cream">Descrivimi cosa è successo</span> — lo sistemo il prima possibile.
+                <span className="text-[#1a1a1a]">Descrivimi cosa è successo</span> — lo sistemo il prima possibile.
               </div>
             </div>
 
@@ -84,7 +84,7 @@ export default function ModalBug({ open, onClose }: Props) {
               onChange={(e) => setDesc(e.target.value)}
               rows={4}
               placeholder="Es. Ho scritto una domanda, premuto invio e non è successo nulla..."
-              className="w-full py-[9px] px-[13px] bg-[#1c1c1c] border border-[#252525] rounded-[9px] text-cream text-[13px] outline-none transition-colors duration-150 focus:border-[#3a3a3a] placeholder:text-[#3a3a3a] resize-none mb-3"
+              className="w-full py-[9px] px-[13px] bg-[#F5F3F0] border border-[#E5E1D8] rounded-[9px] text-[#1a1a1a] text-[13px] outline-none transition-colors duration-150 focus:border-[#C8C2BA] placeholder:text-[#9A9690] resize-none mb-3"
             />
 
             <FormInput type="email" placeholder="La tua email (opzionale — ti aggiorno quando è risolto)" value={email} onChange={setEmail} />

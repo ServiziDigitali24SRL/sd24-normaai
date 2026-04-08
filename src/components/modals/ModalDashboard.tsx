@@ -169,22 +169,22 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
   }
 
   const tabClass = (t: Tab) =>
-    `text-[12.5px] font-medium px-3 py-2 rounded-lg transition-colors duration-150 ${tab === t ? "bg-[#1a1a1a] text-cream" : "text-[#555] hover:text-[#888]"}`;
+    `text-[12.5px] font-medium px-3 py-2 rounded-lg transition-colors duration-150 ${tab === t ? "bg-[#F0EDE8] text-[#1a1a1a]" : "text-[#6B6763] hover:text-[#6B6763]"}`;
 
   return (
     <ModalOverlay open={open} onClose={onClose} maxWidth="max-w-[700px]">
       <div className="flex flex-col h-full max-h-[80vh]">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-[#1e1e1e] shrink-0">
+        <div className="px-6 pt-6 pb-4 border-b border-[#E5E1D8] shrink-0">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-[15px] font-semibold text-accent uppercase shrink-0">
                 {userName.charAt(0)}
               </div>
               <div>
-                <div className="text-cream text-[14px] font-semibold leading-tight">{userName}</div>
+                <div className="text-[#1a1a1a] text-[14px] font-semibold leading-tight">{userName}</div>
                 <div className="flex items-center gap-2 mt-0.5">
-                  {categoria && <span className="text-[10.5px] text-[#666]">{categoria}</span>}
+                  {categoria && <span className="text-[10.5px] text-[#6B6763]">{categoria}</span>}
                   <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${piano === "Pro" ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" : "text-accent bg-accent/10 border-accent/20"}`}>{piano}</span>
                 </div>
               </div>
@@ -197,11 +197,11 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
             {[
               { label: "Lead disponibili", value: leads.length, color: "text-accent" },
               { label: "Lead acquistati", value: acquistati.length, color: "text-green-400" },
-              { label: "Piano attivo", value: piano, color: "text-[#888]" },
+              { label: "Piano attivo", value: piano, color: "text-[#6B6763]" },
             ].map((s) => (
-              <div key={s.label} className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-3">
+              <div key={s.label} className="bg-white border border-[#E5E1D8] rounded-xl p-3">
                 <div className={`text-[18px] font-semibold leading-tight ${s.color}`}>{s.value}</div>
-                <div className="text-[11px] text-[#555] mt-0.5">{s.label}</div>
+                <div className="text-[11px] text-[#6B6763] mt-0.5">{s.label}</div>
               </div>
             ))}
           </div>
@@ -268,11 +268,11 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
           {/* Abbonamento */}
           {!loading && tab === "abbonamento" && (
             <div className="space-y-4">
-              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-5">
+              <div className="bg-white border border-[#E5E1D8] rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <div className="text-cream text-[14px] font-semibold">Piano {piano}</div>
-                    <div className="text-[12px] text-[#555] mt-0.5">Professionista NormaAI</div>
+                    <div className="text-[#1a1a1a] text-[14px] font-semibold">Piano {piano}</div>
+                    <div className="text-[12px] text-[#6B6763] mt-0.5">Professionista NormaAI</div>
                   </div>
                   <span className="text-[11px] text-green-400 bg-green-500/10 border border-green-500/20 rounded-full px-3 py-1">Attivo</span>
                 </div>
@@ -285,17 +285,17 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
                     "Chat AI con corpus legislativo completo",
                     "Generazione bozze: pareri, email, memorie",
                   ].map((f) => (
-                    <div key={f} className="flex items-center gap-2 text-[12.5px] text-[#888]">
+                    <div key={f} className="flex items-center gap-2 text-[12.5px] text-[#6B6763]">
                       <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 stroke-accent fill-none stroke-[2.5]"><polyline points="20,6 9,17 4,12" /></svg>
                       {f}
                     </div>
                   ))}
                 </div>
 
-                <div className="border-t border-[#1e1e1e] pt-4 flex items-center justify-between">
+                <div className="border-t border-[#E5E1D8] pt-4 flex items-center justify-between">
                   <div>
-                    <span className="text-cream text-[18px] font-semibold">€29</span>
-                    <span className="text-[12px] text-[#555]">/mese</span>
+                    <span className="text-[#1a1a1a] text-[18px] font-semibold">€29</span>
+                    <span className="text-[12px] text-[#6B6763]">/mese</span>
                   </div>
                   {piano === "Base" && (
                     <button
@@ -308,19 +308,19 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
                 </div>
               </div>
 
-              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-4">
-                <h3 className="text-[13px] text-cream font-medium mb-3">Lead — prezzi dal wallet</h3>
+              <div className="bg-white border border-[#E5E1D8] rounded-xl p-4">
+                <h3 className="text-[13px] text-[#1a1a1a] font-medium mb-3">Lead — prezzi dal wallet</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-[12.5px]">
-                    <span className="text-[#888]">Lead privato (persona fisica)</span>
-                    <span className="text-cream font-medium">€75</span>
+                    <span className="text-[#6B6763]">Lead privato (persona fisica)</span>
+                    <span className="text-[#1a1a1a] font-medium">€75</span>
                   </div>
                   <div className="flex justify-between text-[12.5px]">
-                    <span className="text-[#888]">Lead impresa / società</span>
-                    <span className="text-cream font-medium">€150</span>
+                    <span className="text-[#6B6763]">Lead impresa / società</span>
+                    <span className="text-[#1a1a1a] font-medium">€150</span>
                   </div>
                 </div>
-                <p className="text-[11px] text-[#444] mt-3">I crediti si scalano dal wallet. I crediti non scadono mai.</p>
+                <p className="text-[11px] text-[#7A766F] mt-3">I crediti si scalano dal wallet. I crediti non scadono mai.</p>
               </div>
             </div>
           )}
@@ -329,18 +329,18 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
           {!loading && tab === "wallet" && (
             <div className="space-y-4">
               {/* Saldo */}
-              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-5">
-                <div className="text-[12px] text-[#555] mb-1">Saldo wallet</div>
+              <div className="bg-white border border-[#E5E1D8] rounded-xl p-5">
+                <div className="text-[12px] text-[#6B6763] mb-1">Saldo wallet</div>
                 <div className="text-[32px] font-semibold text-green-400 leading-tight">
                   €{walletCredits !== null ? (walletCredits / 100).toFixed(2) : "—"}
                 </div>
-                <p className="text-[11px] text-[#444] mt-2">I crediti non scadono mai. Si scalano automaticamente all&apos;acquisto dei lead.</p>
+                <p className="text-[11px] text-[#7A766F] mt-2">I crediti non scadono mai. Si scalano automaticamente all&apos;acquisto dei lead.</p>
               </div>
 
               {/* Codice promozionale */}
-              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-5">
-                <h3 className="text-[13px] text-cream font-medium mb-1">Codice promozionale</h3>
-                <p className="text-[12px] text-[#555] mb-4">Hai un codice promo? Inseriscilo qui per aggiungere crediti al tuo wallet.</p>
+              <div className="bg-white border border-[#E5E1D8] rounded-xl p-5">
+                <h3 className="text-[13px] text-[#1a1a1a] font-medium mb-1">Codice promozionale</h3>
+                <p className="text-[12px] text-[#6B6763] mb-4">Hai un codice promo? Inseriscilo qui per aggiungere crediti al tuo wallet.</p>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -348,7 +348,7 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
                     onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(null); }}
                     onKeyDown={(e) => e.key === "Enter" && redeemPromo()}
                     placeholder="Es. LAUNCH50"
-                    className="flex-1 bg-[#141414] border border-[#2a2a2a] rounded-lg px-3 py-2 text-[13px] text-cream placeholder-[#444] focus:outline-none focus:border-accent/50 font-mono tracking-wider uppercase"
+                    className="flex-1 bg-white border border-[#D5D0C8] rounded-lg px-3 py-2 text-[13px] text-[#1a1a1a] placeholder-[#444] focus:outline-none focus:border-accent/50 font-mono tracking-wider uppercase"
                     disabled={promoLoading}
                   />
                   <button
@@ -367,16 +367,16 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
               </div>
 
               {/* Prezzi lead */}
-              <div className="bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-4">
-                <h3 className="text-[13px] text-cream font-medium mb-3">Prezzi lead</h3>
+              <div className="bg-white border border-[#E5E1D8] rounded-xl p-4">
+                <h3 className="text-[13px] text-[#1a1a1a] font-medium mb-3">Prezzi lead</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-[12.5px]">
-                    <span className="text-[#888]">Lead privato (persona fisica)</span>
-                    <span className="text-cream font-medium">€75</span>
+                    <span className="text-[#6B6763]">Lead privato (persona fisica)</span>
+                    <span className="text-[#1a1a1a] font-medium">€75</span>
                   </div>
                   <div className="flex justify-between text-[12.5px]">
-                    <span className="text-[#888]">Lead impresa / società</span>
-                    <span className="text-cream font-medium">€150</span>
+                    <span className="text-[#6B6763]">Lead impresa / società</span>
+                    <span className="text-[#1a1a1a] font-medium">€150</span>
                   </div>
                 </div>
               </div>
@@ -387,7 +387,7 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#1a1a1a] border border-[#333] text-cream text-[13px] px-4 py-2.5 rounded-xl shadow-lg">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#F0EDE8] border border-[#D5D0C8] text-[#1a1a1a] text-[13px] px-4 py-2.5 rounded-xl shadow-lg">
           {toast}
         </div>
       )}
@@ -397,23 +397,23 @@ export default function ModalDashboard({ open, onClose, user }: Props) {
 
 function LeadCard({ lead, onBuy, buying, showBuy }: { lead: Lead; onBuy?: () => void; buying?: boolean; showBuy: boolean }) {
   return (
-    <div className="bg-[#0f0f0f] border border-[#1e1e1e] hover:border-[#2a2a2a] rounded-xl p-4 transition-colors">
+    <div className="bg-white border border-[#E5E1D8] hover:border-[#D5D0C8] rounded-xl p-4 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className={`text-[10.5px] font-medium border rounded-full px-2.5 py-0.5 ${getMateriaColor(lead.materia)}`}>{lead.materia}</span>
-            <span className={`text-[10.5px] border rounded-full px-2.5 py-0.5 ${lead.tipo === "impresa" ? "text-orange-400 bg-orange-500/10 border-orange-500/20" : "text-[#888] bg-[#1a1a1a] border-[#252525]"}`}>
+            <span className={`text-[10.5px] border rounded-full px-2.5 py-0.5 ${lead.tipo === "impresa" ? "text-orange-400 bg-orange-500/10 border-orange-500/20" : "text-[#6B6763] bg-[#F0EDE8] border-[#E5E1D8]"}`}>
               {lead.tipo === "impresa" ? "Impresa" : "Privato"}
             </span>
-            {lead.citta && <span className="text-[10.5px] text-[#555]">📍 {lead.citta}</span>}
-            <span className="text-[10.5px] text-[#444] ml-auto">{timeAgo(lead.created_at)}</span>
+            {lead.citta && <span className="text-[10.5px] text-[#6B6763]">📍 {lead.citta}</span>}
+            <span className="text-[10.5px] text-[#7A766F] ml-auto">{timeAgo(lead.created_at)}</span>
           </div>
-          <p className="text-[13px] text-[#ccc] leading-[1.5] line-clamp-2">{lead.descrizione || "Cliente cerca consulenza professionale. Acquista per vedere i dettagli completi."}</p>
+          <p className="text-[13px] text-[#3D3A37] leading-[1.5] line-clamp-2">{lead.descrizione || "Cliente cerca consulenza professionale. Acquista per vedere i dettagli completi."}</p>
         </div>
 
         {showBuy && (
           <div className="shrink-0 flex flex-col items-end gap-1.5">
-            <span className="text-cream text-[15px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? 150 : 75)}</span>
+            <span className="text-[#1a1a1a] text-[15px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? 150 : 75)}</span>
             <button
               onClick={onBuy}
               disabled={buying}
@@ -436,8 +436,8 @@ function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: st
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="text-[36px] mb-3">{icon}</div>
-      <p className="text-[13.5px] text-cream font-medium mb-2">{title}</p>
-      <p className="text-[12px] text-[#555] max-w-[340px] leading-[1.6]">{sub}</p>
+      <p className="text-[13.5px] text-[#1a1a1a] font-medium mb-2">{title}</p>
+      <p className="text-[12px] text-[#6B6763] max-w-[340px] leading-[1.6]">{sub}</p>
     </div>
   );
 }

@@ -46,14 +46,14 @@ export default function ModalComeFunziona({ open, onClose }: Props) {
         {STEPS.map((s) => (
           <div
             key={s.num}
-            className="flex gap-[14px] py-4 border-b border-[#1a1a1a] last:border-b-0"
+            className="flex gap-[14px] py-4 border-b border-[#E5E1D8] last:border-b-0"
           >
             <div className="font-serif text-[30px] text-accent min-w-[36px] leading-none">
               {s.num}
             </div>
             <div>
               <div className="font-medium text-[14px] mb-[3px]">{s.title}</div>
-              <div className="text-[12.5px] text-[#666] leading-[1.6]">
+              <div className="text-[12.5px] text-[#6B6763] leading-[1.6]">
                 {s.desc}
               </div>
             </div>

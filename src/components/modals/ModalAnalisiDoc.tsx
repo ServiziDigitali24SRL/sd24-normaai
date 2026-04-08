@@ -88,15 +88,15 @@ function formatBytes(bytes: number): string {
 
 const mdComponents = {
   p: ({ children }: { children?: React.ReactNode }) => <p className="mb-3 last:mb-0">{children}</p>,
-  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-cream font-semibold">{children}</strong>,
-  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-cream text-[14px] font-semibold mb-2 mt-5 first:mt-0">{children}</h2>,
-  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-[#ccc] text-[13px] font-semibold mb-1 mt-3">{children}</h3>,
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-[#1a1a1a] font-semibold">{children}</strong>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-[#1a1a1a] text-[14px] font-semibold mb-2 mt-5 first:mt-0">{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-[#3D3A37] text-[13px] font-semibold mb-1 mt-3">{children}</h3>,
   ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-  li: ({ children }: { children?: React.ReactNode }) => <li className="text-[#ccc]">{children}</li>,
-  blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-accent pl-3 text-[#888] italic my-3">{children}</blockquote>,
+  li: ({ children }: { children?: React.ReactNode }) => <li className="text-[#3D3A37]">{children}</li>,
+  blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-accent pl-3 text-[#6B6763] italic my-3">{children}</blockquote>,
   table: ({ children }: { children?: React.ReactNode }) => <div className="overflow-x-auto mb-3"><table className="w-full text-[12.5px] border-collapse">{children}</table></div>,
-  th: ({ children }: { children?: React.ReactNode }) => <th className="text-left text-[#888] font-medium px-3 py-2 border-b border-[#2a2a2a]">{children}</th>,
-  td: ({ children }: { children?: React.ReactNode }) => <td className="text-[#ccc] px-3 py-2 border-b border-[#1e1e1e]">{children}</td>,
+  th: ({ children }: { children?: React.ReactNode }) => <th className="text-left text-[#6B6763] font-medium px-3 py-2 border-b border-[#D5D0C8]">{children}</th>,
+  td: ({ children }: { children?: React.ReactNode }) => <td className="text-[#3D3A37] px-3 py-2 border-b border-[#E5E1D8]">{children}</td>,
 };
 
 export default function ModalAnalisiDoc({ open, onClose }: Props) {
@@ -213,8 +213,8 @@ export default function ModalAnalisiDoc({ open, onClose }: Props) {
     onClose();
   }
 
-  const selectClass = "w-full bg-[#141414] border border-[#252525] text-cream rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#444] transition-colors duration-150 appearance-none cursor-pointer";
-  const labelClass = "block text-[11px] text-[#666] font-medium mb-1 uppercase tracking-wide";
+  const selectClass = "w-full bg-white border border-[#E5E1D8] text-[#1a1a1a] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#C8C2BA] transition-colors duration-150 appearance-none cursor-pointer";
+  const labelClass = "block text-[11px] text-[#6B6763] font-medium mb-1 uppercase tracking-wide";
 
   // Icona file per tipo
   function fileIcon(name: string) {
@@ -234,8 +234,8 @@ export default function ModalAnalisiDoc({ open, onClose }: Props) {
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-[18px]">📂</div>
             <div>
-              <h2 className="text-cream text-[15px] font-semibold leading-tight">Analisi Documento</h2>
-              <p className="text-[11.5px] text-[#555] mt-0.5">Carica un documento — NormaAI lo analizza con RAG normativo</p>
+              <h2 className="text-[#1a1a1a] text-[15px] font-semibold leading-tight">Analisi Documento</h2>
+              <p className="text-[11.5px] text-[#6B6763] mt-0.5">Carica un documento — NormaAI lo analizza con RAG normativo</p>
             </div>
           </div>
           <ModalClose onClose={handleClose} />
@@ -251,7 +251,7 @@ export default function ModalAnalisiDoc({ open, onClose }: Props) {
             className={`relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-150 mb-4 ${
               dragOver
                 ? "border-accent/60 bg-accent/5"
-                : "border-[#2a2a2a] hover:border-[#383838] hover:bg-white/[0.015]"
+                : "border-[#D5D0C8] hover:border-[#383838] hover:bg-white/[0.015]"
             }`}
           >
             <input
@@ -263,24 +263,24 @@ export default function ModalAnalisiDoc({ open, onClose }: Props) {
             />
             <div className="text-3xl opacity-60">📎</div>
             <div className="text-center">
-              <p className="text-[13.5px] text-[#bbb] font-medium">Trascina qui il documento</p>
-              <p className="text-[12px] text-[#555] mt-1">oppure <span className="text-accent underline underline-offset-2">sfoglia dal computer</span></p>
+              <p className="text-[13.5px] text-[#7A766F] font-medium">Trascina qui il documento</p>
+              <p className="text-[12px] text-[#6B6763] mt-1">oppure <span className="text-accent underline underline-offset-2">sfoglia dal computer</span></p>
             </div>
-            <p className="text-[11px] text-[#444] text-center">
+            <p className="text-[11px] text-[#7A766F] text-center">
               PDF · DOCX · TXT · JPG · PNG &nbsp;·&nbsp; Max 3.5 MB
             </p>
           </div>
         ) : (
           /* File preview */
-          <div className="flex items-center gap-3 bg-[#0f1a0f] border border-[#1a3a1a] rounded-xl px-4 py-3 mb-4">
+          <div className="flex items-center gap-3 bg-[#F0FDF4] border border-[#BBF7D0] rounded-xl px-4 py-3 mb-4">
             <span className="text-2xl">{fileIcon(file.name)}</span>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] text-cream font-medium truncate">{file.name}</p>
-              <p className="text-[11px] text-[#555]">{formatBytes(file.size)}</p>
+              <p className="text-[13px] text-[#1a1a1a] font-medium truncate">{file.name}</p>
+              <p className="text-[11px] text-[#6B6763]">{formatBytes(file.size)}</p>
             </div>
             <button
               onClick={removeFile}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-[#555] hover:text-[#f44] hover:bg-red-500/10 transition-colors shrink-0"
+              className="w-7 h-7 flex items-center justify-center rounded-md text-[#6B6763] hover:text-[#f44] hover:bg-red-500/10 transition-colors shrink-0"
               aria-label="Rimuovi file"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4 stroke-current fill-none stroke-[2]">
@@ -313,7 +313,7 @@ export default function ModalAnalisiDoc({ open, onClose }: Props) {
               onChange={(e) => setDomanda(e.target.value)}
               placeholder="Es. Ci sono clausole vessatorie? · Il recesso è penalizzante? · Che rischi ha il locatore?"
               rows={2}
-              className="w-full bg-[#141414] border border-[#252525] text-cream rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#444] transition-colors duration-150 resize-none placeholder:text-[#333]"
+              className="w-full bg-white border border-[#E5E1D8] text-[#1a1a1a] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#C8C2BA] transition-colors duration-150 resize-none placeholder:text-[#333]"
             />
           </div>
         </div>
@@ -331,9 +331,9 @@ export default function ModalAnalisiDoc({ open, onClose }: Props) {
 
         {/* Result */}
         {(result || loading) && (
-          <div ref={resultRef} className="mt-5 bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-4 max-h-[440px] overflow-y-auto">
+          <div ref={resultRef} className="mt-5 bg-white border border-[#E5E1D8] rounded-xl p-4 max-h-[440px] overflow-y-auto">
             {loading && !result && (
-              <div className="flex items-center gap-3 text-[#555]">
+              <div className="flex items-center gap-3 text-[#6B6763]">
                 <span className="flex gap-[3px]">
                   <span className="w-[5px] h-[5px] rounded-full bg-accent/50 animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-[5px] h-[5px] rounded-full bg-accent/50 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -344,19 +344,19 @@ export default function ModalAnalisiDoc({ open, onClose }: Props) {
             )}
             {result && (
               <>
-                <div className="text-[13px] text-[#ccc] leading-[1.75]">
+                <div className="text-[13px] text-[#3D3A37] leading-[1.75]">
                   <ReactMarkdown components={mdComponents as any}>{result}</ReactMarkdown>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#1e1e1e] flex gap-2">
+                <div className="mt-4 pt-3 border-t border-[#E5E1D8] flex gap-2">
                   <button
                     onClick={() => navigator.clipboard?.writeText(result)}
-                    className="flex-1 text-[12px] text-[#666] hover:text-cream border border-[#252525] hover:border-[#333] rounded-lg py-2 transition-colors"
+                    className="flex-1 text-[12px] text-[#6B6763] hover:text-[#1a1a1a] border border-[#E5E1D8] hover:border-[#D5D0C8] rounded-lg py-2 transition-colors"
                   >
                     Copia analisi
                   </button>
                   <button
                     onClick={reset}
-                    className="flex-1 text-[12px] text-[#666] hover:text-cream border border-[#252525] hover:border-[#333] rounded-lg py-2 transition-colors"
+                    className="flex-1 text-[12px] text-[#6B6763] hover:text-[#1a1a1a] border border-[#E5E1D8] hover:border-[#D5D0C8] rounded-lg py-2 transition-colors"
                   >
                     Nuovo documento
                   </button>

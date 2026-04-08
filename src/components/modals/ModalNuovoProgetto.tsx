@@ -85,7 +85,7 @@ export default function ModalNuovoProgetto({ open, onClose, onCreated }: Props) 
           value={descrizione}
           onChange={(e) => setDescrizione(e.target.value)}
           rows={3}
-          className="w-full py-[9px] px-[13px] bg-[#1c1c1c] border border-[#252525] rounded-[9px] text-cream text-[13.5px] outline-none transition-colors duration-150 focus:border-[#3a3a3a] placeholder:text-[#3a3a3a] resize-none"
+          className="w-full py-[9px] px-[13px] bg-[#F5F3F0] border border-[#E5E1D8] rounded-[9px] text-[#1a1a1a] text-[13.5px] outline-none transition-colors duration-150 focus:border-[#C8C2BA] placeholder:text-[#9A9690] resize-none"
         />
 
         {error && (

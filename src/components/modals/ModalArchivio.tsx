@@ -62,7 +62,7 @@ export default function ModalArchivio({ open, onClose, onNuovo }: Props) {
         <ModalSub>I tuoi documenti e conversazioni salvati</ModalSub>
 
         {loading ? (
-          <div className="text-center py-8 text-[#444] text-[13px]">
+          <div className="text-center py-8 text-[#7A766F] text-[13px]">
             Caricamento...
           </div>
         ) : elementi.length === 0 ? (
@@ -75,7 +75,7 @@ export default function ModalArchivio({ open, onClose, onNuovo }: Props) {
               <rect x="1" y="3" width="22" height="5" />
               <line x1="10" y1="12" x2="14" y2="12" />
             </svg>
-            <div className="text-[#444] text-[13px]">Archivio vuoto</div>
+            <div className="text-[#7A766F] text-[13px]">Archivio vuoto</div>
             <div className="text-[#333] text-[12px] mt-1">
               Salva chat, documenti e normative per ritrovarli
             </div>
@@ -85,7 +85,7 @@ export default function ModalArchivio({ open, onClose, onNuovo }: Props) {
             {elementi.map((e) => (
               <div
                 key={e.id}
-                className="group flex items-start gap-3 bg-[#1a1a1a] border border-[#252525] rounded-xl p-4 hover:border-[#333] transition-colors"
+                className="group flex items-start gap-3 bg-[#F0EDE8] border border-[#E5E1D8] rounded-xl p-4 hover:border-[#D5D0C8] transition-colors"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -95,7 +95,7 @@ export default function ModalArchivio({ open, onClose, onNuovo }: Props) {
                   <rect x="1" y="3" width="22" height="5" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <div className="text-cream text-[13.5px] font-medium truncate">
+                  <div className="text-[#1a1a1a] text-[13.5px] font-medium truncate">
                     {e.titolo}
                   </div>
                   <div className="flex items-center gap-2 mt-[3px]">
@@ -107,14 +107,14 @@ export default function ModalArchivio({ open, onClose, onNuovo }: Props) {
                     </span>
                   </div>
                   {e.note && (
-                    <div className="text-[#555] text-[12px] mt-[4px] line-clamp-2">
+                    <div className="text-[#6B6763] text-[12px] mt-[4px] line-clamp-2">
                       {e.note}
                     </div>
                   )}
                 </div>
                 <button
                   onClick={() => handleDelete(e.id)}
-                  className="opacity-0 group-hover:opacity-100 bg-transparent border-none text-[#444] hover:text-[#f44] text-[16px] cursor-pointer transition-all duration-150 shrink-0"
+                  className="opacity-0 group-hover:opacity-100 bg-transparent border-none text-[#7A766F] hover:text-[#f44] text-[16px] cursor-pointer transition-all duration-150 shrink-0"
                 >
                   &times;
                 </button>

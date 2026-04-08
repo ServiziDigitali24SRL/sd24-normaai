@@ -153,14 +153,14 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
       <ModalClose onClose={onClose} />
 
       {/* Header */}
-      <div className="px-6 pt-6 pb-5 border-b border-[#1e1e1e] sticky top-0 bg-[#131313] z-10">
+      <div className="px-6 pt-6 pb-5 border-b border-[#E5E1D8] sticky top-0 bg-white z-10">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-accent/15 border border-accent/25 flex items-center justify-center text-[18px] font-semibold text-accent uppercase shrink-0">
             {userName.charAt(0)}
           </div>
           <div>
             <div className="font-serif text-[20px] leading-tight">Profilo AI</div>
-            <div className="text-[12px] text-[#555] mt-[2px]">
+            <div className="text-[12px] text-[#6B6763] mt-[2px]">
               {profilo.query_count > 0
                 ? `${profilo.query_count} quer${profilo.query_count === 1 ? "y" : "ies"} analizzat${profilo.query_count === 1 ? "a" : "e"} · più usi NormaAI, più la risposta è tua`
                 : "Completa il profilo per risposte su misura"}
@@ -170,7 +170,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
       </div>
 
       {loading ? (
-        <div className="px-6 py-10 text-center text-[13px] text-[#555]">Caricamento profilo...</div>
+        <div className="px-6 py-10 text-center text-[13px] text-[#6B6763]">Caricamento profilo...</div>
       ) : (
         <div className="px-6 py-5 space-y-6">
 
@@ -193,7 +193,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
                   </span>
                 ))}
               </div>
-              <p className="text-[11px] text-[#444] mt-3 leading-[1.5]">
+              <p className="text-[11px] text-[#7A766F] mt-3 leading-[1.5]">
                 Il modello usa queste informazioni per contestualizzare ogni risposta. I pattern migliorano con ogni sessione.
               </p>
             </div>
@@ -209,8 +209,8 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
                   onClick={() => setProfilo(p => ({ ...p, ruolo: r.id }))}
                   className={`flex items-center gap-[10px] px-4 py-[11px] rounded-[11px] border text-left transition-all duration-150 cursor-pointer ${
                     profilo.ruolo === r.id
-                      ? "border-accent bg-[#E8340A08] text-cream"
-                      : "border-[#252525] bg-card text-[#888] hover:border-[#3a3a3a] hover:text-[#bbb]"
+                      ? "border-accent bg-[#E8340A08] text-[#1a1a1a]"
+                      : "border-[#E5E1D8] bg-card text-[#6B6763] hover:border-[#C8C2BA] hover:text-[#7A766F]"
                   }`}
                 >
                   <span className="text-[18px] shrink-0">{r.icon}</span>
@@ -251,7 +251,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
                 <select
                   value={profilo.regione}
                   onChange={e => setProfilo(p => ({ ...p, regione: e.target.value }))}
-                  className="w-full py-[9px] px-[13px] bg-[#1c1c1c] border border-[#252525] rounded-[9px] text-cream text-[13.5px] outline-none transition-colors duration-150 focus:border-[#3a3a3a] appearance-none cursor-pointer"
+                  className="w-full py-[9px] px-[13px] bg-[#F5F3F0] border border-[#E5E1D8] rounded-[9px] text-[#1a1a1a] text-[13.5px] outline-none transition-colors duration-150 focus:border-[#C8C2BA] appearance-none cursor-pointer"
                 >
                   <option value="">— Tutte le regioni —</option>
                   {REGIONI.map(r => (
@@ -271,7 +271,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
             />
             {suggestions.length > 0 && (
               <div className="mt-3">
-                <div className="text-[10.5px] text-[#444] uppercase tracking-[0.5px] mb-2">Suggerite per {ruoloInfo?.label}</div>
+                <div className="text-[10.5px] text-[#7A766F] uppercase tracking-[0.5px] mb-2">Suggerite per {ruoloInfo?.label}</div>
                 <div className="flex flex-wrap gap-[7px]">
                   {suggestions.map(s => {
                     const active = profilo.specializzazioni.includes(s);
@@ -282,7 +282,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
                         className={`px-[10px] py-[5px] rounded-full text-[12px] border cursor-pointer transition-all duration-150 ${
                           active
                             ? "bg-accent border-accent text-white"
-                            : "bg-transparent border-[#2a2a2a] text-[#777] hover:border-[#444] hover:text-[#bbb]"
+                            : "bg-transparent border-[#D5D0C8] text-[#6B6763] hover:border-[#C8C2BA] hover:text-[#7A766F]"
                         }`}
                       >
                         {active ? "✓ " : ""}{s}
@@ -300,11 +300,11 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
                 onChange={e => setNewSpec(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCustomSpec(); } }}
                 placeholder="Aggiungi area personalizzata..."
-                className="flex-1 py-[8px] px-[12px] bg-[#1c1c1c] border border-[#252525] rounded-[9px] text-[13px] text-cream outline-none focus:border-[#3a3a3a] placeholder:text-[#3a3a3a]"
+                className="flex-1 py-[8px] px-[12px] bg-[#F5F3F0] border border-[#E5E1D8] rounded-[9px] text-[13px] text-[#1a1a1a] outline-none focus:border-[#C8C2BA] placeholder:text-[#9A9690]"
               />
               <button
                 onClick={addCustomSpec}
-                className="px-4 py-[8px] rounded-[9px] bg-[#1e1e1e] border border-[#2a2a2a] text-[#777] text-[12px] hover:border-[#444] hover:text-cream transition-all cursor-pointer"
+                className="px-4 py-[8px] rounded-[9px] bg-white border border-[#D5D0C8] text-[#6B6763] text-[12px] hover:border-[#C8C2BA] hover:text-[#1a1a1a] transition-all cursor-pointer"
               >
                 + Aggiungi
               </button>
@@ -336,7 +336,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
             <SectionHeader icon={<SettingsIcon />} label="Come vuoi le risposte" sub="Adatta stile e profondità" />
             <div className="space-y-4 mt-3">
               <div>
-                <div className="text-[11px] text-[#555] uppercase tracking-[0.5px] mb-2">Verbosità</div>
+                <div className="text-[11px] text-[#6B6763] uppercase tracking-[0.5px] mb-2">Verbosità</div>
                 <div className="flex gap-[6px]">
                   {[
                     { v: "sintetico",   label: "Sintetico",   desc: "Solo l'essenziale" },
@@ -348,18 +348,18 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
                       onClick={() => setProfilo(p => ({ ...p, preferenze: { ...p.preferenze, verbosita: o.v } }))}
                       className={`flex-1 py-[9px] px-2 rounded-[9px] border text-center cursor-pointer transition-all duration-150 ${
                         profilo.preferenze.verbosita === o.v
-                          ? "border-accent bg-[#E8340A08] text-cream"
-                          : "border-[#252525] bg-card text-[#666] hover:border-[#3a3a3a]"
+                          ? "border-accent bg-[#E8340A08] text-[#1a1a1a]"
+                          : "border-[#E5E1D8] bg-card text-[#6B6763] hover:border-[#C8C2BA]"
                       }`}
                     >
                       <div className="text-[12.5px] font-medium">{o.label}</div>
-                      <div className="text-[10px] text-[#555] mt-[2px]">{o.desc}</div>
+                      <div className="text-[10px] text-[#6B6763] mt-[2px]">{o.desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-[#555] uppercase tracking-[0.5px] mb-2">Citazioni normative</div>
+                <div className="text-[11px] text-[#6B6763] uppercase tracking-[0.5px] mb-2">Citazioni normative</div>
                 <div className="flex gap-[6px]">
                   {[
                     { v: "complete",   label: "Complete",   desc: "Art. + comma + data" },
@@ -370,12 +370,12 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
                       onClick={() => setProfilo(p => ({ ...p, preferenze: { ...p.preferenze, citazioni: o.v } }))}
                       className={`flex-1 py-[9px] px-2 rounded-[9px] border text-center cursor-pointer transition-all duration-150 ${
                         profilo.preferenze.citazioni === o.v
-                          ? "border-accent bg-[#E8340A08] text-cream"
-                          : "border-[#252525] bg-card text-[#666] hover:border-[#3a3a3a]"
+                          ? "border-accent bg-[#E8340A08] text-[#1a1a1a]"
+                          : "border-[#E5E1D8] bg-card text-[#6B6763] hover:border-[#C8C2BA]"
                       }`}
                     >
                       <div className="text-[12.5px] font-medium">{o.label}</div>
-                      <div className="text-[10px] text-[#555] mt-[2px]">{o.desc}</div>
+                      <div className="text-[10px] text-[#6B6763] mt-[2px]">{o.desc}</div>
                     </button>
                   ))}
                 </div>
@@ -385,14 +385,14 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
 
           {/* ── Intelligence stats ── */}
           {profilo.query_count > 0 && (
-            <div className="bg-[#0e0e0e] border border-[#1e1e1e] rounded-[12px] p-4">
-              <div className="text-[10.5px] uppercase tracking-[0.5px] text-[#444] mb-3">Intelligenza accumulata</div>
+            <div className="bg-[#F5F3F0] border border-[#E5E1D8] rounded-[12px] p-4">
+              <div className="text-[10.5px] uppercase tracking-[0.5px] text-[#7A766F] mb-3">Intelligenza accumulata</div>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <Stat value={profilo.query_count.toString()} label="Query analizzate" />
                 <Stat value={profilo.specializzazioni.length.toString()} label="Specializzazioni" />
                 <Stat value={profilo.last_topics.length.toString()} label="Topic rilevati" />
               </div>
-              <p className="text-[10.5px] text-[#444] text-center mt-3 leading-[1.5]">
+              <p className="text-[10.5px] text-[#7A766F] text-center mt-3 leading-[1.5]">
                 Il profilo AI si aggiorna automaticamente ad ogni sessione.
                 Non serve fare nulla — basta usare NormaAI.
               </p>
@@ -407,7 +407,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
               saved
                 ? "bg-[#22c55e] text-white"
                 : saving || !profilo.ruolo
-                ? "bg-[#1e1e1e] text-[#444] cursor-not-allowed"
+                ? "bg-white text-[#7A766F] cursor-not-allowed"
                 : "bg-accent text-white hover:bg-accent-hover"
             }`}
           >
@@ -415,7 +415,7 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
           </button>
 
           {!profilo.ruolo && (
-            <p className="text-[11px] text-[#555] text-center -mt-3">
+            <p className="text-[11px] text-[#6B6763] text-center -mt-3">
               Seleziona almeno la tua categoria per salvare
             </p>
           )}
@@ -430,12 +430,12 @@ export default function ModalProfilo({ open, onClose, user }: Props) {
 function SectionHeader({ icon, label, sub, accent }: { icon: React.ReactNode; label: string; sub?: string; accent?: boolean }) {
   return (
     <div className="flex items-start gap-[10px]">
-      <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 mt-[1px] ${accent ? "bg-[#E8340A12] text-accent" : "bg-[#1e1e1e] text-[#666]"}`}>
+      <div className={`w-7 h-7 rounded-[8px] flex items-center justify-center shrink-0 mt-[1px] ${accent ? "bg-[#E8340A12] text-accent" : "bg-white text-[#6B6763]"}`}>
         {icon}
       </div>
       <div>
-        <div className="text-[13.5px] font-medium text-cream">{label}</div>
-        {sub && <div className="text-[11.5px] text-[#555] mt-[1px]">{sub}</div>}
+        <div className="text-[13.5px] font-medium text-[#1a1a1a]">{label}</div>
+        {sub && <div className="text-[11.5px] text-[#6B6763] mt-[1px]">{sub}</div>}
       </div>
     </div>
   );
@@ -444,7 +444,7 @@ function SectionHeader({ icon, label, sub, accent }: { icon: React.ReactNode; la
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-[10.5px] text-[#555] uppercase tracking-[0.5px] mb-[5px]">{label}</label>
+      <label className="block text-[10.5px] text-[#6B6763] uppercase tracking-[0.5px] mb-[5px]">{label}</label>
       {children}
     </div>
   );
@@ -457,7 +457,7 @@ function TextInput({ value, onChange, placeholder }: { value: string; onChange: 
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full py-[9px] px-[13px] bg-[#1c1c1c] border border-[#252525] rounded-[9px] text-cream text-[13.5px] outline-none transition-colors duration-150 focus:border-[#3a3a3a] placeholder:text-[#3a3a3a]"
+      className="w-full py-[9px] px-[13px] bg-[#F5F3F0] border border-[#E5E1D8] rounded-[9px] text-[#1a1a1a] text-[13.5px] outline-none transition-colors duration-150 focus:border-[#C8C2BA] placeholder:text-[#9A9690]"
     />
   );
 }
@@ -465,8 +465,8 @@ function TextInput({ value, onChange, placeholder }: { value: string; onChange: 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
-      <div className="text-[22px] font-serif text-cream">{value}</div>
-      <div className="text-[10px] text-[#555] mt-[2px] leading-tight">{label}</div>
+      <div className="text-[22px] font-serif text-[#1a1a1a]">{value}</div>
+      <div className="text-[10px] text-[#6B6763] mt-[2px] leading-tight">{label}</div>
     </div>
   );
 }

@@ -151,11 +151,11 @@ export default function ModalProfessionista({ open, onClose }: Props) {
       <ModalClose onClose={handleClose} />
 
       {/* Header */}
-      <div className="px-6 pt-6 pb-4 border-b border-[#1e1e1e] sticky top-0 bg-[#131313] z-10">
+      <div className="px-6 pt-6 pb-4 border-b border-[#E5E1D8] sticky top-0 bg-white z-10">
         <div className="font-serif text-[22px] mb-[3px]">
           Accedi come Professionista
         </div>
-        <div className="text-[12.5px] text-[#555]">
+        <div className="text-[12.5px] text-[#6B6763]">
           &euro;29/mese &middot; 14 giorni gratuiti &middot; Ricevi lead qualificati
         </div>
 
@@ -174,7 +174,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
         {/* STEP 1 — Category selection */}
         {step === 1 && (
           <div>
-            <div className="text-[13px] text-[#666] mb-4">
+            <div className="text-[13px] text-[#6B6763] mb-4">
               Seleziona la tua categoria professionale
             </div>
             <div className="grid grid-cols-2 gap-[10px] mb-1">
@@ -184,16 +184,16 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                   <button
                     key={id}
                     onClick={() => setSelected(id)}
-                    className={`bg-card border-[1.5px] rounded-[14px] p-[18px] px-4 cursor-pointer transition-all duration-150 text-left hover:border-[#444] hover:bg-[#1e1e1e] ${
+                    className={`bg-card border-[1.5px] rounded-[14px] p-[18px] px-4 cursor-pointer transition-all duration-150 text-left hover:border-[#C8C2BA] hover:bg-white ${
                       selected === id
                         ? "!border-accent !bg-[#E8340A0c]"
-                        : "border-[#252525]"
+                        : "border-[#E5E1D8]"
                     } ${span2 ? "col-span-2" : ""}`}
                   >
-                    <div className="text-[14px] font-medium mb-[3px] text-cream">
+                    <div className="text-[14px] font-medium mb-[3px] text-[#1a1a1a]">
                       {p.name}
                     </div>
-                    <div className="text-[11.5px] text-[#aaa] leading-[1.4] mt-1">
+                    <div className="text-[11.5px] text-[#6B6763] leading-[1.4] mt-1">
                       {p.desc}
                     </div>
                     <div className="inline-flex items-center text-[10px] mt-2 text-accent bg-[#E8340A10] border border-[#E8340A25] px-[7px] py-[2px] rounded-full">
@@ -206,7 +206,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
             <button
               disabled={!selected}
               onClick={() => setStep(2)}
-              className="w-full py-3 rounded-[10px] text-[14px] font-medium border-none cursor-pointer transition-all duration-150 bg-accent text-white hover:bg-accent-hover mt-4 disabled:bg-[#2a2a2a] disabled:text-[#555] disabled:cursor-not-allowed"
+              className="w-full py-3 rounded-[10px] text-[14px] font-medium border-none cursor-pointer transition-all duration-150 bg-accent text-white hover:bg-accent-hover mt-4 disabled:bg-[#E5E1D8] disabled:text-[#6B6763] disabled:cursor-not-allowed"
             >
               Continua &rarr;
             </button>
@@ -218,7 +218,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
           <div>
             <button
               onClick={() => setStep(1)}
-              className="bg-transparent border-none text-[#555] text-[13px] cursor-pointer mb-4 flex items-center gap-[5px] p-0 hover:text-[#aaa]"
+              className="bg-transparent border-none text-[#6B6763] text-[13px] cursor-pointer mb-4 flex items-center gap-[5px] p-0 hover:text-[#6B6763]"
             >
               &larr; Cambia categoria
             </button>
@@ -228,7 +228,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
               <span className="text-[26px]">{prof.icon}</span>
               <div>
                 <div className="text-[15px] font-medium">{prof.name}</div>
-                <div className="text-[12px] text-[#666] mt-[2px]">
+                <div className="text-[12px] text-[#6B6763] mt-[2px]">
                   Piano Professionista &mdash; tutto incluso
                 </div>
               </div>
@@ -238,7 +238,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
             <div className="flex items-center gap-4 bg-card border border-card-border rounded-xl p-[14px] px-4 mb-4">
               <div className="font-serif text-[28px]">
                 <sup className="text-[14px] font-sans">&euro;</sup>29
-                <sub className="text-[13px] font-sans text-[#555]">/mese</sub>
+                <sub className="text-[13px] font-sans text-[#6B6763]">/mese</sub>
               </div>
               <div className="w-px h-10 bg-[#252525]" />
               <div className="flex-1">
@@ -249,7 +249,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                   <LeadPill value="€75" label="Lead Privato" />
                   <LeadPill value="€150" label="Lead Impresa" />
                 </div>
-                <div className="text-[10.5px] text-[#555] mt-1">Scalati dal wallet · crediti senza scadenza</div>
+                <div className="text-[10.5px] text-[#6B6763] mt-1">Scalati dal wallet · crediti senza scadenza</div>
               </div>
             </div>
 
@@ -292,7 +292,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
           <div>
             <button
               onClick={() => setStep(2)}
-              className="bg-transparent border-none text-[#555] text-[13px] cursor-pointer mb-4 flex items-center gap-[5px] p-0 hover:text-[#aaa]"
+              className="bg-transparent border-none text-[#6B6763] text-[13px] cursor-pointer mb-4 flex items-center gap-[5px] p-0 hover:text-[#6B6763]"
             >
               &larr; Torna al piano
             </button>
@@ -349,7 +349,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                       onChange={(e) => setConsentPrivacy(e.target.checked)}
                       className="mt-[2px] shrink-0 accent-[#E8340A]"
                     />
-                    <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                    <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                       * Ho letto e accetto la{" "}
                       <a href="/privacy" target="_blank" className="text-accent hover:underline">Privacy Policy</a>
                       {" "}e i{" "}
@@ -364,7 +364,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                       onChange={(e) => setConsentLeadMarketplace(e.target.checked)}
                       className="mt-[2px] shrink-0 accent-[#E8340A]"
                     />
-                    <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                    <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                       * Acconsento alla ricezione di lead qualificati tramite il marketplace NormaAI e al relativo trattamento dati. (obbligatorio per professionisti)
                     </span>
                   </label>
@@ -375,7 +375,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                       onChange={(e) => setConsentMarketing(e.target.checked)}
                       className="mt-[2px] shrink-0 accent-[#E8340A]"
                     />
-                    <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                    <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                       Acconsento a ricevere comunicazioni email su novità, offerte e aggiornamenti normativi. (opzionale)
                     </span>
                   </label>
@@ -384,7 +384,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                 <BtnPrimary onClick={handleRegister}>
                   {loading ? "Registrazione..." : "Inizia 14 giorni gratis"}
                 </BtnPrimary>
-                <p className="text-[11px] text-[#444] text-center mt-[10px]">
+                <p className="text-[11px] text-[#7A766F] text-center mt-[10px]">
                   Nessuna carta richiesta per il trial
                 </p>
               </div>
@@ -417,12 +417,12 @@ function StepDot({
             ? "bg-accent text-white"
             : isActive
             ? "bg-[#E8340A22] text-accent border border-[#E8340A40]"
-            : "bg-[#1a1a1a] text-[#555] border border-[#252525]"
+            : "bg-[#F0EDE8] text-[#6B6763] border border-[#E5E1D8]"
         }`}
       >
         {isDone ? "✓" : n}
       </div>
-      <div className="text-[10px] text-[#555] mt-1">{label}</div>
+      <div className="text-[10px] text-[#6B6763] mt-1">{label}</div>
     </div>
   );
 }
@@ -439,21 +439,21 @@ function StepLine({ done }: { done: boolean }) {
 
 function LeadPill({ value, label }: { value: string; label: string }) {
   return (
-    <div className="bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg px-[10px] py-[5px] text-center">
+    <div className="bg-white border border-[#D5D0C8] rounded-lg px-[10px] py-[5px] text-center">
       <span className="text-accent font-semibold text-[14px] block">{value}</span>
-      <span className="text-[#666] text-[10px]">{label}</span>
+      <span className="text-[#6B6763] text-[10px]">{label}</span>
     </div>
   );
 }
 
 function SectionTitle({ dot, label }: { dot: string; label: string }) {
   return (
-    <div className="text-[11px] uppercase tracking-[0.6px] text-[#555] mb-[10px] mt-4 flex items-center gap-[7px]">
+    <div className="text-[11px] uppercase tracking-[0.6px] text-[#6B6763] mb-[10px] mt-4 flex items-center gap-[7px]">
       <span className="inline-flex items-center gap-[5px]">
         <span className={`w-2 h-2 rounded-full inline-block shrink-0 ${dot}`} />
         {label}
       </span>
-      <span className="flex-1 h-[0.5px] bg-[#1e1e1e]" />
+      <span className="flex-1 h-[0.5px] bg-white" />
     </div>
   );
 }
@@ -480,7 +480,7 @@ function FeatureItem({
       <div className={`w-2 h-2 rounded-full shrink-0 mt-1 ${dot}`} />
       <div>
         <div className="text-[13px] font-medium mb-[2px]">{name}</div>
-        <div className="text-[11.5px] text-[#666] leading-[1.4]">{detail}</div>
+        <div className="text-[11.5px] text-[#6B6763] leading-[1.4]">{detail}</div>
         {saving && (
           <div className="text-[11px] text-[#22c55e] mt-[3px]">{saving}</div>
         )}

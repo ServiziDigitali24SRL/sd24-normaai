@@ -79,13 +79,13 @@ export default async function ArticlePage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <div className="min-h-screen bg-[#0D0D0D] text-cream">
+      <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
         <div className="max-w-[720px] mx-auto px-6 py-10">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-[11.5px] text-[#444] mb-8">
-            <Link href="/" className="hover:text-cream transition-colors">NormaAI</Link>
+            <Link href="/" className="hover:text-[#1a1a1a] transition-colors">NormaAI</Link>
             <span>/</span>
-            <Link href="/guide" className="hover:text-cream transition-colors">Guide</Link>
+            <Link href="/guide" className="hover:text-[#1a1a1a] transition-colors">Guide</Link>
             <span>/</span>
             <span className="text-[#666] truncate max-w-[200px]">{article.categoryLabel}</span>
           </nav>
@@ -101,13 +101,13 @@ export default async function ArticlePage({ params }: Props) {
           </h1>
 
           {/* TL;DR box — for AI citations (featured snippet bait) */}
-          <div className="bg-[#111] border border-[#222] rounded-xl p-4 mb-6">
+          <div className="bg-white border border-[#222] rounded-xl p-4 mb-6">
             <div className="text-[10.5px] uppercase tracking-[1px] text-accent mb-2 font-medium">Risposta rapida</div>
-            <p className="text-[13.5px] text-cream leading-[1.65]">{article.tldr}</p>
+            <p className="text-[13.5px] text-[#1a1a1a] leading-[1.65]">{article.tldr}</p>
           </div>
 
           {/* Image */}
-          <div className="relative w-full h-[220px] sm:h-[280px] rounded-xl overflow-hidden mb-8 bg-[#111]">
+          <div className="relative w-full h-[220px] sm:h-[280px] rounded-xl overflow-hidden mb-8 bg-white">
             <Image
               src={`https://images.unsplash.com/photo-${article.image.id}?w=1200&auto=format&fit=crop`}
               alt={article.image.alt}
@@ -136,7 +136,7 @@ export default async function ArticlePage({ params }: Props) {
           </div>
 
           {/* Legal references */}
-          <div className="mt-8 py-4 border-t border-[#1a1a1a]">
+          <div className="mt-8 py-4 border-t border-[#E5E1D8]">
             <span className="text-[11px] uppercase tracking-[1px] text-[#444] mr-2">Fonti normative:</span>
             <span className="text-[12px] text-[#555]">{article.legge}</span>
           </div>
@@ -147,8 +147,8 @@ export default async function ArticlePage({ params }: Props) {
               <h2 className="font-serif text-[22px] tracking-[-0.3px] mb-5">Domande frequenti</h2>
               <div className="space-y-4">
                 {article.faqs.map((faq) => (
-                  <div key={faq.q} className="border border-[#1e1e1e] rounded-xl p-4 bg-[#0f0f0f]">
-                    <h3 className="text-[13.5px] font-medium text-cream mb-2">{faq.q}</h3>
+                  <div key={faq.q} className="border border-[#E5E1D8] rounded-xl p-4 bg-white">
+                    <h3 className="text-[13.5px] font-medium text-[#1a1a1a] mb-2">{faq.q}</h3>
                     <p className="text-[13px] text-[#888] leading-[1.65]">{faq.a}</p>
                   </div>
                 ))}
@@ -157,9 +157,9 @@ export default async function ArticlePage({ params }: Props) {
           )}
 
           {/* CTA */}
-          <div className="mt-10 p-5 bg-[#111] border border-[#1e1e1e] rounded-2xl text-center">
+          <div className="mt-10 p-5 bg-white border border-[#E5E1D8] rounded-2xl text-center">
             <p className="text-[13px] text-[#888] mb-1">Hai un caso specifico?</p>
-            <p className="text-[14px] text-cream mb-4 font-medium">
+            <p className="text-[14px] text-[#1a1a1a] mb-4 font-medium">
               Fai la tua domanda a NormaAI — risposta immediata con le fonti di legge.
             </p>
             <Link
@@ -172,7 +172,7 @@ export default async function ArticlePage({ params }: Props) {
 
           {/* Back link */}
           <div className="mt-8 text-center">
-            <Link href="/guide" className="text-[12px] text-[#444] hover:text-cream transition-colors">
+            <Link href="/guide" className="text-[12px] text-[#444] hover:text-[#1a1a1a] transition-colors">
               ← Tutte le guide
             </Link>
           </div>
@@ -193,7 +193,7 @@ function MarkdownBody({ text }: { text: string }) {
           <span key={i}>
             {parts.map((part, j) =>
               part.startsWith("**") && part.endsWith("**") ? (
-                <strong key={j} className="text-cream font-medium">
+                <strong key={j} className="text-[#1a1a1a] font-medium">
                   {part.slice(2, -2)}
                 </strong>
               ) : (

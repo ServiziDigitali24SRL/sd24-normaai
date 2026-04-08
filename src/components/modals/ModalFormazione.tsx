@@ -242,34 +242,34 @@ export default function ModalFormazione({ open, onClose, userRole, userCategoria
           <div>
             <button
               onClick={() => setActiveVideo(null)}
-              className="flex items-center gap-2 text-[11px] text-[#555] mb-5 hover:text-[#888] transition-colors bg-transparent border-none cursor-pointer p-0"
+              className="flex items-center gap-2 text-[11px] text-[#6B6763] mb-5 hover:text-[#6B6763] transition-colors bg-transparent border-none cursor-pointer p-0"
             >
               <svg viewBox="0 0 24 24" className="w-3 h-3 stroke-current fill-none stroke-[2]">
                 <polyline points="15,18 9,12 15,6" />
               </svg>
               Tutti i video
             </button>
-            <div className="text-[10px] uppercase tracking-[0.08em] text-[#444] mb-1">
+            <div className="text-[10px] uppercase tracking-[0.08em] text-[#7A766F] mb-1">
               {("section" in current && current.section) ? current.section : "Introduzione"}
             </div>
             <ModalTitle>{current.title}</ModalTitle>
-            <p className="text-[12.5px] text-[#555] leading-[1.6] mt-1 mb-5">{current.desc}</p>
+            <p className="text-[12.5px] text-[#6B6763] leading-[1.6] mt-1 mb-5">{current.desc}</p>
 
             {/* Video placeholder */}
-            <div className="w-full aspect-video bg-[#0d0d0d] border border-[#222] rounded-xl flex flex-col items-center justify-center gap-3">
+            <div className="w-full aspect-video bg-[#FAFAF8] border border-[#222] rounded-xl flex flex-col items-center justify-center gap-3">
               <div className="w-12 h-12 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" className="w-5 h-5 fill-accent stroke-none">
                   <polygon points="10,8 16,12 10,16" />
                 </svg>
               </div>
-              <div className="text-[12px] text-[#444]">Video in arrivo — {current.duration}</div>
+              <div className="text-[12px] text-[#7A766F]">Video in arrivo — {current.duration}</div>
             </div>
           </div>
         ) : (
           /* Video list view */
           <>
             <ModalTitle>Formazione</ModalTitle>
-            <p className="text-[12.5px] text-[#555] leading-[1.6] mt-1 mb-6">
+            <p className="text-[12.5px] text-[#6B6763] leading-[1.6] mt-1 mb-6">
               Guarda il video introduttivo per iniziare, poi esplora i tutorial per ogni connettore e strumento AI.
             </p>
 
@@ -281,8 +281,8 @@ export default function ModalFormazione({ open, onClose, userRole, userCategoria
               >
                 <div className="shrink-0">{ROLE_VIDEO_ICON}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-medium truncate text-cream">{featuredVideo.title}</div>
-                  <div className="text-[11px] text-[#444] mt-[1px]">{featuredVideo.duration}</div>
+                  <div className="text-[13px] font-medium truncate text-[#1a1a1a]">{featuredVideo.title}</div>
+                  <div className="text-[11px] text-[#7A766F] mt-[1px]">{featuredVideo.duration}</div>
                 </div>
                 <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 stroke-[#333] fill-none stroke-[2]">
                   <polyline points="9,6 15,12 9,18" />
@@ -293,7 +293,7 @@ export default function ModalFormazione({ open, onClose, userRole, userCategoria
             {grouped.map(({ label, items }) =>
               items.length === 0 ? null : (
                 <div key={label} className="mb-5">
-                  <div className="text-[9px] uppercase tracking-[0.08em] text-[#444] font-medium mb-2 px-1">
+                  <div className="text-[9px] uppercase tracking-[0.08em] text-[#7A766F] font-medium mb-2 px-1">
                     {label}
                   </div>
                   <div className="flex flex-col gap-[6px]">
@@ -301,12 +301,12 @@ export default function ModalFormazione({ open, onClose, userRole, userCategoria
                       <button
                         key={v.id}
                         onClick={() => setActiveVideo(v.id)}
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#1e1e1e] hover:border-[#2a2a2a] hover:bg-white/[0.02] text-left cursor-pointer transition-all duration-150 w-full bg-transparent"
+                        className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#E5E1D8] hover:border-[#D5D0C8] hover:bg-white/[0.02] text-left cursor-pointer transition-all duration-150 w-full bg-transparent"
                       >
                         <div className="shrink-0">{v.icon}</div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[13px] font-medium truncate text-[#888]">{v.title}</div>
-                          <div className="text-[11px] text-[#444] mt-[1px]">{v.duration}</div>
+                          <div className="text-[13px] font-medium truncate text-[#6B6763]">{v.title}</div>
+                          <div className="text-[11px] text-[#7A766F] mt-[1px]">{v.duration}</div>
                         </div>
                         <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0 stroke-[#333] fill-none stroke-[2]">
                           <polyline points="9,6 15,12 9,18" />

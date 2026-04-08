@@ -139,7 +139,7 @@ export default function LeadsPreviewPage() {
           <div className="flex items-end">
             <button
               onClick={fetchLeads}
-              className="bg-[#1a1a1a] text-white text-[13px] font-medium px-4 py-2 rounded-lg hover:bg-[#333] transition-colors"
+              className="bg-[#F0EDE8] text-white text-[13px] font-medium px-4 py-2 rounded-lg hover:bg-[#E0DCD6] transition-colors"
             >
               Filtra
             </button>
@@ -212,7 +212,7 @@ export default function LeadsPreviewPage() {
         )}
 
         {/* CTA bottom */}
-        <div className="mt-10 bg-[#1a1a1a] rounded-2xl p-8 text-center">
+        <div className="mt-10 bg-[#F0EDE8] rounded-2xl p-8 text-center">
           <div className="text-[28px] font-serif text-white mb-2">Vuoi acquistare questi lead?</div>
           <p className="text-[#999] text-[14px] mb-6 max-w-lg mx-auto">
             Abbonati come professionista a €29/mese e accedi ai lead completi con nome, email, numero di telefono e contesto della richiesta.
@@ -226,7 +226,7 @@ export default function LeadsPreviewPage() {
             </Link>
             <Link
               href="/"
-              className="border border-[#444] text-[#ccc] font-medium px-6 py-3 rounded-lg hover:border-[#666] transition-colors"
+              className="border border-[#C8C2BA] text-[#ccc] font-medium px-6 py-3 rounded-lg hover:border-[#666] transition-colors"
             >
               Scopri come funziona
             </Link>

@@ -109,14 +109,14 @@ export default function ModalImpresa({ open, onClose }: Props) {
         <div className="bg-card border border-card-border rounded-xl p-[18px] mt-[14px]">
           <div className="font-serif text-[30px]">
             <sup className="text-[14px] font-sans">&euro;</sup>29
-            <sub className="text-[13px] font-sans text-[#555]">/mese</sub>
+            <sub className="text-[13px] font-sans text-[#6B6763]">/mese</sub>
           </div>
           <div className="text-[11.5px] text-gold mt-[3px]">
             &#10022; 14 giorni gratuiti &middot; Modello Opus 4.6
           </div>
           <div className="mt-3 flex flex-col gap-[7px]">
             {feats.map((f) => (
-              <div key={f} className="flex items-center gap-[7px] text-[12.5px] text-[#999]">
+              <div key={f} className="flex items-center gap-[7px] text-[12.5px] text-[#9A9690]">
                 <CheckIcon />
                 {f}
               </div>
@@ -161,7 +161,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
                   onChange={(e) => setConsentPrivacy(e.target.checked)}
                   className="mt-[2px] shrink-0 accent-[#E8340A]"
                 />
-                <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                   * Ho letto e accetto la{" "}
                   <a href="/privacy" target="_blank" className="text-accent hover:underline">Privacy Policy</a>
                   {" "}e i{" "}
@@ -176,7 +176,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
                   onChange={(e) => setConsentMarketing(e.target.checked)}
                   className="mt-[2px] shrink-0 accent-[#E8340A]"
                 />
-                <span className="text-[11.5px] text-[#666] leading-[1.5]">
+                <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                   Acconsento a ricevere comunicazioni email su novità, aggiornamenti normativi e offerte. (opzionale)
                 </span>
               </label>
@@ -185,7 +185,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
             <BtnPrimary onClick={handleRegister}>
               {loading ? "Registrazione..." : "Inizia 14 giorni gratis"}
             </BtnPrimary>
-            <p className="text-[11px] text-[#444] text-center mt-[10px]">
+            <p className="text-[11px] text-[#7A766F] text-center mt-[10px]">
               Nessuna carta richiesta per il trial
             </p>
           </div>

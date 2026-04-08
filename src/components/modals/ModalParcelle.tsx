@@ -39,15 +39,15 @@ const SCAGLIONI = [
 
 const mdComponents = {
   p: ({ children }: { children?: React.ReactNode }) => <p className="mb-3 last:mb-0">{children}</p>,
-  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-cream font-semibold">{children}</strong>,
-  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-cream text-[14px] font-semibold mb-2 mt-4 first:mt-0">{children}</h2>,
-  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-[#ccc] text-[13px] font-semibold mb-1 mt-3">{children}</h3>,
+  strong: ({ children }: { children?: React.ReactNode }) => <strong className="text-[#1a1a1a] font-semibold">{children}</strong>,
+  h2: ({ children }: { children?: React.ReactNode }) => <h2 className="text-[#1a1a1a] text-[14px] font-semibold mb-2 mt-4 first:mt-0">{children}</h2>,
+  h3: ({ children }: { children?: React.ReactNode }) => <h3 className="text-[#3D3A37] text-[13px] font-semibold mb-1 mt-3">{children}</h3>,
   ul: ({ children }: { children?: React.ReactNode }) => <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>,
-  li: ({ children }: { children?: React.ReactNode }) => <li className="text-[#ccc]">{children}</li>,
+  li: ({ children }: { children?: React.ReactNode }) => <li className="text-[#3D3A37]">{children}</li>,
   table: ({ children }: { children?: React.ReactNode }) => <div className="overflow-x-auto mb-3"><table className="w-full text-[12.5px] border-collapse">{children}</table></div>,
-  th: ({ children }: { children?: React.ReactNode }) => <th className="text-left text-[#888] font-medium px-3 py-2 border-b border-[#2a2a2a]">{children}</th>,
-  td: ({ children }: { children?: React.ReactNode }) => <td className="text-[#ccc] px-3 py-2 border-b border-[#1e1e1e]">{children}</td>,
-  blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-accent pl-3 text-[#888] italic my-3">{children}</blockquote>,
+  th: ({ children }: { children?: React.ReactNode }) => <th className="text-left text-[#6B6763] font-medium px-3 py-2 border-b border-[#D5D0C8]">{children}</th>,
+  td: ({ children }: { children?: React.ReactNode }) => <td className="text-[#3D3A37] px-3 py-2 border-b border-[#E5E1D8]">{children}</td>,
+  blockquote: ({ children }: { children?: React.ReactNode }) => <blockquote className="border-l-2 border-accent pl-3 text-[#6B6763] italic my-3">{children}</blockquote>,
 };
 
 export default function ModalParcelle({ open, onClose }: Props) {
@@ -125,8 +125,8 @@ Fornisci il calcolo completo con la tabella degli onorari per ogni fase, gli acc
     onClose();
   }
 
-  const selectClass = "w-full bg-[#141414] border border-[#252525] text-cream rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#444] transition-colors duration-150 appearance-none cursor-pointer";
-  const labelClass = "block text-[11px] text-[#666] font-medium mb-1 uppercase tracking-wide";
+  const selectClass = "w-full bg-white border border-[#E5E1D8] text-[#1a1a1a] rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#C8C2BA] transition-colors duration-150 appearance-none cursor-pointer";
+  const labelClass = "block text-[11px] text-[#6B6763] font-medium mb-1 uppercase tracking-wide";
 
   return (
     <ModalOverlay open={open} onClose={handleClose} maxWidth="max-w-[640px]">
@@ -136,8 +136,8 @@ Fornisci il calcolo completo con la tabella degli onorari per ogni fase, gli acc
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-[18px]">⚖️</div>
             <div>
-              <h2 className="text-cream text-[15px] font-semibold leading-tight">Calcolatore Parcelle Forensi</h2>
-              <p className="text-[11.5px] text-[#555] mt-0.5">DM 55/2014 · DM 147/2022</p>
+              <h2 className="text-[#1a1a1a] text-[15px] font-semibold leading-tight">Calcolatore Parcelle Forensi</h2>
+              <p className="text-[11.5px] text-[#6B6763] mt-0.5">DM 55/2014 · DM 147/2022</p>
             </div>
           </div>
           <ModalClose onClose={handleClose} />
@@ -189,9 +189,9 @@ Fornisci il calcolo completo con la tabella degli onorari per ogni fase, gli acc
 
         {/* Result */}
         {(result || loading) && (
-          <div ref={resultRef} className="mt-5 bg-[#0f0f0f] border border-[#1e1e1e] rounded-xl p-4 max-h-[380px] overflow-y-auto">
+          <div ref={resultRef} className="mt-5 bg-white border border-[#E5E1D8] rounded-xl p-4 max-h-[380px] overflow-y-auto">
             {loading && !result && (
-              <div className="flex items-center gap-3 text-[#555]">
+              <div className="flex items-center gap-3 text-[#6B6763]">
                 <span className="flex gap-[3px]">
                   <span className="w-[5px] h-[5px] rounded-full bg-accent/50 animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="w-[5px] h-[5px] rounded-full bg-accent/50 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -202,19 +202,19 @@ Fornisci il calcolo completo con la tabella degli onorari per ogni fase, gli acc
             )}
             {result && (
               <>
-                <div className="text-[13px] text-[#ccc] leading-[1.75]">
+                <div className="text-[13px] text-[#3D3A37] leading-[1.75]">
                   <ReactMarkdown components={mdComponents as any}>{result}</ReactMarkdown>
                 </div>
-                <div className="mt-4 pt-3 border-t border-[#1e1e1e] flex gap-2">
+                <div className="mt-4 pt-3 border-t border-[#E5E1D8] flex gap-2">
                   <button
                     onClick={() => navigator.clipboard?.writeText(result)}
-                    className="flex-1 text-[12px] text-[#666] hover:text-cream border border-[#252525] hover:border-[#333] rounded-lg py-2 transition-colors"
+                    className="flex-1 text-[12px] text-[#6B6763] hover:text-[#1a1a1a] border border-[#E5E1D8] hover:border-[#D5D0C8] rounded-lg py-2 transition-colors"
                   >
                     Copia risultato
                   </button>
                   <button
                     onClick={reset}
-                    className="flex-1 text-[12px] text-[#666] hover:text-cream border border-[#252525] hover:border-[#333] rounded-lg py-2 transition-colors"
+                    className="flex-1 text-[12px] text-[#6B6763] hover:text-[#1a1a1a] border border-[#E5E1D8] hover:border-[#D5D0C8] rounded-lg py-2 transition-colors"
                   >
                     Nuovo calcolo
                   </button>
@@ -224,7 +224,7 @@ Fornisci il calcolo completo con la tabella degli onorari per ogni fase, gli acc
           </div>
         )}
 
-        <p className="text-center text-[11px] text-[#444] mt-4">
+        <p className="text-center text-[11px] text-[#7A766F] mt-4">
           Calcolo orientativo basato su DM 55/2014 e DM 147/2022. Il giudice può liquidare discrezionalmente.
         </p>
       </div>

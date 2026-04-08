@@ -130,7 +130,7 @@ export default function ModalSfondo({ open, onClose, onApply, currentGradient }:
               <div className="relative">
                 <label htmlFor={`cs-${i}`}>
                   <div
-                    className="w-9 h-9 rounded-full border-2 border-[#333] cursor-pointer"
+                    className="w-9 h-9 rounded-full border-2 border-[#D5D0C8] cursor-pointer"
                     style={{ backgroundColor: stop.color }}
                   />
                 </label>
@@ -148,12 +148,12 @@ export default function ModalSfondo({ open, onClose, onApply, currentGradient }:
                 max={100}
                 value={stop.position}
                 onChange={(e) => updateStop(i, stop.color, Number(e.target.value))}
-                className="w-16 h-9 bg-[#1c1c1c] border-[#252525] text-cream text-[12px]"
+                className="w-16 h-9 bg-[#F5F3F0] border-[#E5E1D8] text-[#1a1a1a] text-[12px]"
               />
               {colorStops.length > 2 && (
                 <button
                   onClick={() => removeStop(i)}
-                  className="w-7 h-7 flex items-center justify-center rounded-md border border-[#333] text-[#666] hover:text-[#f44] bg-transparent cursor-pointer transition-colors text-[14px]"
+                  className="w-7 h-7 flex items-center justify-center rounded-md border border-[#D5D0C8] text-[#6B6763] hover:text-[#f44] bg-transparent cursor-pointer transition-colors text-[14px]"
                 >
                   &times;
                 </button>
@@ -163,7 +163,7 @@ export default function ModalSfondo({ open, onClose, onApply, currentGradient }:
           {colorStops.length < 5 && (
             <button
               onClick={addStop}
-              className="w-9 h-9 flex items-center justify-center rounded-full border-2 border-dashed border-[#333] text-[#555] hover:text-cream hover:border-accent bg-transparent cursor-pointer transition-colors text-[18px]"
+              className="w-9 h-9 flex items-center justify-center rounded-full border-2 border-dashed border-[#D5D0C8] text-[#6B6763] hover:text-[#1a1a1a] hover:border-accent bg-transparent cursor-pointer transition-colors text-[18px]"
             >
               +
             </button>
@@ -172,18 +172,18 @@ export default function ModalSfondo({ open, onClose, onApply, currentGradient }:
 
         {/* Type Toggle */}
         <div className="flex items-center gap-3 mt-4">
-          <Label className={`text-[12px] ${!isRadial ? "text-cream" : "text-[#555]"}`}>Lineare</Label>
+          <Label className={`text-[12px] ${!isRadial ? "text-[#1a1a1a]" : "text-[#6B6763]"}`}>Lineare</Label>
           <Switch
             checked={isRadial}
             onCheckedChange={setIsRadial}
           />
-          <Label className={`text-[12px] ${isRadial ? "text-cream" : "text-[#555]"}`}>Radiale</Label>
+          <Label className={`text-[12px] ${isRadial ? "text-[#1a1a1a]" : "text-[#6B6763]"}`}>Radiale</Label>
         </div>
 
         {/* Angle (only linear) */}
         {!isRadial && (
           <div className="flex items-center gap-3 mt-3">
-            <Label className="text-[12px] text-[#555]">Angolo</Label>
+            <Label className="text-[12px] text-[#6B6763]">Angolo</Label>
             <Slider
               value={[angle]}
               min={0}
@@ -191,7 +191,7 @@ export default function ModalSfondo({ open, onClose, onApply, currentGradient }:
               className="flex-1"
               onValueChange={(v) => setAngle(v[0])}
             />
-            <span className="text-[12px] text-[#555] w-10 text-right">{angle}°</span>
+            <span className="text-[12px] text-[#6B6763] w-10 text-right">{angle}°</span>
           </div>
         )}
 
@@ -205,7 +205,7 @@ export default function ModalSfondo({ open, onClose, onApply, currentGradient }:
           </button>
           <button
             onClick={handleReset}
-            className="px-4 py-[11px] rounded-[9px] text-[13.5px] border border-[#252525] bg-transparent text-cream cursor-pointer hover:border-[#3a3a3a] transition-colors"
+            className="px-4 py-[11px] rounded-[9px] text-[13.5px] border border-[#E5E1D8] bg-transparent text-[#1a1a1a] cursor-pointer hover:border-[#C8C2BA] transition-colors"
           >
             Reset
           </button>

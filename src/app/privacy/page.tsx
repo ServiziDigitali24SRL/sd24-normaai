@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-[#0D0D0D] text-cream">
+    <div className="min-h-screen bg-[#FAFAF8] text-[#1a1a1a]">
       <div className="max-w-[760px] mx-auto px-6 py-12">
-        <Link href="/" className="text-[12px] text-[#555] hover:text-cream transition-colors mb-8 inline-block">
+        <Link href="/" className="text-[12px] text-[#555] hover:text-[#1a1a1a] transition-colors mb-8 inline-block">
           ← Torna a NormaAI
         </Link>
 
@@ -164,9 +164,9 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <div className="mt-12 pt-8 border-t border-[#1a1a1a] text-[11px] text-[#444]">
-          Servizi Digitali 24 S.R.L. · <a href="mailto:privacy@normaai.it" className="hover:text-cream transition-colors">privacy@normaai.it</a>
-          {" · "}<Link href="/termini" className="hover:text-cream transition-colors">Termini di Servizio</Link>
+        <div className="mt-12 pt-8 border-t border-[#E5E1D8] text-[11px] text-[#444]">
+          Servizi Digitali 24 S.R.L. · <a href="mailto:privacy@normaai.it" className="hover:text-[#1a1a1a] transition-colors">privacy@normaai.it</a>
+          {" · "}<Link href="/termini" className="hover:text-[#1a1a1a] transition-colors">Termini di Servizio</Link>
         </div>
       </div>
     </div>
@@ -176,7 +176,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      <h2 className="text-[16px] font-medium text-cream mb-3 pb-2 border-b border-[#1a1a1a]">{title}</h2>
+      <h2 className="text-[16px] font-medium text-[#1a1a1a] mb-3 pb-2 border-b border-[#E5E1D8]">{title}</h2>
       <div className="text-[13px] text-[#999] leading-[1.7] space-y-2">{children}</div>
     </div>
   );
@@ -188,7 +188,7 @@ function Th({ children }: { children: React.ReactNode }) {
 
 function Tr({ cells }: { cells: string[] }) {
   return (
-    <tr className="border-b border-[#1a1a1a]">
+    <tr className="border-b border-[#E5E1D8]">
       {cells.map((c, i) => (
         <td key={i} className="py-2 pr-4 text-[#888]">{c}</td>
       ))}

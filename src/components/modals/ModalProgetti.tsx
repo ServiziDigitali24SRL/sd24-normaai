@@ -54,7 +54,7 @@ export default function ModalProgetti({ open, onClose, onNuovo }: Props) {
         <ModalSub>Organizza le tue ricerche normative per progetto</ModalSub>
 
         {loading ? (
-          <div className="text-center py-8 text-[#444] text-[13px]">
+          <div className="text-center py-8 text-[#7A766F] text-[13px]">
             Caricamento...
           </div>
         ) : progetti.length === 0 ? (
@@ -66,7 +66,7 @@ export default function ModalProgetti({ open, onClose, onNuovo }: Props) {
               <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
               <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
             </svg>
-            <div className="text-[#444] text-[13px]">Nessun progetto ancora</div>
+            <div className="text-[#7A766F] text-[13px]">Nessun progetto ancora</div>
             <div className="text-[#333] text-[12px] mt-1">
               Crea il tuo primo progetto per organizzare le ricerche
             </div>
@@ -76,7 +76,7 @@ export default function ModalProgetti({ open, onClose, onNuovo }: Props) {
             {progetti.map((p) => (
               <div
                 key={p.id}
-                className="group flex items-start gap-3 bg-[#1a1a1a] border border-[#252525] rounded-xl p-4 hover:border-[#333] transition-colors"
+                className="group flex items-start gap-3 bg-[#F0EDE8] border border-[#E5E1D8] rounded-xl p-4 hover:border-[#D5D0C8] transition-colors"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -86,11 +86,11 @@ export default function ModalProgetti({ open, onClose, onNuovo }: Props) {
                   <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <div className="text-cream text-[13.5px] font-medium truncate">
+                  <div className="text-[#1a1a1a] text-[13.5px] font-medium truncate">
                     {p.nome}
                   </div>
                   {p.descrizione && (
-                    <div className="text-[#555] text-[12px] mt-[2px] line-clamp-2">
+                    <div className="text-[#6B6763] text-[12px] mt-[2px] line-clamp-2">
                       {p.descrizione}
                     </div>
                   )}
@@ -100,7 +100,7 @@ export default function ModalProgetti({ open, onClose, onNuovo }: Props) {
                 </div>
                 <button
                   onClick={() => handleDelete(p.id)}
-                  className="opacity-0 group-hover:opacity-100 bg-transparent border-none text-[#444] hover:text-[#f44] text-[16px] cursor-pointer transition-all duration-150 shrink-0"
+                  className="opacity-0 group-hover:opacity-100 bg-transparent border-none text-[#7A766F] hover:text-[#f44] text-[16px] cursor-pointer transition-all duration-150 shrink-0"
                 >
                   &times;
                 </button>

@@ -32,10 +32,10 @@ const STATUS_COLORS: Record<string, string> = {
   SIGNED: "text-green-400",
   OUT_FOR_SIGNATURE: "text-yellow-400",
   WAITING_FOR_MY_SIGNATURE: "text-blue-400",
-  DRAFT: "text-[#555]",
+  DRAFT: "text-[#6B6763]",
   CANCELLED: "text-red-400",
   EXPIRED: "text-red-400",
-  AUTHORING: "text-[#555]",
+  AUTHORING: "text-[#6B6763]",
   OUT_FOR_APPROVAL: "text-yellow-400",
 };
 
@@ -114,24 +114,24 @@ export default function ModalAdobeSign({ open, onClose }: Props) {
 
         {view === "loading" && (
           <div className="py-12 text-center">
-            <div className="text-[13px] text-[#555]">Connessione in corso...</div>
+            <div className="text-[13px] text-[#6B6763]">Connessione in corso...</div>
           </div>
         )}
 
         {view === "disconnected" && (
           <div>
             <ModalTitle>Adobe Sign</ModalTitle>
-            <div className="mt-4 text-[13px] text-[#666] leading-[1.6]">
+            <div className="mt-4 text-[13px] text-[#6B6763] leading-[1.6]">
               Connetti Adobe Sign per monitorare i tuoi accordi e firme digitali.
               NormaAI terr&agrave; traccia delle scadenze e dello stato dei documenti.
             </div>
 
-            <div className="mt-5 p-4 rounded-xl border border-[#1e1e1e] bg-[#0f0f0f]">
+            <div className="mt-5 p-4 rounded-xl border border-[#E5E1D8] bg-white">
               <div className="flex items-start gap-3">
                 <div className="text-[18px] mt-[1px]">&#128274;</div>
                 <div>
-                  <div className="text-[12px] font-semibold text-[#888] mb-1">Privacy</div>
-                  <div className="text-[11px] text-[#555] leading-[1.5]">
+                  <div className="text-[12px] font-semibold text-[#6B6763] mb-1">Privacy</div>
+                  <div className="text-[11px] text-[#6B6763] leading-[1.5]">
                     Accesso in sola lettura. Nessun documento viene modificato o salvato.
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export default function ModalAdobeSign({ open, onClose }: Props) {
 
             <button
               onClick={handleConnect}
-              className="mt-6 w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-[#2a2a2a] bg-white text-[#333] font-semibold text-[13px] cursor-pointer hover:bg-gray-50 transition-colors"
+              className="mt-6 w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-[#D5D0C8] bg-white text-[#333] font-semibold text-[13px] cursor-pointer hover:bg-gray-50 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
@@ -159,13 +159,13 @@ export default function ModalAdobeSign({ open, onClose }: Props) {
             <div className="flex items-center gap-2 mb-5">
               <ModalTitle>Adobe Sign</ModalTitle>
               {email && (
-                <span className="ml-auto text-[10px] text-[#444] bg-[#161616] border border-[#252525] px-2 py-[3px] rounded-md truncate max-w-[160px]">
+                <span className="ml-auto text-[10px] text-[#7A766F] bg-[#161616] border border-[#E5E1D8] px-2 py-[3px] rounded-md truncate max-w-[160px]">
                   {email}
                 </span>
               )}
             </div>
 
-            <div className="text-[12px] text-[#555] mb-4 leading-[1.5]">
+            <div className="text-[12px] text-[#6B6763] mb-4 leading-[1.5]">
               I tuoi accordi recenti su Adobe Sign.
             </div>
 
@@ -176,19 +176,19 @@ export default function ModalAdobeSign({ open, onClose }: Props) {
                 {agreements.map((agr) => (
                   <div
                     key={agr.id}
-                    className="p-3 rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] flex items-center gap-3"
+                    className="p-3 rounded-lg border border-[#E5E1D8] bg-[#FAFAF8] flex items-center gap-3"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="text-[12px] text-[#bbb] truncate">
+                      <div className="text-[12px] text-[#7A766F] truncate">
                         {agr.name || "Senza nome"}
                       </div>
-                      <div className="text-[10px] text-[#444] mt-[2px]">
+                      <div className="text-[10px] text-[#7A766F] mt-[2px]">
                         {formatDate(agr.createdDate)}
                       </div>
                     </div>
                     <div
                       className={`text-[10px] font-medium shrink-0 ${
-                        STATUS_COLORS[agr.status] || "text-[#555]"
+                        STATUS_COLORS[agr.status] || "text-[#6B6763]"
                       }`}
                     >
                       {STATUS_LABELS[agr.status] || agr.status}
@@ -197,14 +197,14 @@ export default function ModalAdobeSign({ open, onClose }: Props) {
                 ))}
               </div>
             ) : (
-              <div className="py-6 text-center text-[12px] text-[#444]">
+              <div className="py-6 text-center text-[12px] text-[#7A766F]">
                 Nessun accordo recente
               </div>
             )}
 
             <button
               onClick={handleDisconnect}
-              className="mt-5 w-full text-[11px] text-[#444] hover:text-[#666] bg-transparent border-none cursor-pointer transition-colors"
+              className="mt-5 w-full text-[11px] text-[#7A766F] hover:text-[#6B6763] bg-transparent border-none cursor-pointer transition-colors"
             >
               Disconnetti Adobe Sign
             </button>

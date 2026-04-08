@@ -50,10 +50,10 @@ export default function ModalInvesti({ open, onClose }: Props) {
           {/* Header */}
           <div className="mb-6">
             <div className="text-[11px] text-gold uppercase tracking-[1px] mb-2">Opportunità early-stage</div>
-            <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.5px] text-cream mb-3">
+            <h2 className="font-serif text-[28px] leading-[1.15] tracking-[-0.5px] text-[#1a1a1a] mb-3">
               L&apos;AI normativa italiana<br />non ha ancora un leader.
             </h2>
-            <p className="text-[13.5px] text-[#777] leading-[1.7]">
+            <p className="text-[13.5px] text-[#6B6763] leading-[1.7]">
               787.000 professionisti del diritto in Italia pagano centinaia di euro al mese per accedere
               a banche dati normative. NormaAI li serve con AI, a un decimo del costo.
             </p>
@@ -90,7 +90,7 @@ export default function ModalInvesti({ open, onClose }: Props) {
           >
             Voglio saperne di più →
           </button>
-          <p className="text-[11px] text-[#444] text-center mt-3">
+          <p className="text-[11px] text-[#7A766F] text-center mt-3">
             Nessun impegno. Ti contatteremo per spiegarti i dettagli.
           </p>
         </div>
@@ -100,13 +100,13 @@ export default function ModalInvesti({ open, onClose }: Props) {
         <div className="p-7">
           <button
             onClick={() => setStep("landing")}
-            className="text-[12px] text-[#555] hover:text-cream transition-colors mb-5 inline-block bg-transparent border-none cursor-pointer p-0"
+            className="text-[12px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors mb-5 inline-block bg-transparent border-none cursor-pointer p-0"
           >
             ← Torna all&apos;opportunità
           </button>
           <div className="text-[11px] text-gold uppercase tracking-[1px] mb-1">Early investor</div>
-          <h2 className="font-serif text-[24px] tracking-[-0.5px] text-cream mb-1">Lascia i tuoi dati</h2>
-          <p className="text-[12.5px] text-[#555] mb-6">
+          <h2 className="font-serif text-[24px] tracking-[-0.5px] text-[#1a1a1a] mb-1">Lascia i tuoi dati</h2>
+          <p className="text-[12.5px] text-[#6B6763] mb-6">
             Ti chiamiamo noi — spieghiamo tutto e rispondiamo alle tue domande.
           </p>
 
@@ -126,7 +126,7 @@ export default function ModalInvesti({ open, onClose }: Props) {
           >
             {loading ? "Invio in corso..." : "Richiedi informazioni"}
           </button>
-          <p className="text-[11px] text-[#444] text-center mt-3">
+          <p className="text-[11px] text-[#7A766F] text-center mt-3">
             I tuoi dati non vengono condivisi con terzi · Privacy Policy
           </p>
         </div>
@@ -136,13 +136,13 @@ export default function ModalInvesti({ open, onClose }: Props) {
         <div className="p-7 text-center py-14">
           <div className="text-[36px] mb-4">✦</div>
           <h2 className="font-serif text-[26px] text-gold mb-2">Perfetto, grazie!</h2>
-          <p className="text-[13.5px] text-[#777] mb-6 leading-[1.7]">
+          <p className="text-[13.5px] text-[#6B6763] mb-6 leading-[1.7]">
             Ti contatteremo entro 24 ore al numero che hai indicato.<br />
             Nel frattempo puoi esplorare NormaAI liberamente.
           </p>
           <button
             onClick={handleClose}
-            className="px-6 py-[10px] rounded-[9px] text-[13px] bg-[#1c1c1c] border border-[#333] text-cream hover:border-[#555] transition-colors cursor-pointer"
+            className="px-6 py-[10px] rounded-[9px] text-[13px] bg-[#F5F3F0] border border-[#D5D0C8] text-[#1a1a1a] hover:border-[#555] transition-colors cursor-pointer"
           >
             Esplora NormaAI
           </button>
@@ -154,11 +154,11 @@ export default function ModalInvesti({ open, onClose }: Props) {
 
 function Pillar({ icon, title, body }: { icon: string; title: string; body: string }) {
   return (
-    <div className="flex gap-3 bg-[#141414] border border-[#1e1e1e] rounded-xl p-[14px]">
+    <div className="flex gap-3 bg-white border border-[#E5E1D8] rounded-xl p-[14px]">
       <div className="text-[20px] shrink-0 mt-[1px]">{icon}</div>
       <div>
-        <div className="text-[13px] font-medium text-cream mb-[3px]">{title}</div>
-        <div className="text-[12px] text-[#666] leading-[1.6]">{body}</div>
+        <div className="text-[13px] font-medium text-[#1a1a1a] mb-[3px]">{title}</div>
+        <div className="text-[12px] text-[#6B6763] leading-[1.6]">{body}</div>
       </div>
     </div>
   );

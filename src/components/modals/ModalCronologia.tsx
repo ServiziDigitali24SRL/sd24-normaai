@@ -39,7 +39,7 @@ export default function ModalCronologia({
             <ModalTitle>Cronologia</ModalTitle>
             <ModalSub>Accedi per salvare e ritrovare le tue conversazioni</ModalSub>
 
-            <div className="text-center py-8 text-[#444] text-[13px]">
+            <div className="text-center py-8 text-[#7A766F] text-[13px]">
               <svg
                 viewBox="0 0 24 24"
                 className="w-[38px] h-[38px] stroke-[#2a2a2a] fill-none stroke-[1.5] mx-auto mb-3 block"
@@ -62,27 +62,27 @@ export default function ModalCronologia({
             <div className="mt-6 flex flex-col gap-3">
               <button
                 onClick={() => { handleClose(); onOpenCittadino(); }}
-                className="flex items-center gap-4 bg-card border border-card-border rounded-xl p-4 text-left hover:border-[#333] transition-colors group"
+                className="flex items-center gap-4 bg-card border border-card-border rounded-xl p-4 text-left hover:border-[#D5D0C8] transition-colors group"
               >
-                <div className="w-10 h-10 rounded-full bg-[#1a1a1a] flex items-center justify-center text-[18px] shrink-0 group-hover:bg-[#222] transition-colors">
+                <div className="w-10 h-10 rounded-full bg-[#F0EDE8] flex items-center justify-center text-[18px] shrink-0 group-hover:bg-[#F0EDE8] transition-colors">
                   👤
                 </div>
                 <div>
-                  <div className="text-cream text-[13.5px] font-medium">Sono un cittadino</div>
-                  <div className="text-[#555] text-[12px] mt-[2px]">Multe, contratti, condominio, lavoro…</div>
+                  <div className="text-[#1a1a1a] text-[13.5px] font-medium">Sono un cittadino</div>
+                  <div className="text-[#6B6763] text-[12px] mt-[2px]">Multe, contratti, condominio, lavoro…</div>
                 </div>
               </button>
 
               <button
                 onClick={() => { handleClose(); onOpenImpresa(); }}
-                className="flex items-center gap-4 bg-card border border-card-border rounded-xl p-4 text-left hover:border-[#333] transition-colors group"
+                className="flex items-center gap-4 bg-card border border-card-border rounded-xl p-4 text-left hover:border-[#D5D0C8] transition-colors group"
               >
-                <div className="w-10 h-10 rounded-full bg-[#1a1a1a] flex items-center justify-center text-[18px] shrink-0 group-hover:bg-[#222] transition-colors">
+                <div className="w-10 h-10 rounded-full bg-[#F0EDE8] flex items-center justify-center text-[18px] shrink-0 group-hover:bg-[#F0EDE8] transition-colors">
                   🏢
                 </div>
                 <div>
-                  <div className="text-cream text-[13.5px] font-medium">Sono un&apos;impresa</div>
-                  <div className="text-[#555] text-[12px] mt-[2px]">Compliance, contratti commerciali, lavoro…</div>
+                  <div className="text-[#1a1a1a] text-[13.5px] font-medium">Sono un&apos;impresa</div>
+                  <div className="text-[#6B6763] text-[12px] mt-[2px]">Compliance, contratti commerciali, lavoro…</div>
                 </div>
               </button>
             </div>

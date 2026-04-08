@@ -28,12 +28,12 @@ interface Lead {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const MATERIA_COLOR: Record<string, string> = {
-  "Diritto civile":          "text-blue-400   bg-blue-500/10   border-blue-500/20",
-  "Diritto penale":          "text-red-400    bg-red-500/10    border-red-500/20",
-  "Diritto del lavoro":      "text-green-400  bg-green-500/10  border-green-500/20",
-  "Diritto tributario":      "text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
-  "Diritto amministrativo":  "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  "Diritto commerciale":     "text-orange-400 bg-orange-500/10 border-orange-500/20",
+  "Diritto civile":          "text-blue-700 bg-blue-50 border-blue-200",
+  "Diritto penale":          "text-red-700 bg-red-50 border-red-200",
+  "Diritto del lavoro":      "text-green-700 bg-green-50 border-green-200",
+  "Diritto tributario":      "text-yellow-700 bg-yellow-50 border-yellow-200",
+  "Diritto amministrativo":  "text-purple-700 bg-purple-50 border-purple-200",
+  "Diritto commerciale":     "text-orange-700 bg-orange-50 border-orange-200",
 };
 const getMateriaColor = (m: string) => MATERIA_COLOR[m] ?? "text-accent bg-accent/10 border-accent/20";
 
@@ -156,7 +156,7 @@ export default function DashboardPage() {
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 {categoria && <span className="text-[11px] text-[#6B6763]">{categoria}</span>}
                 {roleLabel && <span className="text-[11px] text-[#6B6763]">· {roleLabel}</span>}
-                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${piano === "Pro" ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" : "text-accent bg-accent/10 border-accent/20"}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${piano === "Pro" ? "text-yellow-700 bg-yellow-50 border-yellow-200" : "text-accent bg-accent/10 border-accent/20"}`}>
                   Piano {piano}
                 </span>
               </div>
@@ -246,10 +246,10 @@ function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: U
   return (
     <div>
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <StatCard label="Lead disponibili" value={loading ? "…" : String(leads.length)} color="text-accent" />
-        <StatCard label="Lead acquistati"  value={loading ? "…" : String(acquistati.length)} color="text-green-400" />
-        <StatCard label="Crediti wallet"   value={`€${walletCrediti}`} color="text-yellow-400" />
+        <StatCard label="Lead acquistati"  value={loading ? "…" : String(acquistati.length)} color="text-green-700" />
+        <StatCard label="Crediti wallet"   value={`€${walletCrediti}`} color="text-yellow-700" />
         <StatCard label="Piano attivo"     value={piano} color="text-[#9A9690]" />
       </div>
 
@@ -326,7 +326,7 @@ function ImpresaDashboard({ piano }: { piano: string }) {
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <StatCard label="Piano attivo" value={piano} color="text-accent" />
-        <StatCard label="Query AI disponibili" value="Illimitate" color="text-green-400" />
+        <StatCard label="Query AI disponibili" value="Illimitate" color="text-green-700" />
         <StatCard label="Verticali coperti" value="5" color="text-[#9A9690]" />
       </div>
 
@@ -370,7 +370,7 @@ function CittadinoDashboard({ piano }: { piano: string }) {
     <div>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <StatCard label="Piano attivo"         value={piano}        color="text-accent" />
-        <StatCard label="Query AI disponibili" value="Illimitate"   color="text-green-400" />
+        <StatCard label="Query AI disponibili" value="Illimitate"   color="text-green-700" />
         <StatCard label="Guide gratuite"       value="46+"          color="text-[#9A9690]" />
       </div>
 
@@ -596,7 +596,7 @@ function LeadCard({ lead, showBuy, onBuy, buying, acquired }: { lead: Lead; show
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className={`text-[10.5px] font-medium border rounded-full px-2.5 py-0.5 ${getMateriaColor(lead.materia)}`}>{lead.materia}</span>
-            <span className={`text-[10.5px] border rounded-full px-2.5 py-0.5 ${lead.tipo === "impresa" ? "text-orange-400 bg-orange-500/10 border-orange-500/20" : "text-[#9A9690] bg-[#F0EDE8] border-[#E5E1D8]"}`}>
+            <span className={`text-[10.5px] border rounded-full px-2.5 py-0.5 ${lead.tipo === "impresa" ? "text-orange-700 bg-orange-50 border-orange-200" : "text-[#9A9690] bg-[#F0EDE8] border-[#E5E1D8]"}`}>
               {lead.tipo === "impresa" ? "Impresa" : "Privato"}
             </span>
             {lead.citta && <span className="text-[10.5px] text-[#6B6763]">📍 {lead.citta}</span>}
@@ -659,7 +659,7 @@ function Spinner() {
 
 function Toast({ msg }: { msg: string }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#F0EDE8] border border-[#D5D0C8] text-[#1a1a1a] text-[13px] px-4 py-2.5 rounded-xl shadow-lg whitespace-nowrap">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#F0EDE8] border border-[#D5D0C8] text-white text-[13px] px-4 py-2.5 rounded-xl shadow-lg whitespace-nowrap">
       {msg}
     </div>
   );

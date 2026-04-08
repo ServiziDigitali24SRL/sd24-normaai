@@ -48,7 +48,7 @@ export default function CookieBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[500] p-4 bg-[#111] border-t border-[#222]">
+    <div className="fixed bottom-0 left-0 right-0 z-[500] p-4 bg-white border-t border-[#222]">
       <div className="max-w-[760px] mx-auto">
         {showCustomize ? (
           <div>
@@ -86,7 +86,7 @@ export default function CookieBanner() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowCustomize(false)}
-                className="flex-1 px-3 py-[7px] text-[12px] text-[#666] border border-[#333] rounded-lg hover:border-[#444] transition-colors"
+                className="flex-1 px-3 py-[7px] text-[12px] text-[#666] border border-[#D5D0C8] rounded-lg hover:border-[#C8C2BA] transition-colors"
               >
                 Indietro
               </button>
@@ -110,13 +110,13 @@ export default function CookieBanner() {
             <div className="flex gap-2 shrink-0 flex-wrap">
               <button
                 onClick={() => setShowCustomize(true)}
-                className="px-4 py-[7px] text-[12px] text-[#666] border border-[#333] rounded-lg hover:border-[#444] hover:text-[#999] transition-colors"
+                className="px-4 py-[7px] text-[12px] text-[#666] border border-[#D5D0C8] rounded-lg hover:border-[#C8C2BA] hover:text-[#999] transition-colors"
               >
                 Personalizza
               </button>
               <button
                 onClick={declineAll}
-                className="px-4 py-[7px] text-[12px] text-[#666] border border-[#333] rounded-lg hover:border-[#444] hover:text-[#999] transition-colors"
+                className="px-4 py-[7px] text-[12px] text-[#666] border border-[#D5D0C8] rounded-lg hover:border-[#C8C2BA] hover:text-[#999] transition-colors"
               >
                 Solo tecnici
               </button>

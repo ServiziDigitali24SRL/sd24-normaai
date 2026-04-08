@@ -105,25 +105,25 @@ export default function ModalDropbox({ open, onClose }: Props) {
 
         {view === "loading" && (
           <div className="py-12 text-center">
-            <div className="text-[13px] text-[#555]">Connessione in corso...</div>
+            <div className="text-[13px] text-[#6B6763]">Connessione in corso...</div>
           </div>
         )}
 
         {view === "disconnected" && (
           <div>
             <ModalTitle>Documenti Dropbox</ModalTitle>
-            <div className="mt-4 text-[13px] text-[#666] leading-[1.6]">
+            <div className="mt-4 text-[13px] text-[#6B6763] leading-[1.6]">
               Connetti il tuo Dropbox per cercare e analizzare documenti direttamente dalla tua
-              cartella cloud. NormaAI accede ai file <strong className="text-[#888]">in sola lettura</strong> per
+              cartella cloud. NormaAI accede ai file <strong className="text-[#6B6763]">in sola lettura</strong> per
               estrarre informazioni legali, contratti e scadenze rilevanti.
             </div>
 
-            <div className="mt-5 p-4 rounded-xl border border-[#1e1e1e] bg-[#0f0f0f]">
+            <div className="mt-5 p-4 rounded-xl border border-[#E5E1D8] bg-white">
               <div className="flex items-start gap-3">
                 <div className="text-[18px] mt-[1px]">🔒</div>
                 <div>
-                  <div className="text-[12px] font-semibold text-[#888] mb-1">Privacy first</div>
-                  <div className="text-[11px] text-[#555] leading-[1.5]">
+                  <div className="text-[12px] font-semibold text-[#6B6763] mb-1">Privacy first</div>
+                  <div className="text-[11px] text-[#6B6763] leading-[1.5]">
                     Cerchiamo solo i file che corrispondono alla tua ricerca. Non scansioniamo l'intero Dropbox. Nessun file viene copiato o salvato.
                   </div>
                 </div>
@@ -132,7 +132,7 @@ export default function ModalDropbox({ open, onClose }: Props) {
 
             <button
               onClick={handleConnect}
-              className="mt-6 w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-[#2a2a2a] bg-white text-[#333] font-semibold text-[13px] cursor-pointer hover:bg-gray-50 transition-colors"
+              className="mt-6 w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-[#D5D0C8] bg-white text-[#333] font-semibold text-[13px] cursor-pointer hover:bg-gray-50 transition-colors"
             >
               <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" fill="#0061FF">
                 <path d="M12 2L6 6.5L12 11L6 15.5L0 11L6 6.5L0 2L6 6.5L12 2ZM6 15.5L12 11L18 15.5L12 20L6 15.5ZM12 11L18 6.5L12 2L18 6.5L24 2L18 6.5L24 11L18 6.5L12 11Z"/>
@@ -147,18 +147,18 @@ export default function ModalDropbox({ open, onClose }: Props) {
             <div className="flex items-center gap-2 mb-5">
               <ModalTitle>Documenti Dropbox</ModalTitle>
               {accountName && (
-                <span className="ml-auto text-[10px] text-[#444] bg-[#161616] border border-[#252525] px-2 py-[3px] rounded-md truncate max-w-[140px]">
+                <span className="ml-auto text-[10px] text-[#7A766F] bg-[#161616] border border-[#E5E1D8] px-2 py-[3px] rounded-md truncate max-w-[140px]">
                   {accountName}
                 </span>
               )}
             </div>
 
-            <div className="text-[12px] text-[#555] mb-4 leading-[1.5]">
+            <div className="text-[12px] text-[#6B6763] mb-4 leading-[1.5]">
               Cerca un documento nel tuo Dropbox. NormaAI troverà i file corrispondenti
               e potrà analizzarne il contenuto legale.
             </div>
 
-            <div className="text-[10px] uppercase tracking-[0.06em] text-[#444] mb-[6px]">
+            <div className="text-[10px] uppercase tracking-[0.06em] text-[#7A766F] mb-[6px]">
               Cerca documenti
             </div>
             <input
@@ -167,7 +167,7 @@ export default function ModalDropbox({ open, onClose }: Props) {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSearch()}
-              className="w-full bg-[#111] border border-[#222] rounded-lg px-3 py-[10px] text-[13px] text-[#ccc] outline-none focus:border-[#333] placeholder:text-[#333]"
+              className="w-full bg-white border border-[#222] rounded-lg px-3 py-[10px] text-[13px] text-[#3D3A37] outline-none focus:border-[#D5D0C8] placeholder:text-[#333]"
               disabled={view === "searching"}
             />
 
@@ -191,18 +191,18 @@ export default function ModalDropbox({ open, onClose }: Props) {
             {/* Search results */}
             {files.length > 0 && (
               <div className="mt-5">
-                <div className="text-[10px] uppercase tracking-[0.06em] text-[#444] mb-2">
+                <div className="text-[10px] uppercase tracking-[0.06em] text-[#7A766F] mb-2">
                   {files.length} {files.length === 1 ? "risultato" : "risultati"}
                 </div>
                 <div className="flex flex-col gap-2">
                   {files.map(f => (
                     <div
                       key={f.id}
-                      className="p-3 rounded-lg border border-[#1e1e1e] bg-[#0a0a0a] hover:border-[#2a2a2a] transition-colors"
+                      className="p-3 rounded-lg border border-[#E5E1D8] bg-[#FAFAF8] hover:border-[#D5D0C8] transition-colors"
                     >
-                      <div className="text-[13px] text-[#bbb] font-medium truncate">{f.name}</div>
+                      <div className="text-[13px] text-[#7A766F] font-medium truncate">{f.name}</div>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-[10px] text-[#444] truncate">{f.path}</span>
+                        <span className="text-[10px] text-[#7A766F] truncate">{f.path}</span>
                         <span className="text-[10px] text-[#333] shrink-0">{formatSize(f.size)}</span>
                       </div>
                     </div>
@@ -213,7 +213,7 @@ export default function ModalDropbox({ open, onClose }: Props) {
 
             <button
               onClick={handleDisconnect}
-              className="mt-3 w-full text-[11px] text-[#444] hover:text-[#666] bg-transparent border-none cursor-pointer transition-colors"
+              className="mt-3 w-full text-[11px] text-[#7A766F] hover:text-[#6B6763] bg-transparent border-none cursor-pointer transition-colors"
             >
               Disconnetti Dropbox
             </button>
