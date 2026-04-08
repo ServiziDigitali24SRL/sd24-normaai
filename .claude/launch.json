@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "normaai-dev",
-      "runtimeExecutable": "/Users/user/Documents/PROGETTI/NORMAAI/code/apps/normaai-app-v1/start-dev.sh",
-      "runtimeArgs": [],
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["/usr/local/lib/node_modules/npm/bin/npm-cli.js", "run", "dev"],
       "port": 3000
     }
   ]
