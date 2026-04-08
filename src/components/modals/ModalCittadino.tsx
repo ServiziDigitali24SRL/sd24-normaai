@@ -29,15 +29,27 @@ export default function ModalCittadino({ open, onClose }: Props) {
   const supabase = createClient();
 
   async function handleLogin() {
+    if (!email.trim() || !password.trim()) {
+      setError("Email e password sono obbligatorie.");
+      return;
+    }
     setLoading(true);
     setError("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError(error.message);
+    if (error) setError("Email o password non corretti.");
     else onClose();
     setLoading(false);
   }
 
   async function handleRegister() {
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Tutti i campi sono obbligatori.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("La password deve essere di almeno 8 caratteri.");
+      return;
+    }
     setLoading(true);
     setError("");
     const { data, error } = await supabase.auth.signUp({

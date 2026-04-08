@@ -261,7 +261,7 @@ export default function Home() {
               </a>
               <button
                 onClick={() => openModal("cittadino")}
-                className="hidden sm:block text-[12.5px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border-none cursor-pointer py-[6px] px-3"
+                className="text-[12.5px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border-none cursor-pointer py-[6px] px-3"
               >
                 Accedi
               </button>
