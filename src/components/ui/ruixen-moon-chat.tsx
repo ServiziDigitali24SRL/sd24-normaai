@@ -18,6 +18,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   Paperclip,
+  Image,
   Camera,
   Mic,
   MicOff,
@@ -99,6 +100,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
   const inputRef = useRef<HTMLDivElement>(null);
   const docRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
   const sendingRef = useRef(sending);
   sendingRef.current = sending;
 
@@ -484,6 +486,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
         <div className="max-w-[768px] mx-auto px-4 md:px-6 pt-3 pb-3">
           <input ref={docRef} type="file" accept="application/pdf,text/plain,.pdf,.txt,.doc,.docx" className="hidden" onChange={handleDocFile} />
           <input ref={imgRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImgFile} />
+          <input ref={camRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" className="hidden" onChange={handleImgFile} />
           <div className="relative bg-white border border-[#D5D0C8] rounded-xl focus-within:border-[#B0A898] focus-within:shadow-[0_0_0_3px_rgba(180,160,140,0.12)] transition-all shadow-sm">
             {attachment && (
               <div className="flex items-center gap-2 px-4 pt-2">
@@ -521,6 +524,13 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
               <button
                 onClick={() => imgRef.current?.click()}
                 title="Allega immagine"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
+              >
+                <Image className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => camRef.current?.click()}
+                title="Scatta foto"
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
               >
                 <Camera className="w-4 h-4" />
