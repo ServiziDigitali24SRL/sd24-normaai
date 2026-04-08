@@ -84,7 +84,30 @@ export default function PrivacyPage() {
           </table>
         </Section>
 
-        <Section title="5. Periodo di conservazione">
+        <Section title="5. Training AI e utilizzo delle query">
+          <p>
+            Le query inviate a NormaAI vengono elaborate dal modello Claude (Anthropic, Inc.) esclusivamente per
+            generare la risposta richiesta.
+          </p>
+          <p className="mt-2">
+            <strong>Le query NON vengono utilizzate per addestrare o migliorare i modelli AI di Anthropic o di altri provider.</strong>
+          </p>
+          <p className="mt-2">
+            Il trattamento avviene in conformità a:
+          </p>
+          <ul className="list-disc list-inside mt-1 space-y-1 text-[13px] text-[#999]">
+            <li>Standard Contractual Clauses (SCC) Anthropic — disponibili su richiesta</li>
+            <li>Privacy Policy Anthropic: anthropic.com/legal/privacy</li>
+            <li>Data Processing Agreement Anthropic (art. 28 GDPR)</li>
+          </ul>
+          <p className="mt-3 text-[12px] text-[#777]">
+            Attenzione: si raccomanda di non inserire nelle query dati personali di terzi (nomi, indirizzi,
+            numeri di telefono) o dati sensibili (salute, religione, opinioni politiche, condanne penali).
+            Per opt-out ulteriori: <a href="mailto:privacy@normaai.it" className="text-accent hover:underline">privacy@normaai.it</a>
+          </p>
+        </Section>
+
+        <Section title="6. Periodo di conservazione">
           <table className="w-full text-[12.5px] border-collapse mt-3">
             <thead>
               <tr className="border-b border-[#222]">
