@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import {
+  sendWelcomeEmail,
+  sendSubscriptionConfirmEmail,
+  sendLeadPurchaseConfirmEmail,
+} from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -44,25 +49,66 @@ export async function POST(req: NextRequest) {
 
         // Lead purchase: professionista compra lead dal marketplace
         if (meta.type === "lead_purchase" && meta.lead_id && meta.professional_id) {
+          // Fetch lead info per email
+          const { data: lead } = await supabase
+            .from("marketplace_leads")
+            .select("question_summary, price_cents")
+            .eq("id", meta.lead_id)
+            .single();
+
           await supabase
             .from("marketplace_leads")
             .update({ status: "sold", purchased_by: meta.professional_id })
             .eq("id", meta.lead_id);
+
+          // Email conferma acquisto lead al professionista
+          const customerEmail = session.customer_email ?? session.customer_details?.email;
+          if (customerEmail && lead) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", meta.professional_id)
+              .single();
+            await sendLeadPurchaseConfirmEmail(
+              customerEmail,
+              profile?.full_name ?? "Professionista",
+              lead.question_summary ?? "Consulenza richiesta",
+              lead.price_cents ?? 0
+            );
+          }
           break;
         }
 
         // Subscription checkout
         const userId = meta.userId;
         if (userId) {
+          const plan = meta.plan ?? "trial";
+          const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
           await supabase
             .from("profiles")
             .update({
               plan: "trial",
               stripe_customer_id: session.customer as string,
               stripe_subscription_id: session.subscription as string,
-              trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+              trial_ends_at: trialEndsAt,
             })
             .eq("id", userId);
+
+          // Email benvenuto + conferma abbonamento
+          const customerEmail = session.customer_email ?? session.customer_details?.email;
+          if (customerEmail) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", userId)
+              .single();
+            const name = profile?.full_name ?? customerEmail.split("@")[0];
+            await Promise.all([
+              sendWelcomeEmail(customerEmail, name, plan),
+              sendSubscriptionConfirmEmail(customerEmail, name, plan, trialEndsAt),
+            ]);
+          }
         }
         break;
       }
