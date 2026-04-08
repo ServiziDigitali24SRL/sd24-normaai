@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
           await supabase
             .from("profiles")
             .update({
-              plan: "trial",
+              plan: plan,
               stripe_customer_id: session.customer as string,
               stripe_subscription_id: session.subscription as string,
               trial_ends_at: trialEndsAt,
@@ -143,8 +143,18 @@ export async function POST(req: NextRequest) {
         const sub = event.data.object as Stripe.Subscription;
         await supabase
           .from("profiles")
-          .update({ plan: "cancelled", stripe_subscription_id: null })
+          .update({ plan: "free", stripe_subscription_id: null })
           .eq("stripe_subscription_id", sub.id);
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+        await supabase
+          .from("profiles")
+          .update({ plan: "paused" })
+          .eq("stripe_customer_id", customerId);
         break;
       }
     }
