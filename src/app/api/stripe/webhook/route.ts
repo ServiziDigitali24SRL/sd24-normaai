@@ -41,6 +41,20 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabase();
 
+  // CVE-08 fix: idempotency check — ignora eventi già processati
+  // Richiede tabella stripe_processed_events (vedi migration CVE-08)
+  try {
+    const { error: insertErr } = await supabase
+      .from("stripe_processed_events")
+      .insert({ event_id: event.id, event_type: event.type });
+    if (insertErr && insertErr.code === "23505") {
+      // Duplicate key: evento già processato → ack senza riprocessare
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+  } catch {
+    // Tabella non ancora creata o errore transitorio: continua senza idempotency
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -159,8 +173,9 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (err) {
+    // CVE-08 fix: restituisci 200 anche su errori handler per evitare retry Stripe
+    // che causerebbero aggiornamenti duplicati. Gli errori vengono loggati.
     console.error("Webhook handler error:", err);
-    return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

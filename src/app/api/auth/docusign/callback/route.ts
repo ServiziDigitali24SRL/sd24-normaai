@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdmin } from "@supabase/supabase-js";
+import { encryptToken } from "@/lib/oauth-crypto";
 
 export const dynamic = "force-dynamic";
 
-const TOKEN_URL = "https://account-d.docusign.com/oauth/token";
-const USERINFO_URL = "https://account-d.docusign.com/oauth/userinfo";
+const TOKEN_URL = "https://account.docusign.com/oauth/token";
+const USERINFO_URL = "https://account.docusign.com/oauth/userinfo";
 
 function getRedirectUri() {
   const base = process.env.NEXT_PUBLIC_APP_URL || "https://normaai.it";
@@ -97,8 +98,8 @@ export async function GET(req: NextRequest) {
   await admin.from("user_docusign_tokens").upsert(
     {
       user_id: stateRecord.user_id,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token || null,
+      access_token: encryptToken(tokens.access_token),
+      refresh_token: encryptToken(tokens.refresh_token || null),
       account_id: accountId,
       account_name: accountName,
       created_at: new Date().toISOString(),

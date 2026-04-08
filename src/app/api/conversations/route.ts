@@ -91,8 +91,12 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { conversationId, msg } = await req.json();
-    if (!msg) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    const body = await req.json();
+    const { conversationId, msg } = body;
+    // CVE-07 fix: validate msg.question before use to prevent 500 on null/missing input
+    if (!msg || typeof msg.question !== "string" || msg.question.trim().length === 0) {
+      return NextResponse.json({ error: "Missing or invalid fields" }, { status: 400 });
+    }
 
     const supabase = getServiceClient();
     let convId = conversationId;

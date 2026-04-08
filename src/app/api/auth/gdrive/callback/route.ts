@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdmin } from "@supabase/supabase-js";
+import { encryptToken } from "@/lib/oauth-crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -87,8 +88,8 @@ export async function GET(req: NextRequest) {
   await admin.from("user_gdrive_tokens").upsert({
     user_id: stateRecord.user_id,
     email,
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token || null,
+    access_token: encryptToken(tokens.access_token),
+    refresh_token: encryptToken(tokens.refresh_token || null),
     token_expiry: expiry,
     scope: tokens.scope || null,
     updated_at: new Date().toISOString(),

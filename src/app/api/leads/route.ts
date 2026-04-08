@@ -38,9 +38,14 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") ?? "20", 10)));
     const offset = (page - 1) * limit;
 
-    // FIX MEDIO-01: filtri opzionali
-    const verticale = searchParams.get("verticale") ?? null;
-    const citta = searchParams.get("citta") ?? null;
+    // CVE-06 fix: escape wildcard chars per prevenire enumerazione via ILIKE
+    function sanitizeLike(v: string | null): string | null {
+      if (!v) return null;
+      return v.replace(/[%_\\]/g, "\\$&").slice(0, 100);
+    }
+
+    const verticale = sanitizeLike(searchParams.get("verticale"));
+    const citta = sanitizeLike(searchParams.get("citta"));
     const prezzoMax = searchParams.get("prezzo_max") ? parseFloat(searchParams.get("prezzo_max")!) : null;
 
     const supabase = getSupabase();

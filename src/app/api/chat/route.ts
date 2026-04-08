@@ -648,26 +648,24 @@ export async function POST(req: NextRequest) {
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const { question, vertical, userId: clientUserId, attachment, conversationHistory, turnNumber } = await req.json();
 
-  // BUG-03 fix: se il client dichiara un userId, verifica che corrisponda ESATTAMENTE alla sessione.
-  // Se non coincidono → 403 (no override silenzioso).
-  // Se clientUserId assente → utente anonimo → userId = null (freemium consentito).
+  // CVE-05 fix: risolvi SEMPRE userId dalla sessione cookie (non solo quando il client lo dichiara).
+  // Questo previene il bypass della quota freemium quando clientUserId è omesso ma il cookie è valido.
   let userId: string | null = null;
-  if (clientUserId) {
-    try {
-      const { createClient: createServerClient } = await import("@/lib/supabase-server");
-      const authClient = await createServerClient();
-      const { data: { user } } = await authClient.auth.getUser();
-      if (!user || user.id !== clientUserId) {
+  try {
+    const { createClient: createServerClient } = await import("@/lib/supabase-server");
+    const authClient = await createServerClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    if (user) {
+      // Se il client dichiara un userId, deve coincidere con la sessione reale
+      if (clientUserId && user.id !== clientUserId) {
         return new Response(JSON.stringify({ error: "Non autorizzato" }), {
           status: 403, headers: { "Content-Type": "application/json" },
         });
       }
       userId = user.id;
-    } catch {
-      return new Response(JSON.stringify({ error: "Errore di autenticazione" }), {
-        status: 401, headers: { "Content-Type": "application/json" },
-      });
     }
+  } catch {
+    // Sessione non leggibile: continua come anonimo
   }
 
   // BUG-06 fix: attachment size limit 5MB (base64 ≈ 75% efficiency)

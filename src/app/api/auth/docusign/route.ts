@@ -5,7 +5,7 @@ import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
-const DOCUSIGN_AUTH_URL = "https://account-d.docusign.com/oauth/auth";
+const DOCUSIGN_AUTH_URL = "https://account.docusign.com/oauth/auth";
 const SCOPES = "signature";
 
 function getRedirectUri() {

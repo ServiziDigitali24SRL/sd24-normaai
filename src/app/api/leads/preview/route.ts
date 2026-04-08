@@ -42,8 +42,13 @@ function verticalLabel(verticalId: string | null): string {
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const verticale = searchParams.get("verticale") ?? null;
-  const citta = searchParams.get("citta") ?? null;
+  // CVE-06 fix: escape wildcard chars per prevenire enumerazione via ILIKE
+  function sanitizeLike(v: string | null): string | null {
+    if (!v) return null;
+    return v.replace(/[%_\\]/g, "\\$&").slice(0, 100);
+  }
+  const verticale = sanitizeLike(searchParams.get("verticale"));
+  const citta = sanitizeLike(searchParams.get("citta"));
   const prezzoMax = searchParams.get("prezzo_max") ? parseInt(searchParams.get("prezzo_max")!, 10) : null;
 
   const supabase = getSupabase();

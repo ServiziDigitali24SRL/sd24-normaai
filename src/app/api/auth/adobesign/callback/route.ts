@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createAdmin } from "@supabase/supabase-js";
+import { encryptToken } from "@/lib/oauth-crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -84,8 +85,8 @@ export async function GET(req: NextRequest) {
   await admin.from("user_adobesign_tokens").upsert(
     {
       user_id: stateRecord.user_id,
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token || null,
+      access_token: encryptToken(tokens.access_token),
+      refresh_token: encryptToken(tokens.refresh_token || null),
       email: userEmail,
       api_access_point: apiAccessPoint,
       created_at: new Date().toISOString(),
