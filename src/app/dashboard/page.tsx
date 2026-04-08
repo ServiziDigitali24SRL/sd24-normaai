@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#0D0D0D]">
+      <div className="flex items-center justify-center h-screen bg-[#FAFAF8]">
         <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -119,13 +119,13 @@ export default function DashboardPage() {
         onLogout={handleLogout}
       />
 
-      <div className={`flex flex-col min-h-screen bg-[#0D0D0D] transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
+      <div className={`flex flex-col min-h-screen bg-[#FAFAF8] transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
 
         {/* Topbar */}
-        <div className="flex items-center px-4 py-3 border-b border-[#1a1a1a] bg-[#0D0D0D] sticky top-0 z-[100]">
+        <div className="flex items-center px-4 py-3 border-b border-[#E5E1D8] bg-[#FAFAF8] sticky top-0 z-[100]">
           <button
             onClick={toggleSidebar}
-            className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] mr-3 rounded-md text-[#555] hover:text-cream hover:bg-white/[0.05] transition-all shrink-0"
+            className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] mr-3 rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all shrink-0"
           >
             <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
             <span className="block w-5 h-[1.5px] bg-current" />
@@ -135,7 +135,7 @@ export default function DashboardPage() {
             Norma<span className="text-accent">AI</span>
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <Link href="/" className="text-[12px] text-[#555] hover:text-cream border border-[#252525] hover:border-[#333] rounded-lg px-3 py-[6px] transition-colors hidden sm:block">
+            <Link href="/" className="text-[12px] text-[#6B6763] hover:text-[#1a1a1a] border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-lg px-3 py-[6px] transition-colors hidden sm:block">
               ← Torna alla chat
             </Link>
             <div className="w-7 h-7 rounded-full bg-accent/20 border border-accent/30 flex items-center justify-center text-[11px] font-semibold text-accent uppercase shrink-0">
@@ -152,15 +152,15 @@ export default function DashboardPage() {
               {userName.charAt(0)}
             </div>
             <div>
-              <div className="text-cream text-[17px] font-semibold leading-tight">{userName}</div>
+              <div className="text-[#1a1a1a] text-[17px] font-semibold leading-tight">{userName}</div>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {categoria && <span className="text-[11px] text-[#666]">{categoria}</span>}
-                {roleLabel && <span className="text-[11px] text-[#555]">· {roleLabel}</span>}
+                {categoria && <span className="text-[11px] text-[#6B6763]">{categoria}</span>}
+                {roleLabel && <span className="text-[11px] text-[#6B6763]">· {roleLabel}</span>}
                 <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${piano === "Pro" ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" : "text-accent bg-accent/10 border-accent/20"}`}>
                   Piano {piano}
                 </span>
               </div>
-              <div className="text-[11px] text-[#444] mt-0.5">{userEmail}</div>
+              <div className="text-[11px] text-[#7A766F] mt-0.5">{userEmail}</div>
             </div>
           </div>
 
@@ -250,7 +250,7 @@ function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: U
         <StatCard label="Lead disponibili" value={loading ? "…" : String(leads.length)} color="text-accent" />
         <StatCard label="Lead acquistati"  value={loading ? "…" : String(acquistati.length)} color="text-green-400" />
         <StatCard label="Crediti wallet"   value={`€${walletCrediti}`} color="text-yellow-400" />
-        <StatCard label="Piano attivo"     value={piano} color="text-[#888]" />
+        <StatCard label="Piano attivo"     value={piano} color="text-[#9A9690]" />
       </div>
 
       {/* Tabs */}
@@ -291,10 +291,10 @@ function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: U
             { icon: "🧮", title: "Calcolo Parcelle", desc: "Onorari professionali DM 147/2022 — 6 tipi di pratica", href: "/?tool=parcelle" },
             { icon: "📄", title: "Analisi documento", desc: "Upload PDF/DOCX/immagine — analisi strutturata in 5 sezioni", href: "/?tool=analisi-doc" },
           ].map(s => (
-            <Link key={s.title} href={s.href} className="bg-[#111] border border-[#1e1e1e] hover:border-[#2a2a2a] rounded-xl p-4 transition-colors group">
+            <Link key={s.title} href={s.href} className="bg-white border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-xl p-4 transition-colors group">
               <div className="text-[22px] mb-2">{s.icon}</div>
-              <div className="text-cream text-[13px] font-semibold mb-1 group-hover:text-accent transition-colors">{s.title}</div>
-              <div className="text-[12px] text-[#555] leading-[1.5]">{s.desc}</div>
+              <div className="text-[#1a1a1a] text-[13px] font-semibold mb-1 group-hover:text-accent transition-colors">{s.title}</div>
+              <div className="text-[12px] text-[#6B6763] leading-[1.5]">{s.desc}</div>
             </Link>
           ))}
         </div>
@@ -327,7 +327,7 @@ function ImpresaDashboard({ piano }: { piano: string }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <StatCard label="Piano attivo" value={piano} color="text-accent" />
         <StatCard label="Query AI disponibili" value="Illimitate" color="text-green-400" />
-        <StatCard label="Verticali coperti" value="5" color="text-[#888]" />
+        <StatCard label="Verticali coperti" value="5" color="text-[#9A9690]" />
       </div>
 
       <TabBar tabs={TABS} active={tab} onChange={t => setTab(t as Tab)} />
@@ -340,10 +340,10 @@ function ImpresaDashboard({ piano }: { piano: string }) {
             { icon: "📁", title: "I tuoi archivi",           desc: "Organizza documenti e conversazioni per progetto o cliente",    href: "/" },
             { icon: "🔗", title: "Connettori",               desc: "Collega Gmail, Drive, OneDrive, DocuSign per analisi diretta",  href: "/" },
           ].map(s => (
-            <Link key={s.title} href={s.href} className="bg-[#111] border border-[#1e1e1e] hover:border-[#2a2a2a] rounded-xl p-4 transition-colors group">
+            <Link key={s.title} href={s.href} className="bg-white border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-xl p-4 transition-colors group">
               <div className="text-[22px] mb-2">{s.icon}</div>
-              <div className="text-cream text-[13px] font-semibold mb-1 group-hover:text-accent transition-colors">{s.title}</div>
-              <div className="text-[12px] text-[#555] leading-[1.5]">{s.desc}</div>
+              <div className="text-[#1a1a1a] text-[13px] font-semibold mb-1 group-hover:text-accent transition-colors">{s.title}</div>
+              <div className="text-[12px] text-[#6B6763] leading-[1.5]">{s.desc}</div>
             </Link>
           ))}
         </div>
@@ -371,7 +371,7 @@ function CittadinoDashboard({ piano }: { piano: string }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <StatCard label="Piano attivo"         value={piano}        color="text-accent" />
         <StatCard label="Query AI disponibili" value="Illimitate"   color="text-green-400" />
-        <StatCard label="Guide gratuite"       value="46+"          color="text-[#888]" />
+        <StatCard label="Guide gratuite"       value="46+"          color="text-[#9A9690]" />
       </div>
 
       <TabBar tabs={TABS} active={tab} onChange={t => setTab(t as Tab)} />
@@ -384,10 +384,10 @@ function CittadinoDashboard({ piano }: { piano: string }) {
             { icon: "👤", title: "Trova un professionista", desc: "Avvocati, commercialisti, ingegneri abilitati su NormaAI",      href: "/" },
             { icon: "📚", title: "Guide gratuite",        desc: "46 guide su diritto del lavoro, fisco, condominio e molto altro", href: "/guide" },
           ].map(s => (
-            <Link key={s.title} href={s.href} className="bg-[#111] border border-[#1e1e1e] hover:border-[#2a2a2a] rounded-xl p-4 transition-colors group">
+            <Link key={s.title} href={s.href} className="bg-white border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-xl p-4 transition-colors group">
               <div className="text-[22px] mb-2">{s.icon}</div>
-              <div className="text-cream text-[13px] font-semibold mb-1 group-hover:text-accent transition-colors">{s.title}</div>
-              <div className="text-[12px] text-[#555] leading-[1.5]">{s.desc}</div>
+              <div className="text-[#1a1a1a] text-[13px] font-semibold mb-1 group-hover:text-accent transition-colors">{s.title}</div>
+              <div className="text-[12px] text-[#6B6763] leading-[1.5]">{s.desc}</div>
             </Link>
           ))}
         </div>
@@ -442,11 +442,11 @@ function AbbonamentoSection({ piano, ruolo, categoria }: { piano: string; ruolo:
   return (
     <div className="mt-4 space-y-4">
       {/* Piano card */}
-      <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-5">
+      <div className="bg-white border border-[#E5E1D8] rounded-xl p-5">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <div className="text-cream text-[14px] font-semibold">Piano {piano}</div>
-            <div className="text-[12px] text-[#555] mt-0.5">
+            <div className="text-[#1a1a1a] text-[14px] font-semibold">Piano {piano}</div>
+            <div className="text-[12px] text-[#6B6763] mt-0.5">
               {ruolo === "professionista" ? (categoria ?? "Professionista NormaAI") : ruolo === "impresa" ? "Impresa" : "Cittadino"}
             </div>
           </div>
@@ -455,22 +455,22 @@ function AbbonamentoSection({ piano, ruolo, categoria }: { piano: string; ruolo:
 
         <div className="space-y-2 mb-5">
           {features.map(f => (
-            <div key={f} className="flex items-center gap-2 text-[12.5px] text-[#888]">
+            <div key={f} className="flex items-center gap-2 text-[12.5px] text-[#9A9690]">
               <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 stroke-accent fill-none stroke-[2.5]"><polyline points="20,6 9,17 4,12" /></svg>
               {f}
             </div>
           ))}
         </div>
 
-        <div className="border-t border-[#1e1e1e] pt-4 flex items-center justify-between">
+        <div className="border-t border-[#E5E1D8] pt-4 flex items-center justify-between">
           <div>
-            <span className="text-cream text-[20px] font-semibold">€{prezzo}</span>
-            <span className="text-[12px] text-[#555]">/mese</span>
-            {piano !== "Pro" && <span className="text-[11px] text-[#444] ml-2">· 14 gg gratis al primo accesso</span>}
+            <span className="text-[#1a1a1a] text-[20px] font-semibold">€{prezzo}</span>
+            <span className="text-[12px] text-[#6B6763]">/mese</span>
+            {piano !== "Pro" && <span className="text-[11px] text-[#7A766F] ml-2">· 14 gg gratis al primo accesso</span>}
           </div>
           <button
             onClick={() => window.open("https://billing.stripe.com", "_blank")}
-            className="text-[12px] text-[#666] border border-[#252525] hover:border-[#333] hover:text-[#888] rounded-lg px-4 py-2 transition-colors"
+            className="text-[12px] text-[#6B6763] border border-[#E5E1D8] hover:border-[#C8C2BA] hover:text-[#7A766F] rounded-lg px-4 py-2 transition-colors"
           >
             Gestisci →
           </button>
@@ -479,13 +479,13 @@ function AbbonamentoSection({ piano, ruolo, categoria }: { piano: string; ruolo:
 
       {/* Lead pricing — solo professionista */}
       {ruolo === "professionista" && (
-        <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-4">
-          <h3 className="text-[13px] text-cream font-medium mb-3">Lead — prezzi dal wallet</h3>
+        <div className="bg-white border border-[#E5E1D8] rounded-xl p-4">
+          <h3 className="text-[13px] text-[#1a1a1a] font-medium mb-3">Lead — prezzi dal wallet</h3>
           <div className="space-y-2">
-            <div className="flex justify-between text-[12.5px]"><span className="text-[#888]">Lead privato (persona fisica)</span><span className="text-cream font-medium">€75</span></div>
-            <div className="flex justify-between text-[12.5px]"><span className="text-[#888]">Lead impresa / società</span><span className="text-cream font-medium">€150</span></div>
+            <div className="flex justify-between text-[12.5px]"><span className="text-[#9A9690]">Lead privato (persona fisica)</span><span className="text-[#1a1a1a] font-medium">€75</span></div>
+            <div className="flex justify-between text-[12.5px]"><span className="text-[#9A9690]">Lead impresa / società</span><span className="text-[#1a1a1a] font-medium">€150</span></div>
           </div>
-          <p className="text-[11px] text-[#444] mt-3">I crediti si scalano dal wallet. Nessun obbligo, i crediti non scadono mai.</p>
+          <p className="text-[11px] text-[#7A766F] mt-3">I crediti si scalano dal wallet. Nessun obbligo, i crediti non scadono mai.</p>
         </div>
       )}
     </div>
@@ -519,41 +519,41 @@ function WalletSection({ walletCrediti }: { walletCrediti: number }) {
   return (
     <div className="mt-4 space-y-4">
       {/* Saldo attuale */}
-      <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-5">
+      <div className="bg-white border border-[#E5E1D8] rounded-xl p-5">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-[13px] text-[#666]">Saldo wallet</span>
+          <span className="text-[13px] text-[#6B6763]">Saldo wallet</span>
           <span className="text-[11px] text-green-400 bg-green-500/10 border border-green-500/20 rounded-full px-2.5 py-0.5">I crediti non scadono</span>
         </div>
-        <div className="text-cream text-[36px] font-semibold font-serif tracking-tight">
+        <div className="text-[#1a1a1a] text-[36px] font-semibold font-serif tracking-tight">
           €{walletCrediti}
         </div>
-        <p className="text-[12px] text-[#444] mt-1">
+        <p className="text-[12px] text-[#7A766F] mt-1">
           Lead privato €75 · Lead impresa €150 · Scalati automaticamente all&apos;acquisto
         </p>
       </div>
 
       {/* Pacchetti ricarica */}
       <div>
-        <h3 className="text-[13px] text-cream font-medium mb-3">Ricarica wallet</h3>
+        <h3 className="text-[13px] text-[#1a1a1a] font-medium mb-3">Ricarica wallet</h3>
         <div className="grid grid-cols-2 gap-3">
           {PACCHETTI.map(p => (
             <button
               key={p.prezzo}
               onClick={() => ricarica(p.prezzo)}
-              className="bg-[#111] border border-[#1e1e1e] hover:border-[#2a2a2a] rounded-xl p-4 text-left transition-colors group"
+              className="bg-white border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-xl p-4 text-left transition-colors group"
             >
               <div className="flex items-start justify-between mb-1">
-                <span className="text-cream text-[13px] font-semibold">{p.label}</span>
+                <span className="text-[#1a1a1a] text-[13px] font-semibold">{p.label}</span>
                 {p.badge && (
                   <span className="text-[10px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-full px-2 py-0.5">{p.badge}</span>
                 )}
               </div>
-              <div className="text-[22px] font-semibold text-cream font-serif">€{p.prezzo}</div>
-              <div className="text-[12px] text-[#555] mt-1">{p.crediti} crediti</div>
+              <div className="text-[22px] font-semibold text-[#1a1a1a] font-serif">€{p.prezzo}</div>
+              <div className="text-[12px] text-[#6B6763] mt-1">{p.crediti} crediti</div>
             </button>
           ))}
         </div>
-        <p className="text-[11px] text-[#444] mt-3">Pagamento sicuro via Stripe. I crediti non scadono mai e sono trasferibili tra device.</p>
+        <p className="text-[11px] text-[#7A766F] mt-3">Pagamento sicuro via Stripe. I crediti non scadono mai e sono trasferibili tra device.</p>
       </div>
     </div>
   );
@@ -563,12 +563,12 @@ function WalletSection({ walletCrediti }: { walletCrediti: number }) {
 
 function TabBar({ tabs, active, onChange }: { tabs: { id: string; label: string; badge?: number }[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex gap-1 border-b border-[#1a1a1a] mb-1">
+    <div className="flex gap-1 border-b border-[#E5E1D8] mb-1">
       {tabs.map(t => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className={`flex items-center gap-1.5 px-3 py-2.5 text-[12.5px] font-medium border-b-2 -mb-px transition-colors ${active === t.id ? "border-accent text-cream" : "border-transparent text-[#555] hover:text-[#888]"}`}
+          className={`flex items-center gap-1.5 px-3 py-2.5 text-[12.5px] font-medium border-b-2 -mb-px transition-colors ${active === t.id ? "border-accent text-[#1a1a1a]" : "border-transparent text-[#6B6763] hover:text-[#7A766F]"}`}
         >
           {t.label}
           {t.badge != null && t.badge > 0 && (
@@ -582,33 +582,33 @@ function TabBar({ tabs, active, onChange }: { tabs: { id: string; label: string;
 
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-4">
+    <div className="bg-white border border-[#E5E1D8] rounded-xl p-4">
       <div className={`text-[20px] font-semibold leading-tight ${color}`}>{value}</div>
-      <div className="text-[11px] text-[#555] mt-0.5">{label}</div>
+      <div className="text-[11px] text-[#6B6763] mt-0.5">{label}</div>
     </div>
   );
 }
 
 function LeadCard({ lead, showBuy, onBuy, buying, acquired }: { lead: Lead; showBuy: boolean; onBuy?: () => void; buying?: boolean; acquired?: boolean }) {
   return (
-    <div className="bg-[#0f0f0f] border border-[#1e1e1e] hover:border-[#2a2a2a] rounded-xl p-4 transition-colors">
+    <div className="bg-white border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-xl p-4 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className={`text-[10.5px] font-medium border rounded-full px-2.5 py-0.5 ${getMateriaColor(lead.materia)}`}>{lead.materia}</span>
-            <span className={`text-[10.5px] border rounded-full px-2.5 py-0.5 ${lead.tipo === "impresa" ? "text-orange-400 bg-orange-500/10 border-orange-500/20" : "text-[#888] bg-[#1a1a1a] border-[#252525]"}`}>
+            <span className={`text-[10.5px] border rounded-full px-2.5 py-0.5 ${lead.tipo === "impresa" ? "text-orange-400 bg-orange-500/10 border-orange-500/20" : "text-[#9A9690] bg-[#F0EDE8] border-[#E5E1D8]"}`}>
               {lead.tipo === "impresa" ? "Impresa" : "Privato"}
             </span>
-            {lead.citta && <span className="text-[10.5px] text-[#555]">📍 {lead.citta}</span>}
-            <span className="text-[10.5px] text-[#444] ml-auto">{timeAgo(lead.created_at)}</span>
+            {lead.citta && <span className="text-[10.5px] text-[#6B6763]">📍 {lead.citta}</span>}
+            <span className="text-[10.5px] text-[#7A766F] ml-auto">{timeAgo(lead.created_at)}</span>
           </div>
-          <p className="text-[13px] text-[#ccc] leading-[1.5] line-clamp-2">
+          <p className="text-[13px] text-[#3D3A37] leading-[1.5] line-clamp-2">
             {lead.descrizione || "Cliente cerca consulenza professionale. Acquista per vedere i dettagli completi."}
           </p>
           {/* Dettagli contatto — visibili solo dopo acquisto */}
           {acquired && (lead.nome_cliente || lead.email_cliente || lead.telefono_cliente) && (
-            <div className="mt-3 pt-3 border-t border-[#1e1e1e] flex flex-wrap gap-3 text-[12px]">
-              {lead.nome_cliente    && <span className="text-cream">👤 {lead.nome_cliente}</span>}
+            <div className="mt-3 pt-3 border-t border-[#E5E1D8] flex flex-wrap gap-3 text-[12px]">
+              {lead.nome_cliente    && <span className="text-[#1a1a1a]">👤 {lead.nome_cliente}</span>}
               {lead.email_cliente   && <a href={`mailto:${lead.email_cliente}`} className="text-accent hover:underline">✉️ {lead.email_cliente}</a>}
               {lead.telefono_cliente && <a href={`tel:${lead.telefono_cliente}`} className="text-accent hover:underline">📞 {lead.telefono_cliente}</a>}
             </div>
@@ -618,7 +618,7 @@ function LeadCard({ lead, showBuy, onBuy, buying, acquired }: { lead: Lead; show
         <div className="shrink-0 flex flex-col items-end gap-1.5">
           {showBuy && (
             <>
-              <span className="text-cream text-[16px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? LEAD_PREZZI.impresa : LEAD_PREZZI.privato)}</span>
+              <span className="text-[#1a1a1a] text-[16px] font-semibold">€{lead.prezzo ?? (lead.tipo === "impresa" ? LEAD_PREZZI.impresa : LEAD_PREZZI.privato)}</span>
               <button
                 onClick={onBuy}
                 disabled={buying}
@@ -643,8 +643,8 @@ function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: st
   return (
     <div className="flex flex-col items-center justify-center py-14 text-center">
       <div className="text-[40px] mb-3">{icon}</div>
-      <p className="text-[14px] text-cream font-medium mb-2">{title}</p>
-      <p className="text-[12.5px] text-[#555] max-w-[360px] leading-[1.6]">{sub}</p>
+      <p className="text-[14px] text-[#1a1a1a] font-medium mb-2">{title}</p>
+      <p className="text-[12.5px] text-[#6B6763] max-w-[360px] leading-[1.6]">{sub}</p>
     </div>
   );
 }
@@ -659,7 +659,7 @@ function Spinner() {
 
 function Toast({ msg }: { msg: string }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#1a1a1a] border border-[#333] text-cream text-[13px] px-4 py-2.5 rounded-xl shadow-lg whitespace-nowrap">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#F0EDE8] border border-[#D5D0C8] text-[#1a1a1a] text-[13px] px-4 py-2.5 rounded-xl shadow-lg whitespace-nowrap">
       {msg}
     </div>
   );
