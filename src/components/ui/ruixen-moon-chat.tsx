@@ -92,6 +92,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
   const [placeholderVisible, setPlaceholderVisible] = useState(true);
   const [attachment, setAttachment] = useState<{ name: string; type: string; data: string } | null>(null);
   const [recording, setRecording] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const mediaRef = useRef<MediaRecorder | null>(null);
 
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -144,6 +145,19 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
     const el = messagesRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [current?.text, history.length]);
+
+  // Keyboard offset — prevents virtual keyboard from covering input bar on mobile
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handler = () => {
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardOffset(offset);
+    };
+    vv.addEventListener("resize", handler);
+    vv.addEventListener("scroll", handler);
+    return () => { vv.removeEventListener("resize", handler); vv.removeEventListener("scroll", handler); };
+  }, []);
 
   // New chat event
   useEffect(() => {
@@ -480,7 +494,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
       <div
         ref={inputRef}
         className="fixed bottom-0 right-0 z-[50] bg-[#F7F5F2] border-t border-[#E5E1D8]"
-        style={{ left: sidebarW, paddingBottom: "env(safe-area-inset-bottom, 0px)", transition: "left 250ms ease-in-out" }}
+        style={{ left: sidebarW, paddingBottom: `max(env(safe-area-inset-bottom, 0px), ${keyboardOffset}px)`, transition: "left 250ms ease-in-out, padding-bottom 150ms ease-out" }}
         suppressHydrationWarning
       >
         <div className="max-w-[768px] mx-auto px-4 md:px-6 pt-3 pb-3">
@@ -510,35 +524,35 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
                   : (placeholderVisible ? PLACEHOLDER_EXAMPLES[placeholderIdx] : "")
               }
               rows={1}
-              className="w-full px-4 py-3 pb-2 bg-transparent border-none outline-none text-[#1a1a1a] text-[15px] min-h-[48px] placeholder:text-[#9A9690] resize-none transition-opacity duration-300"
+              className="w-full px-4 py-3 pb-2 bg-transparent border-none outline-none text-[#1a1a1a] text-[16px] min-h-[48px] placeholder:text-[#9A9690] resize-none transition-opacity duration-300"
               style={{ overflow: "hidden" }}
             />
             <div className="flex items-center gap-2 px-3 pb-3 pt-1">
               <button
                 onClick={() => docRef.current?.click()}
                 title="Allega documento"
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
+                className="w-[44px] h-[44px] flex items-center justify-center rounded-xl text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
               >
                 <Paperclip className="w-4 h-4" />
               </button>
               <button
                 onClick={() => imgRef.current?.click()}
                 title="Allega immagine"
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
+                className="w-[44px] h-[44px] flex items-center justify-center rounded-xl text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
               >
                 <Image className="w-4 h-4" />
               </button>
               <button
                 onClick={() => camRef.current?.click()}
                 title="Scatta foto"
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
+                className="w-[44px] h-[44px] flex items-center justify-center rounded-xl text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all border-none bg-transparent cursor-pointer"
               >
                 <Camera className="w-4 h-4" />
               </button>
               <button
                 onClick={toggleRecording}
                 title={recording ? "Ferma registrazione" : "Registra vocale"}
-                className={`w-7 h-7 flex items-center justify-center rounded-lg transition-all border-none bg-transparent cursor-pointer ${recording ? "text-accent bg-accent/10" : "text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8]"}`}
+                className={`w-[44px] h-[44px] flex items-center justify-center rounded-xl transition-all border-none bg-transparent cursor-pointer ${recording ? "text-accent bg-accent/10" : "text-[#9A9690] hover:text-[#1a1a1a] hover:bg-[#F0EDE8]"}`}
               >
                 {recording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </button>
@@ -548,7 +562,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
               <button
                 onClick={handleSend}
                 disabled={!canSend}
-                className="ml-auto w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150 border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                className="ml-auto w-[44px] h-[44px] rounded-full flex items-center justify-center transition-all duration-150 border-none cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{ background: canSend ? "#E8340A" : "#D5D0C8" }}
               >
                 {sending

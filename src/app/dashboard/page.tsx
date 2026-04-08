@@ -502,7 +502,13 @@ const PACCHETTI = [
 ];
 
 function WalletSection({ walletCrediti }: { walletCrediti: number }) {
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoMsg, setPromoMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [buyingPackage, setBuyingPackage] = useState<number | null>(null);
+
   async function ricarica(prezzo: number) {
+    setBuyingPackage(prezzo);
     try {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
@@ -514,6 +520,29 @@ function WalletSection({ walletCrediti }: { walletCrediti: number }) {
         if (url) { window.location.href = url; return; }
       }
     } catch { /* silent */ }
+    setBuyingPackage(null);
+  }
+
+  async function applyPromo() {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoMsg(null);
+    try {
+      const res = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: promoCode.trim().toUpperCase() }),
+      });
+      if (res.ok) {
+        setPromoMsg({ type: "ok", text: "Codice applicato! I crediti sono stati aggiunti al tuo wallet." });
+        setPromoCode("");
+      } else {
+        const d = await res.json().catch(() => ({}));
+        setPromoMsg({ type: "err", text: d.error || "Codice non valido o già usato." });
+      }
+    } catch {
+      setPromoMsg({ type: "err", text: "Errore di rete. Riprova." });
+    } finally { setPromoLoading(false); }
   }
 
   return (
@@ -522,7 +551,7 @@ function WalletSection({ walletCrediti }: { walletCrediti: number }) {
       <div className="bg-white border border-[#E5E1D8] rounded-xl p-5">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[13px] text-[#6B6763]">Saldo wallet</span>
-          <span className="text-[11px] text-green-400 bg-green-500/10 border border-green-500/20 rounded-full px-2.5 py-0.5">I crediti non scadono</span>
+          <span className="text-[11px] text-green-700 bg-green-50 border border-green-200 rounded-full px-2.5 py-0.5">I crediti non scadono</span>
         </div>
         <div className="text-[#1a1a1a] text-[36px] font-semibold font-serif tracking-tight">
           €{walletCrediti}
@@ -530,6 +559,35 @@ function WalletSection({ walletCrediti }: { walletCrediti: number }) {
         <p className="text-[12px] text-[#7A766F] mt-1">
           Lead privato €75 · Lead impresa €150 · Scalati automaticamente all&apos;acquisto
         </p>
+      </div>
+
+      {/* Codice promo */}
+      <div className="bg-white border border-[#E5E1D8] rounded-xl p-4">
+        <h3 className="text-[13px] text-[#1a1a1a] font-medium mb-3">Hai un codice promo?</h3>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Es. LAUNCH50"
+            value={promoCode}
+            onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && applyPromo()}
+            className="flex-1 px-3 py-2.5 border border-[#D5D0C8] rounded-lg text-[14px] text-[#1a1a1a] bg-[#F5F3F0] outline-none focus:border-[#C8C2BA] placeholder:text-[#9A9690] font-mono tracking-wider"
+          />
+          <button
+            onClick={applyPromo}
+            disabled={promoLoading || !promoCode.trim()}
+            className="px-4 py-2.5 bg-accent text-white text-[13px] font-medium rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 min-w-[80px] flex items-center justify-center"
+          >
+            {promoLoading
+              ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : "Applica"}
+          </button>
+        </div>
+        {promoMsg && (
+          <p className={`text-[12px] mt-2 ${promoMsg.type === "ok" ? "text-green-700" : "text-red-600"}`}>
+            {promoMsg.type === "ok" ? "✓ " : "✕ "}{promoMsg.text}
+          </p>
+        )}
       </div>
 
       {/* Pacchetti ricarica */}
@@ -540,15 +598,20 @@ function WalletSection({ walletCrediti }: { walletCrediti: number }) {
             <button
               key={p.prezzo}
               onClick={() => ricarica(p.prezzo)}
-              className="bg-white border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-xl p-4 text-left transition-colors group"
+              disabled={buyingPackage !== null}
+              className="bg-white border border-[#E5E1D8] hover:border-[#C8C2BA] rounded-xl p-4 text-left transition-colors group disabled:opacity-60"
             >
               <div className="flex items-start justify-between mb-1">
                 <span className="text-[#1a1a1a] text-[13px] font-semibold">{p.label}</span>
                 {p.badge && (
-                  <span className="text-[10px] text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-full px-2 py-0.5">{p.badge}</span>
+                  <span className="text-[10px] text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-full px-2 py-0.5">{p.badge}</span>
                 )}
               </div>
-              <div className="text-[22px] font-semibold text-[#1a1a1a] font-serif">€{p.prezzo}</div>
+              <div className="text-[22px] font-semibold text-[#1a1a1a] font-serif">
+                {buyingPackage === p.prezzo
+                  ? <span className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin inline-block" />
+                  : `€${p.prezzo}`}
+              </div>
               <div className="text-[12px] text-[#6B6763] mt-1">{p.crediti} crediti</div>
             </button>
           ))}
@@ -563,12 +626,12 @@ function WalletSection({ walletCrediti }: { walletCrediti: number }) {
 
 function TabBar({ tabs, active, onChange }: { tabs: { id: string; label: string; badge?: number }[]; active: string; onChange: (id: string) => void }) {
   return (
-    <div className="flex gap-1 border-b border-[#E5E1D8] mb-1">
+    <div className="flex gap-1 border-b border-[#E5E1D8] mb-1 overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
       {tabs.map(t => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className={`flex items-center gap-1.5 px-3 py-2.5 text-[12.5px] font-medium border-b-2 -mb-px transition-colors ${active === t.id ? "border-accent text-[#1a1a1a]" : "border-transparent text-[#6B6763] hover:text-[#7A766F]"}`}
+          className={`flex items-center gap-1.5 px-3 py-3 text-[13px] font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0 min-h-[44px] ${active === t.id ? "border-accent text-[#1a1a1a]" : "border-transparent text-[#6B6763] hover:text-[#7A766F]"}`}
         >
           {t.label}
           {t.badge != null && t.badge > 0 && (
@@ -622,7 +685,7 @@ function LeadCard({ lead, showBuy, onBuy, buying, acquired }: { lead: Lead; show
               <button
                 onClick={onBuy}
                 disabled={buying}
-                className="text-[12px] bg-accent text-white rounded-lg px-3 py-1.5 font-medium hover:bg-accent-hover transition-colors disabled:opacity-60 whitespace-nowrap"
+                className="text-[13px] bg-accent text-white rounded-lg px-4 py-2.5 font-medium hover:bg-accent-hover transition-colors disabled:opacity-60 whitespace-nowrap min-h-[44px] flex items-center justify-center"
               >
                 {buying
                   ? <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin inline-block" />
@@ -651,15 +714,32 @@ function EmptyState({ icon, title, sub }: { icon: string; title: string; sub: st
 
 function Spinner() {
   return (
-    <div className="flex items-center justify-center py-12">
-      <span className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+    <div className="space-y-3">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="bg-white border border-[#E5E1D8] rounded-xl p-4 animate-pulse">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex gap-2 mb-3">
+                <div className="h-5 w-24 bg-[#F0EDE8] rounded-full" />
+                <div className="h-5 w-16 bg-[#F0EDE8] rounded-full" />
+              </div>
+              <div className="h-3.5 bg-[#F0EDE8] rounded w-full mb-2" />
+              <div className="h-3.5 bg-[#F0EDE8] rounded w-2/3" />
+            </div>
+            <div className="shrink-0 flex flex-col items-end gap-2">
+              <div className="h-6 w-12 bg-[#F0EDE8] rounded" />
+              <div className="h-9 w-20 bg-[#F0EDE8] rounded-lg" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
 function Toast({ msg }: { msg: string }) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#F0EDE8] border border-[#D5D0C8] text-white text-[13px] px-4 py-2.5 rounded-xl shadow-lg whitespace-nowrap">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[700] bg-[#1a1a1a] border border-[#333] text-white text-[13px] px-4 py-2.5 rounded-xl shadow-lg whitespace-nowrap">
       {msg}
     </div>
   );

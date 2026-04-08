@@ -20,30 +20,36 @@ export default function ModalOverlay({
   return (
     <AnimatePresence>
       {open && (
+        {/* Overlay backdrop */}
         <motion.div
-          className="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center p-5"
+          className="fixed inset-0 bg-black/40 z-[200]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) onClose();
-          }}
-        >
+          onClick={onClose}
+        />
+        {/* Mobile: bottom sheet | Desktop: centered modal */}
+        <div className="fixed inset-0 z-[201] flex items-end sm:items-center sm:justify-center sm:p-5 pointer-events-none">
           <motion.div
             role="dialog"
             aria-modal="true"
-            className={`bg-white border border-[#E5E1D8] rounded-[18px] w-full relative max-h-[92vh] overflow-y-auto shadow-[0_4px_32px_rgba(0,0,0,0.10)] ${
-              maxWidth ?? (wide ? "max-w-[560px]" : "max-w-[440px]")
-            }`}
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 10 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className={`bg-white border border-[#E5E1D8] w-full relative max-h-[92vh] overflow-y-auto shadow-[0_4px_32px_rgba(0,0,0,0.12)] pointer-events-auto
+              rounded-t-[20px] sm:rounded-[18px]
+              ${maxWidth ?? (wide ? "sm:max-w-[560px]" : "sm:max-w-[440px]")}
+            `}
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
+            {/* Drag handle — mobile only */}
+            <div className="flex justify-center pt-3 pb-1 sm:hidden">
+              <div className="w-10 h-1 bg-[#D5D0C8] rounded-full" />
+            </div>
             {children}
           </motion.div>
-        </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );
@@ -53,7 +59,8 @@ export function ModalClose({ onClose }: { onClose: () => void }) {
   return (
     <button
       onClick={onClose}
-      className="absolute top-[14px] right-[16px] bg-transparent border-none text-[#9A9690] text-[20px] leading-none z-10 hover:text-[#1a1a1a] transition-colors"
+      aria-label="Chiudi"
+      className="absolute top-2 right-2 w-[44px] h-[44px] flex items-center justify-center bg-transparent border-none text-[#9A9690] text-[20px] leading-none z-10 hover:text-[#1a1a1a] hover:bg-[#F0EDE8] rounded-lg transition-colors cursor-pointer"
     >
       &times;
     </button>
@@ -97,7 +104,7 @@ export function FormInput({
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange?.(e.target.value)}
-      className="w-full py-[9px] px-[13px] bg-[#F0EDE8] border border-[#D5D0C8] rounded-[9px] text-[#1a1a1a] text-[13.5px] outline-none transition-colors duration-150 focus:border-[#B0A898] focus:bg-white placeholder:text-[#A09B93]"
+      className="w-full py-[12px] px-[13px] bg-[#F0EDE8] border border-[#D5D0C8] rounded-[9px] text-[#1a1a1a] text-[16px] outline-none transition-colors duration-150 focus:border-[#B0A898] focus:bg-white placeholder:text-[#A09B93]"
     />
   );
 }
