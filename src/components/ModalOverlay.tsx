@@ -20,36 +20,35 @@ export default function ModalOverlay({
   return (
     <AnimatePresence>
       {open && (
-        {/* Overlay backdrop */}
-        <motion.div
-          className="fixed inset-0 bg-black/40 z-[200]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-          onClick={onClose}
-        />
-        {/* Mobile: bottom sheet | Desktop: centered modal */}
-        <div className="fixed inset-0 z-[201] flex items-end sm:items-center sm:justify-center sm:p-5 pointer-events-none">
+        <>
+          {/* Overlay backdrop */}
           <motion.div
-            role="dialog"
-            aria-modal="true"
-            className={`bg-white border border-[#E5E1D8] w-full relative max-h-[92vh] overflow-y-auto shadow-[0_4px_32px_rgba(0,0,0,0.12)] pointer-events-auto
-              rounded-t-[20px] sm:rounded-[18px]
-              ${maxWidth ?? (wide ? "sm:max-w-[560px]" : "sm:max-w-[440px]")}
-            `}
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 40 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {/* Drag handle — mobile only */}
-            <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="w-10 h-1 bg-[#D5D0C8] rounded-full" />
-            </div>
-            {children}
-          </motion.div>
-        </div>
+            className="fixed inset-0 bg-black/40 z-[200]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={onClose}
+          />
+          {/* Mobile: bottom sheet | Desktop: centered modal */}
+          <div className="fixed inset-0 z-[201] flex items-end sm:items-center sm:justify-center sm:p-5 pointer-events-none">
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              className={`bg-white border border-[#E5E1D8] w-full relative max-h-[92vh] overflow-y-auto shadow-[0_4px_32px_rgba(0,0,0,0.12)] pointer-events-auto rounded-t-[20px] sm:rounded-[18px] ${maxWidth ?? (wide ? "sm:max-w-[560px]" : "sm:max-w-[440px]")}`}
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {/* Drag handle — mobile only */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 bg-[#D5D0C8] rounded-full" />
+              </div>
+              {children}
+            </motion.div>
+          </div>
+        </>
       )}
     </AnimatePresence>
   );
