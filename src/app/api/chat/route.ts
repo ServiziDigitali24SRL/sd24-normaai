@@ -506,8 +506,6 @@ ${CITATION_RULES}${followUp}${proponi}
 // FIX 08/04/2026: migrato da VPS fastembed 384 dim (mismatch con pgvector 1536)
 // a OpenAI direttamente. OPENAI_API_KEY già presente in env.
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? "";
-
 async function generateEmbedding(text: string): Promise<number[] | null> {
   if (!OPENAI_API_KEY) {
     console.error("[EMBED] OPENAI_API_KEY non configurata");
