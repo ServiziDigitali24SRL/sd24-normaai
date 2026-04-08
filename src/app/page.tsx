@@ -36,7 +36,6 @@ import ModalParcelle from "@/components/modals/ModalParcelle";
 import ModalDashboard from "@/components/modals/ModalDashboard";
 import ModalAnalisiDoc from "@/components/modals/ModalAnalisiDoc";
 import ModalConnettori from "@/components/modals/ModalConnettori";
-import ModalPiani from "@/components/modals/ModalPiani";
 import CommandPalette from "@/components/CommandPalette";
 import NormaNewsTicker from "@/components/NormaNewsTicker";
 import { Bell, Settings, ChevronDown } from "lucide-react";
@@ -328,7 +327,6 @@ export default function Home() {
       <ModalDashboard open={activeModal === "dashboard"} onClose={closeModal} user={user} />
       <ModalAnalisiDoc open={activeModal === "analisi-doc"} onClose={closeModal} />
       <ModalConnettori open={activeModal === "connettori"} onClose={closeModal} onOpenModal={openModal} />
-      <ModalPiani open={activeModal === "piani"} onClose={closeModal} onOpenModal={openModal} />
     </>
   );
 }

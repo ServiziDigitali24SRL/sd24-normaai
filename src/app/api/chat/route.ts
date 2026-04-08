@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import * as Sentry from "@sentry/nextjs";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/rate-limit";
 import { scoreLeadQuality } from "@/lib/lead-scoring";
+
+// Sentry stub — install @sentry/nextjs to enable real error tracking
+const Sentry = { captureException: (e: unknown, _ctx?: unknown) => console.error("[sentry]", e) };
 
 export const dynamic = "force-dynamic";
 
@@ -665,7 +667,7 @@ export async function POST(req: NextRequest) {
   }
 
   const rateLimitKey = userId || `ip:${clientIp}`;
-  const { allowed, remaining } = await checkRateLimit(rateLimitKey, !!userId);
+  const { allowed, remaining } = rateLimit(rateLimitKey, !!userId ? 100 : 20, 60_000);
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Troppe richieste. Riprova tra un minuto.", remaining }), {
       status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60" },
