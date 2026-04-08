@@ -1,32 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
-// GET /api/conversations?userId=xxx&conversationId=xxx
+async function getAuthUser() {
+  const client = await createServerClient();
+  const { data: { user } } = await client.auth.getUser();
+  return user;
+}
+
+// GET /api/conversations?conversationId=xxx
 // Returns: { messages: HistoryMsg[], conversationId: string | null }
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get("userId");
-  const conversationId = searchParams.get("conversationId");
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!userId) return NextResponse.json({ messages: [], conversationId: null });
+  const { searchParams } = new URL(req.url);
+  const conversationId = searchParams.get("conversationId");
+  const supabase = getServiceClient();
 
   try {
     let convId = conversationId;
 
-    // If no conversationId, find the most recent conversation
     if (!convId) {
       const { data: convs } = await supabase
         .from("conversations")
         .select("id")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
         .limit(1);
       convId = convs?.[0]?.id ?? null;
+    } else {
+      // Verify conversation belongs to this user
+      const { data: conv } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("id", convId)
+        .eq("user_id", user.id)
+        .single();
+      if (!conv) return NextResponse.json({ messages: [], conversationId: null });
     }
 
     if (!convId) return NextResponse.json({ messages: [], conversationId: null });
@@ -39,7 +57,6 @@ export async function GET(req: NextRequest) {
 
     if (!rows || rows.length === 0) return NextResponse.json({ messages: [], conversationId: convId });
 
-    // Pair user+assistant messages into HistoryMsg objects
     const history: any[] = [];
     for (let i = 0; i < rows.length - 1; i += 2) {
       const userMsg = rows[i];
@@ -68,34 +85,43 @@ export async function GET(req: NextRequest) {
 }
 
 // POST /api/conversations
-// Body: { userId, conversationId?, msg: HistoryMsg }
-// Returns: { ok: true, conversationId: string }
+// Body: { conversationId?, msg: HistoryMsg }
 export async function POST(req: NextRequest) {
-  try {
-    const { userId, conversationId, msg } = await req.json();
-    if (!userId || !msg) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  const user = await getAuthUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  try {
+    const { conversationId, msg } = await req.json();
+    if (!msg) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+
+    const supabase = getServiceClient();
     let convId = conversationId;
 
-    // Create conversation if needed
     if (!convId) {
       const title = msg.question.slice(0, 80);
       const { data: conv, error: convErr } = await supabase
         .from("conversations")
-        .insert({ user_id: userId, title, vertical: msg.vertical })
+        .insert({ user_id: user.id, title, vertical: msg.vertical })
         .select("id")
         .single();
       if (convErr) throw convErr;
       convId = conv.id;
     } else {
-      // Update updated_at
+      // Verify ownership before update
+      const { data: existing } = await supabase
+        .from("conversations")
+        .select("id")
+        .eq("id", convId)
+        .eq("user_id", user.id)
+        .single();
+      if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
       await supabase
         .from("conversations")
         .update({ updated_at: new Date().toISOString() })
         .eq("id", convId);
     }
 
-    // Insert user message
     await supabase.from("messages").insert({
       conversation_id: convId,
       role: "user",
@@ -103,7 +129,6 @@ export async function POST(req: NextRequest) {
       sources: { vertical: msg.vertical ?? null, attachmentName: msg.attachmentName ?? null },
     });
 
-    // Insert assistant message (sources field carries all metadata)
     await supabase.from("messages").insert({
       conversation_id: convId,
       role: "assistant",

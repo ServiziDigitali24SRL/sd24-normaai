@@ -40,8 +40,19 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
+        const meta = session.metadata ?? {};
 
+        // Lead purchase: professionista compra lead dal marketplace
+        if (meta.type === "lead_purchase" && meta.lead_id && meta.professional_id) {
+          await supabase
+            .from("marketplace_leads")
+            .update({ status: "sold", purchased_by: meta.professional_id })
+            .eq("id", meta.lead_id);
+          break;
+        }
+
+        // Subscription checkout
+        const userId = meta.userId;
         if (userId) {
           await supabase
             .from("profiles")
