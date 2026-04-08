@@ -282,7 +282,7 @@ export default function Home() {
         <NormaNewsTicker />
 
         {/* Main chat area */}
-        <RuixenMoonChat user={user} onOpenModal={openModal} />
+        <RuixenMoonChat user={user} />
       </div>
 
       <CommandPalette />
