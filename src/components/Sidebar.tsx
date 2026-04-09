@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import type { User } from "@supabase/supabase-js";
 
@@ -48,6 +48,7 @@ const sb = {
 
 export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout }: SidebarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const userRole = user?.user_metadata?.role as string | undefined;
   const userName = user?.user_metadata?.full_name || user?.user_metadata?.ragione_sociale || user?.email?.split("@")[0] || "";
   const roleLabel = userRole === "privato" ? "Cittadino" : userRole === "impresa" ? "Impresa" : userRole === "professionista" ? "Professionista" : null;
@@ -95,7 +96,13 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
 
           {/* Chat section */}
           <SectionLabel label="Chat" />
-          <NavItem onClick={() => navClick(() => window.dispatchEvent(new CustomEvent("norma-new-chat")))} icon={<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>} label="Nuova chat" />
+          <NavItem onClick={() => navClick(() => {
+            if (pathname === "/") {
+              window.dispatchEvent(new CustomEvent("norma-new-chat"));
+            } else {
+              router.push("/");
+            }
+          })} icon={<svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>} label="Nuova chat" />
           <NavItem onClick={() => navClick(() => onOpenModal("cronologia"))} icon={<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><polyline points="12,6 12,12 16,14" /></svg>} label="Cronologia" />
           <NavItem onClick={() => navClick(() => onOpenModal("formazione"))} icon={<svg viewBox="0 0 24 24"><polygon points="23,7 16,12 23,17"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>} label="Formazione" />
 
