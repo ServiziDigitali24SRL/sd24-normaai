@@ -14,11 +14,21 @@ const PRICE_MAP: Record<string, string | undefined> = {
   professionista_annual:   process.env.STRIPE_PRICE_PROFESSIONISTA_ANNUAL,
   impresa:                 process.env.STRIPE_PRICE_IMPRESA,
   impresa_annual:          process.env.STRIPE_PRICE_IMPRESA_ANNUAL,
+  impresa_micro:           process.env.STRIPE_PRICE_IMPRESA_MICRO,
+  impresa_piccola:         process.env.STRIPE_PRICE_IMPRESA_PICCOLA,
+  impresa_media:           process.env.STRIPE_PRICE_IMPRESA_MEDIA,
+  impresa_grande:          process.env.STRIPE_PRICE_IMPRESA_GRANDE,
+  piccola_impresa:         process.env.STRIPE_PRICE_PICCOLA_IMPRESA,
+  piccola_impresa_annual:  process.env.STRIPE_PRICE_PICCOLA_IMPRESA_ANNUAL,
+  cittadino_pro:           process.env.STRIPE_PRICE_CITTADINO_PRO,
   api_developer:           process.env.STRIPE_PRICE_API_DEVELOPER,
   api_pro:                 process.env.STRIPE_PRICE_API_PRO,
   lead_privato:            process.env.STRIPE_PRICE_LEAD_PRIVATO,
   lead_impresa:            process.env.STRIPE_PRICE_LEAD_IMPRESA,
 };
+
+// Piani impresa con trial 7gg
+const IMPRESA_TRIAL_PLANS = new Set(["impresa_micro", "impresa_piccola", "impresa_media", "impresa_grande"]);
 
 // Piani lead sono one-time payment, non subscription
 const ONE_TIME_PLANS = new Set(["lead_privato", "lead_impresa"]);
@@ -53,10 +63,19 @@ export async function POST(req: NextRequest) {
       sessionParams.mode = "payment";
     } else {
       sessionParams.mode = "subscription";
-      sessionParams.subscription_data = {
-        trial_period_days: 14,
-        metadata: { userId: userId || "", plan },
-      };
+      if (IMPRESA_TRIAL_PLANS.has(plan)) {
+        sessionParams.subscription_data = {
+          trial_period_days: 7,
+          metadata: { userId: userId || "", plan },
+        };
+      } else if (plan !== "cittadino_pro") {
+        sessionParams.subscription_data = {
+          trial_period_days: 14,
+          metadata: { userId: userId || "", plan },
+        };
+      } else {
+        sessionParams.subscription_data = { metadata: { userId: userId || "", plan } };
+      }
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);

@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useState, useEffect, useCallback, Suspense, useMemo } from "react";
+import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
@@ -42,6 +42,11 @@ const ModalDashboard = lazyDynamic(() => import("@/components/modals/ModalDashbo
 const ModalAnalisiDoc = lazyDynamic(() => import("@/components/modals/ModalAnalisiDoc"), { ssr: false });
 const ModalConnettori = lazyDynamic(() => import("@/components/modals/ModalConnettori"), { ssr: false });
 const ModalSfondo = lazyDynamic(() => import("@/components/modals/ModalSfondo"), { ssr: false });
+const ModalUpgrade = lazyDynamic(() => import("@/components/modals/ModalUpgrade"), { ssr: false });
+const ModalOnboarding = lazyDynamic(() => import("@/components/modals/ModalOnboarding"), { ssr: false });
+const ModalPopupProfessionista = lazyDynamic(() => import("@/components/modals/ModalPopupProfessionista"), { ssr: false });
+const ModalCaricaDocumento = lazyDynamic(() => import("@/components/modals/ModalCaricaDocumento"), { ssr: false });
+const ModalScadenze = lazyDynamic(() => import("@/components/modals/ModalScadenze"), { ssr: false });
 import { Bell, Settings, ChevronDown } from "lucide-react";
 
 function LeadCounterBanner({ onCTA }: { onCTA: () => void }) {
@@ -102,7 +107,8 @@ type ModalId =
   | "gmail" | "gdrive" | "dropbox" | "onedrive" | "outlook"
   | "docusign" | "adobesign" | "whatsapp" | "telegram"
   | "progetti" | "nuovo-progetto" | "archivio" | "nuovo-archivio" | "profilo-ai"
-  | "parcelle" | "dashboard" | "analisi-doc" | "connettori" | "piani" | null;
+  | "parcelle" | "dashboard" | "analisi-doc" | "connettori" | "piani"
+  | "upgrade" | "onboarding" | "carica-documento" | "scadenze" | null;
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<ModalId>(null);
@@ -110,22 +116,47 @@ export default function Home() {
   const [checkoutToast, setCheckoutToast] = useState<"success" | "cancel" | null>(null);
   const [gmailToast, setGmailToast] = useState<"connected" | "error" | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [isPro, setIsPro] = useState(false);
+  const [popupProfShow, setPopupProfShow] = useState(false);
+  const [popupConvSummary, setPopupConvSummary] = useState("");
+  const [docModalCat, setDocModalCat] = useState("");
+  const [docModalSub, setDocModalSub] = useState("");
+  const queryCountRef = useRef(0);
+  const nextPopupAtRef = useRef(Math.floor(Math.random() * 3) + 3); // 3-5
   const supabase = useMemo(() => createClient(), []); // FIX: memoizzato
 
   const router = useRouter();
+
+  async function checkIsPro(userId: string) {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("plan")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+    const PRO_PLANS = ["cittadino_pro", "professionista", "impresa", "api_developer", "api_pro"];
+    setIsPro(data ? PRO_PLANS.includes(data.plan) : false);
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const u = data.user;
       setUser(u);
+      if (u) checkIsPro(u.id);
       // Nessun redirect automatico: il professionista può usare la chat
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) checkIsPro(session.user.id);
+      else setIsPro(false);
       if (event === "SIGNED_IN" && session?.user) {
-        // Professionista → dashboard
-        if (session.user.user_metadata?.role === "professionista") {
+        const role = session.user.user_metadata?.role;
+        if (role === "professionista") {
           router.replace("/dashboard");
+          return;
+        }
+        if (role === "impresa") {
+          router.replace("/dashboard-impresa");
           return;
         }
         const key = `norma-onboarding-${session.user.id}`;
@@ -138,6 +169,23 @@ export default function Home() {
     return () => subscription.unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Popup professionista: ogni 3-5 query riuscite
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (!user || isPro) return;
+      const detail = (e as CustomEvent<{ summary?: string }>).detail;
+      queryCountRef.current += 1;
+      if (queryCountRef.current >= nextPopupAtRef.current) {
+        queryCountRef.current = 0;
+        nextPopupAtRef.current = Math.floor(Math.random() * 3) + 3;
+        setPopupConvSummary(detail?.summary || "");
+        setPopupProfShow(true);
+      }
+    };
+    window.addEventListener("norma-query-done", handler);
+    return () => window.removeEventListener("norma-query-done", handler);
+  }, [user, isPro]);
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -181,6 +229,7 @@ export default function Home() {
 
   function openModal(id: string) { setActiveModal(id as ModalId); }
   function closeModal() { setActiveModal(null); }
+  function handleOpenDocumento(cat: string, sub: string) { setDocModalCat(cat); setDocModalSub(sub); setActiveModal("carica-documento"); }
 
   return (
     <>
@@ -191,7 +240,7 @@ export default function Home() {
         <CheckoutToastHandler onToast={setCheckoutToast} onGmailToast={setGmailToast} onModal={openModal} />
       </Suspense>
 
-      <Sidebar onOpenModal={openModal} isOpen={sidebarOpen} onToggle={toggleSidebar} user={user} onLogout={handleLogout} />
+      <Sidebar onOpenModal={openModal} isOpen={sidebarOpen} onToggle={toggleSidebar} user={user} onLogout={handleLogout} isPro={isPro} onOpenDocumento={handleOpenDocumento} />
 
       {/* Main content — FIX: margin solo desktop */}
       <div className={`flex flex-col h-screen overflow-hidden transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
@@ -333,6 +382,11 @@ export default function Home() {
       <ModalDashboard open={activeModal === "dashboard"} onClose={closeModal} user={user} />
       <ModalAnalisiDoc open={activeModal === "analisi-doc"} onClose={closeModal} />
       <ModalConnettori open={activeModal === "connettori"} onClose={closeModal} onOpenModal={openModal} />
+      <ModalUpgrade open={activeModal === "upgrade"} onClose={closeModal} />
+      <ModalOnboarding open={activeModal === "onboarding"} onClose={closeModal} userId={user?.id ?? ""} userEmail={user?.email ?? ""} />
+      <ModalScadenze open={activeModal === "scadenze"} onClose={closeModal} userId={user?.id ?? ""} isPro={isPro} onUpgradeRequired={() => openModal("upgrade")} />
+      <ModalCaricaDocumento open={activeModal === "carica-documento"} onClose={closeModal} userId={user?.id ?? ""} categoria={docModalCat} sottocategoria={docModalSub} isPro={isPro} onUpgradeRequired={() => openModal("upgrade")} />
+      <ModalPopupProfessionista open={popupProfShow} onClose={() => setPopupProfShow(false)} userId={user?.id ?? null} userEmail={user?.email ?? ""} conversationSummary={popupConvSummary} vertical="" userCity="" />
     </>
   );
 }

@@ -209,6 +209,13 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, vertical: null, userId: user?.id ?? null, conversationHistory, turnNumber: history.length }),
       });
+      if (res.status === 402) {
+        const data = await res.json().catch(() => ({}));
+        const code = data?.code;
+        setCurrent(null); setSending(false); setStreaming(false);
+        window.dispatchEvent(new CustomEvent("norma-open-modal", { detail: code === "onboarding" ? "onboarding" : "cittadino" }));
+        return;
+      }
       if (!res.ok || !res.body) throw new Error("HTTP " + res.status);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -229,6 +236,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
               const msg: Msg = { id: crypto.randomUUID(), question: q, text: finalText, sources: finalSources, hasRag: finalHasRag, ts: Date.now() };
               setHistory((prev) => { const next = [...prev, msg]; saveHistory(next); return next; });
               setCurrent(null);
+              window.dispatchEvent(new CustomEvent("norma-query-done", { detail: { summary: q.slice(0, 200) } }));
             } else if (event.type === "error") { setCurrent((p) => p ? { ...p, text: p.text || "Errore. Riprova." } : null); setStreaming(false); }
           } catch { }
         }

@@ -19,12 +19,20 @@ interface Props {
   onClose: () => void;
 }
 
+const PIANI = [
+  { id: "impresa_micro",   label: "Micro",   prezzo: "29",  query: "543 query/mese",  desc: "Fino a 5 dipendenti" },
+  { id: "impresa_piccola", label: "Piccola", prezzo: "149", query: "1.481 query/mese", desc: "Fino a 25 dipendenti" },
+  { id: "impresa_media",   label: "Media",   prezzo: "349", query: "3.731 query/mese", desc: "Fino a 100 dipendenti" },
+  { id: "impresa_grande",  label: "Grande",  prezzo: "799", query: "9.356 query/mese", desc: "Oltre 100 dipendenti" },
+];
+
 export default function ModalImpresa({ open, onClose }: Props) {
   const [tab, setTab] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [ragioneSociale, setRagioneSociale] = useState("");
   const [piva, setPiva] = useState("");
+  const [piano, setPiano] = useState("impresa_micro");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [consentPrivacy, setConsentPrivacy] = useState(false);
@@ -81,7 +89,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: "price_impresa", userId: data.user.id, email }),
+        body: JSON.stringify({ plan: piano, userId: data.user.id, email }),
       });
       const { url } = await res.json();
       if (url) window.location.href = url;
@@ -91,40 +99,52 @@ export default function ModalImpresa({ open, onClose }: Props) {
   }
 
   const feats = [
-    "Multe e sanzioni",
-    "Contratti commerciali",
-    "Rapporti con dipendenti",
-    "Diffide, contenziosi e cause",
-    "Altro + domande libere",
-    "Archivio conversazioni",
+    "Query normative illimitate con AI (nel pool del piano)",
+    "Modello Claude Opus 4.6 per analisi critiche",
+    "Fascicolo aziendale documenti",
+    "Gestione team e ruoli aziendali",
+    "Matching con professionisti (avvocati, consulenti)",
+    "Alert scadenze normative automatici",
+    "Report compliance mensile",
+    "Dashboard impresa dedicata",
   ];
+
+  const pianoSelezionato = PIANI.find(p => p.id === piano) ?? PIANI[0];
 
   return (
     <ModalOverlay open={open} onClose={onClose}>
       <div className="p-7">
         <ModalClose onClose={onClose} />
-        <ModalTitle>Accedi come Impresa</ModalTitle>
-        <ModalSub>14 giorni gratuiti, poi 29&euro;/mese &mdash; disdici quando vuoi</ModalSub>
+        <ModalTitle>NormaAI per Imprese</ModalTitle>
+        <ModalSub>7 giorni gratuiti &mdash; disdici quando vuoi &mdash; nessuna carta richiesta</ModalSub>
 
-        <div className="bg-card border border-card-border rounded-xl p-[18px] mt-[14px]">
-          <div className="font-serif text-[30px]">
-            <sup className="text-[14px] font-sans">&euro;</sup>29
-            <sub className="text-[13px] font-sans text-[#6B6763]">/mese</sub>
-          </div>
-          <div className="text-[11.5px] text-gold mt-[3px]">
-            &#10022; 14 giorni gratuiti &middot; Modello Opus 4.6
-          </div>
-          <div className="mt-3 flex flex-col gap-[7px]">
-            {feats.map((f) => (
-              <div key={f} className="flex items-center gap-[7px] text-[12.5px] text-[#9A9690]">
-                <CheckIcon />
-                {f}
-              </div>
-            ))}
-          </div>
+        {/* Piano selector */}
+        <div className="mt-4 grid grid-cols-4 gap-[6px]">
+          {PIANI.map(p => (
+            <button
+              key={p.id}
+              onClick={() => setPiano(p.id)}
+              className={`flex flex-col items-center py-[10px] px-[4px] rounded-xl border text-center transition-all cursor-pointer ${piano === p.id ? "border-accent bg-accent/5" : "border-[#E5E1D8] bg-white hover:border-[#C8C2BA]"}`}
+            >
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${piano === p.id ? "text-accent" : "text-[#6B6763]"}`}>{p.label}</span>
+              <span className={`text-[16px] font-serif mt-[2px] ${piano === p.id ? "text-[#1a1a1a]" : "text-[#3a3a3a]"}`}>€{p.prezzo}</span>
+              <span className="text-[9px] text-[#9A9690] mt-[1px]">/mese</span>
+            </button>
+          ))}
+        </div>
+        <div className="mt-[6px] text-[11px] text-[#9A9690] text-center">{pianoSelezionato.desc} &middot; {pianoSelezionato.query}</div>
+
+        {/* Features */}
+        <div className="bg-card border border-card-border rounded-xl p-[14px] mt-[12px] flex flex-col gap-[6px]">
+          {feats.map((f) => (
+            <div key={f} className="flex items-start gap-[7px] text-[11.5px] text-[#9A9690]">
+              <CheckIcon />
+              {f}
+            </div>
+          ))}
         </div>
 
-        <div className="mt-5">
+        <div className="mt-4">
           <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={(t) => { setTab(t); setError(""); }} />
         </div>
 
@@ -147,46 +167,34 @@ export default function ModalImpresa({ open, onClose }: Props) {
             <FormInput placeholder="Azienda S.r.l." value={ragioneSociale} onChange={setRagioneSociale} />
             <FormLabel>P.IVA</FormLabel>
             <FormInput placeholder="IT00000000000" value={piva} onChange={setPiva} />
-            <FormLabel>Email</FormLabel>
+            <FormLabel>Email aziendale</FormLabel>
             <FormInput type="email" placeholder="admin@azienda.it" value={email} onChange={setEmail} />
             <FormLabel>Password</FormLabel>
-            <FormInput type="password" placeholder="Crea una password" value={password} onChange={setPassword} />
+            <FormInput type="password" placeholder="Crea una password (min. 8 caratteri)" value={password} onChange={setPassword} />
 
-            {/* GDPR Consents */}
             <div className="mt-4 space-y-3">
               <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={consentPrivacy}
-                  onChange={(e) => setConsentPrivacy(e.target.checked)}
-                  className="mt-[2px] shrink-0 accent-[#E8340A]"
-                />
+                <input type="checkbox" checked={consentPrivacy} onChange={(e) => setConsentPrivacy(e.target.checked)} className="mt-[2px] shrink-0 accent-[#E8340A]" />
                 <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
                   * Ho letto e accetto la{" "}
                   <a href="/privacy" target="_blank" className="text-accent hover:underline">Privacy Policy</a>
                   {" "}e i{" "}
-                  <a href="/termini" target="_blank" className="text-accent hover:underline">Termini di Servizio</a>.
-                  Acconsento al trattamento dei miei dati personali. (obbligatorio)
+                  <a href="/termini" target="_blank" className="text-accent hover:underline">Termini di Servizio</a>. (obbligatorio)
                 </span>
               </label>
               <label className="flex items-start gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={consentMarketing}
-                  onChange={(e) => setConsentMarketing(e.target.checked)}
-                  className="mt-[2px] shrink-0 accent-[#E8340A]"
-                />
+                <input type="checkbox" checked={consentMarketing} onChange={(e) => setConsentMarketing(e.target.checked)} className="mt-[2px] shrink-0 accent-[#E8340A]" />
                 <span className="text-[11.5px] text-[#6B6763] leading-[1.5]">
-                  Acconsento a ricevere comunicazioni email su novità, aggiornamenti normativi e offerte. (opzionale)
+                  Acconsento a ricevere email su novità e aggiornamenti normativi. (opzionale)
                 </span>
               </label>
             </div>
 
             <BtnPrimary onClick={handleRegister}>
-              {loading ? "Registrazione..." : "Inizia 14 giorni gratis"}
+              {loading ? "Registrazione..." : `Inizia 7 giorni gratis — Piano ${pianoSelezionato.label}`}
             </BtnPrimary>
             <p className="text-[11px] text-[#7A766F] text-center mt-[10px]">
-              Nessuna carta richiesta per il trial
+              Nessuna carta richiesta per il trial · €{pianoSelezionato.prezzo}/mese dopo i 7 giorni
             </p>
           </div>
         )}

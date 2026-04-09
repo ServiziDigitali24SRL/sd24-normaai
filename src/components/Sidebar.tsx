@@ -11,6 +11,8 @@ interface SidebarProps {
   onToggle: () => void;
   user: User | null;
   onLogout: () => void;
+  isPro?: boolean;
+  onOpenDocumento?: (categoria: string, sottocategoria: string) => void;
 }
 
 const ALL_ITEMS: { id: string; label: string; section: string; icon: React.ReactNode }[] = [
@@ -46,7 +48,7 @@ const sb = {
   popupHover: "hover:bg-[#F0EDE8]",
 };
 
-export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout }: SidebarProps) {
+export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout, isPro, onOpenDocumento }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const userRole = user?.user_metadata?.role as string | undefined;
@@ -111,12 +113,30 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
           <NavItem onClick={() => navClick(() => onOpenModal("progetti"))} icon={<svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>} label="Progetti" onAdd={() => onOpenModal("nuovo-progetto")} />
           <NavItem onClick={() => navClick(() => onOpenModal("archivio"))} icon={<svg viewBox="0 0 24 24"><polyline points="21,8 21,21 3,21 3,8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>} label="Archivio" onAdd={() => onOpenModal("nuovo-archivio")} />
           {user && <NavItem onClick={() => navClick(() => onOpenModal("professionisti"))} icon={<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>} label="I tuoi professionisti" />}
-          {user && (
+          {user && userRole !== "impresa" && (
             <NavLink
               href="/dashboard"
               onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 1024) onToggle(); }}
               icon={<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>}
               label="Dashboard"
+            />
+          )}
+          {user && userRole === "impresa" && (
+            <>
+              <NavLink
+                href="/dashboard-impresa"
+                onClick={() => { if (typeof window !== "undefined" && window.innerWidth < 1024) onToggle(); }}
+                icon={<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>}
+                label="Dashboard Impresa"
+              />
+            </>
+          )}
+
+          {user && (
+            <DocumentiSection
+              isPro={isPro ?? false}
+              onOpenModal={onOpenModal}
+              onOpenDocumento={onOpenDocumento ?? (() => {})}
             />
           )}
 
@@ -164,6 +184,67 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout 
 
       {/* Mobile backdrop */}
       {isOpen && <div className="fixed inset-0 bg-black/30 z-[89] lg:hidden" onClick={onToggle} />}
+    </>
+  );
+}
+
+const CATEGORIE_DOCS: Record<string, string[]> = {
+  "Personali e legali": ["Carta d'identità", "Passaporto", "Codice fiscale", "Atti notarili", "Testamento", "Contratti"],
+  "Lavoro e reddito": ["Busta paga", "CU / 730", "Contratto di lavoro", "Dimissioni / Licenziamento", "NASPI"],
+  "Fiscale e tributario": ["Dichiarazione redditi", "F24", "Cartelle Equitalia", "Fatture", "IVA"],
+  "Immigrazione": ["Permesso di soggiorno", "Visto", "Ricongiungimento familiare", "Cittadinanza"],
+  "Utenze e bollette": ["Luce e gas", "Telefono", "Internet", "Acqua", "Condominio"],
+};
+
+const CAT_ICONS: Record<string, React.ReactNode> = {
+  "Personali e legali": <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  "Lavoro e reddito": <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>,
+  "Fiscale e tributario": <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  "Immigrazione": <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
+  "Utenze e bollette": <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>,
+};
+
+function DocumentiSection({ isPro, onOpenModal, onOpenDocumento }: { isPro: boolean; onOpenModal: (id: string) => void; onOpenDocumento: (cat: string, sub: string) => void }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  return (
+    <>
+      <SectionLabel label="Documenti" />
+      {!isPro && (
+        <div
+          className="mx-[14px] mb-[6px] px-[10px] py-[6px] rounded-lg bg-accent/10 border border-accent/20 flex items-center gap-[7px] cursor-pointer"
+          onClick={() => onOpenModal("upgrade")}
+        >
+          <svg viewBox="0 0 24 24" className="w-[11px] h-[11px] shrink-0 stroke-accent fill-none stroke-[2]"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span className="text-[10.5px] text-accent font-medium">Funzione PRO — €9/mese</span>
+        </div>
+      )}
+      {Object.entries(CATEGORIE_DOCS).map(([cat, subs]) => (
+        <div key={cat}>
+          <button
+            onClick={() => setExpanded(prev => prev === cat ? null : cat)}
+            className={`flex items-center gap-[9px] w-full px-[18px] py-[7px] text-[12px] ${sb.muted} bg-transparent border-none text-left cursor-pointer ${sb.hover} transition-colors duration-150 [&_svg]:w-[13px] [&_svg]:h-[13px] [&_svg]:shrink-0 [&_svg]:stroke-current [&_svg]:fill-none [&_svg]:stroke-[2]`}
+          >
+            {CAT_ICONS[cat]}
+            <span className="flex-1 truncate">{cat}</span>
+            <svg viewBox="0 0 24 24" className={`!w-[10px] !h-[10px] shrink-0 stroke-current fill-none stroke-[2] transition-transform duration-150 ${expanded === cat ? "rotate-180" : ""}`}><polyline points="6,9 12,15 18,9"/></svg>
+          </button>
+          {expanded === cat && (
+            <div className="pb-[2px]">
+              {subs.map(sub => (
+                <button
+                  key={sub}
+                  onClick={() => { if (!isPro) { onOpenModal("upgrade"); return; } onOpenDocumento(cat, sub); }}
+                  className={`flex items-center gap-[9px] w-full pl-[38px] pr-[18px] py-[6px] text-[11.5px] ${sb.muted} bg-transparent border-none text-left cursor-pointer ${sb.hover} transition-colors duration-150`}
+                >
+                  <svg viewBox="0 0 24 24" className="w-[11px] h-[11px] shrink-0 stroke-current fill-none stroke-[2]"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                  <span className="flex-1 truncate">{sub}</span>
+                  {!isPro && <svg viewBox="0 0 24 24" className="w-[9px] h-[9px] shrink-0 stroke-accent fill-none stroke-[2]"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </>
   );
 }

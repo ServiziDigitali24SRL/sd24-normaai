@@ -97,17 +97,39 @@ export async function POST(req: NextRequest) {
         const userId = meta.userId;
         if (userId) {
           const plan = meta.plan ?? "trial";
-          const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+          const isImpresaPlan = ["impresa_micro", "impresa_piccola", "impresa_media", "impresa_grande"].includes(plan);
+          const trialDays = isImpresaPlan ? 7 : 14;
+          const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
 
           await supabase
             .from("profiles")
             .update({
-              plan: plan,
+              plan: isImpresaPlan ? "impresa" : plan,
               stripe_customer_id: session.customer as string,
               stripe_subscription_id: session.subscription as string,
               trial_ends_at: trialEndsAt,
             })
             .eq("id", userId);
+
+          // Crea company_profile per piani impresa
+          if (isImpresaPlan) {
+            const QUERY_MAP: Record<string, number> = {
+              impresa_micro: 543, impresa_piccola: 1481, impresa_media: 3731, impresa_grande: 9356,
+            };
+            const month = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" }).slice(0, 7);
+            await supabase
+              .from("company_profiles")
+              .upsert({
+                user_id: userId,
+                piano: plan,
+                stripe_subscription_id: session.subscription as string,
+                query_incluse: QUERY_MAP[plan] ?? 543,
+                query_usate_mese: 0,
+                mese_corrente: month,
+                trial_ends_at: trialEndsAt,
+                stato: "trial",
+              }, { onConflict: "user_id" });
+          }
 
           // Email benvenuto + conferma abbonamento
           const customerEmail = session.customer_email ?? session.customer_details?.email;
@@ -131,25 +153,30 @@ export async function POST(req: NextRequest) {
         const sub = event.data.object as Stripe.Subscription;
         const customerId = sub.customer as string;
         const status = sub.status;
+        const subMeta = sub.metadata ?? {};
+        const subPlan = subMeta.plan ?? "";
+        const isImpresaPlan = ["impresa_micro", "impresa_piccola", "impresa_media", "impresa_grande"].includes(subPlan);
 
-        const planMap: Record<string, string> = {
-          active: "active",
-          trialing: "trial",
-          canceled: "cancelled",
-          past_due: "paused",
-          unpaid: "paused",
-        };
+        const profilePlan = isImpresaPlan ? "impresa" : (status === "canceled" ? "free" : status === "past_due" || status === "unpaid" ? "paused" : subPlan || "free");
 
         await supabase
           .from("profiles")
           .update({
-            plan: planMap[status] || "free",
+            plan: profilePlan,
             subscription_ends_at:
               (sub as unknown as { current_period_end?: number }).current_period_end
                 ? new Date(((sub as unknown as { current_period_end: number }).current_period_end) * 1000).toISOString()
                 : null,
           })
           .eq("stripe_customer_id", customerId);
+
+        // Aggiorna stato company_profile se impresa
+        if (isImpresaPlan && status === "active") {
+          await supabase
+            .from("company_profiles")
+            .update({ stato: "attivo" })
+            .eq("stripe_subscription_id", sub.id);
+        }
         break;
       }
 
@@ -158,6 +185,10 @@ export async function POST(req: NextRequest) {
         await supabase
           .from("profiles")
           .update({ plan: "free", stripe_subscription_id: null })
+          .eq("stripe_subscription_id", sub.id);
+        await supabase
+          .from("company_profiles")
+          .update({ stato: "cancellato" })
           .eq("stripe_subscription_id", sub.id);
         break;
       }
@@ -169,6 +200,10 @@ export async function POST(req: NextRequest) {
           .from("profiles")
           .update({ plan: "paused" })
           .eq("stripe_customer_id", customerId);
+        await supabase
+          .from("company_profiles")
+          .update({ stato: "sospeso" })
+          .eq("stripe_subscription_id", (invoice as unknown as { subscription?: string }).subscription ?? "");
         break;
       }
     }
