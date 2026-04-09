@@ -112,7 +112,7 @@ export default function DashboardPage() {
   return (
     <>
       <Sidebar
-        onOpenModal={() => {}}
+        onOpenModal={(id) => router.push(`/?modal=${id}`)}
         isOpen={sidebarOpen}
         onToggle={toggleSidebar}
         user={user}

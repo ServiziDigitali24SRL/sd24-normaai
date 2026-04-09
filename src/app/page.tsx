@@ -77,17 +77,19 @@ function LeadCounterBanner({ onCTA }: { onCTA: () => void }) {
   );
 }
 
-function CheckoutToastHandler({ onToast, onGmailToast }: { onToast: (t: "success" | "cancel" | null) => void; onGmailToast: (t: "connected" | "error" | null) => void }) {
+function CheckoutToastHandler({ onToast, onGmailToast, onModal }: { onToast: (t: "success" | "cancel" | null) => void; onGmailToast: (t: "connected" | "error" | null) => void; onModal: (id: string) => void }) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
     const checkout = searchParams.get("checkout");
     const gmail = searchParams.get("gmail");
+    const modal = searchParams.get("modal");
     if (checkout === "success") { onToast("success"); router.replace("/"); setTimeout(() => onToast(null), 5000); }
     else if (checkout === "cancel") { onToast("cancel"); router.replace("/"); setTimeout(() => onToast(null), 4000); }
     else if (gmail === "connected") { onGmailToast("connected"); router.replace("/"); setTimeout(() => onGmailToast(null), 4000); }
     else if (gmail === "error") { onGmailToast("error"); router.replace("/"); setTimeout(() => onGmailToast(null), 4000); }
+    if (modal) { router.replace("/"); setTimeout(() => onModal(modal), 100); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -186,7 +188,7 @@ export default function Home() {
       <h1 className="sr-only">NormaAI — AI normativo italiano: cerca leggi, normative e sentenze</h1>
 
       <Suspense fallback={null}>
-        <CheckoutToastHandler onToast={setCheckoutToast} onGmailToast={setGmailToast} />
+        <CheckoutToastHandler onToast={setCheckoutToast} onGmailToast={setGmailToast} onModal={openModal} />
       </Suspense>
 
       <Sidebar onOpenModal={openModal} isOpen={sidebarOpen} onToggle={toggleSidebar} user={user} onLogout={handleLogout} />
