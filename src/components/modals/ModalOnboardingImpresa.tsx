@@ -13,9 +13,8 @@ interface Props {
 const STEPS = [
   { id: 1, label: "Benvenuto", emoji: "👋" },
   { id: 2, label: "Dati aziendali", emoji: "🏢" },
-  { id: 3, label: "Organigramma", emoji: "👥" },
-  { id: 4, label: "Connettori", emoji: "🔗" },
-  { id: 5, label: "Pronto!", emoji: "🚀" },
+  { id: 3, label: "Connettori", emoji: "🔗" },
+  { id: 4, label: "Pronto!", emoji: "🚀" },
 ];
 
 const CONNETTORI = [
@@ -26,20 +25,13 @@ const CONNETTORI = [
   { id: "outlook", label: "Outlook", icon: "📮" },
 ];
 
-const RUOLI_PREDEFINITI = ["CEO / Amministratore", "CFO / Responsabile Finanza", "HR / Risorse Umane", "Responsabile Legale", "Responsabile Compliance", "IT Manager", "Operations"];
-
 export default function ModalOnboardingImpresa({ open, onClose, userId, companyId }: Props) {
   const [step, setStep] = useState(1);
   const [ragioneSociale, setRagioneSociale] = useState("");
   const [piva, setPiva] = useState("");
   const [settore, setSettore] = useState("");
   const [nDipendenti, setNDipendenti] = useState("");
-  const [ruoliSelezionati, setRuoliSelezionati] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
-
-  function toggleRuolo(r: string) {
-    setRuoliSelezionati(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
-  }
 
   async function saveStep2() {
     if (!ragioneSociale.trim()) return;
@@ -51,19 +43,6 @@ export default function ModalOnboardingImpresa({ open, onClose, userId, companyI
     }).catch(() => {});
     setSaving(false);
     setStep(3);
-  }
-
-  async function saveStep3() {
-    setSaving(true);
-    if (ruoliSelezionati.length > 0) {
-      await fetch(`/api/impresa/members?company_id=${companyId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ruoli: ruoliSelezionati }),
-      }).catch(() => {});
-    }
-    setSaving(false);
-    setStep(4);
   }
 
   const pct = Math.round(((step - 1) / (STEPS.length - 1)) * 100);
@@ -189,40 +168,8 @@ export default function ModalOnboardingImpresa({ open, onClose, userId, companyI
           </div>
         )}
 
-        {/* Step 3: Organigramma */}
+        {/* Step 3: Connettori */}
         {step === 3 && (
-          <div>
-            <div className="text-[22px] font-serif text-[#1a1a1a] mb-1">Ruoli aziendali</div>
-            <p className="text-[13px] text-[#9A9690] mb-5">Seleziona i ruoli presenti nella tua azienda. Personalizza i permessi di accesso a NormaAI.</p>
-            <div className="grid grid-cols-2 gap-2 mb-6">
-              {RUOLI_PREDEFINITI.map(r => (
-                <button
-                  key={r}
-                  onClick={() => toggleRuolo(r)}
-                  className={`text-left px-3 py-2.5 rounded-lg border text-[12px] transition-all ${ruoliSelezionati.includes(r) ? "border-accent bg-accent/5 text-accent font-medium" : "border-[#E5E1D8] text-[#6B6763] hover:border-[#C8C2BA]"}`}
-                >
-                  {ruoliSelezionati.includes(r) && <span className="mr-1">✓</span>}
-                  {r}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-3">
-              <button onClick={() => setStep(2)} className="flex-1 border border-[#E5E1D8] text-[#6B6763] py-3 rounded-xl text-[13px] hover:bg-[#F0EDE8] transition-colors">
-                Indietro
-              </button>
-              <button
-                onClick={saveStep3}
-                disabled={saving}
-                className="flex-1 bg-accent text-white py-3 rounded-xl text-[13px] font-semibold hover:bg-[#c82d08] transition-colors disabled:opacity-40"
-              >
-                {saving ? "Salvo..." : "Avanti →"}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Connettori */}
-        {step === 4 && (
           <div>
             <div className="text-[22px] font-serif text-[#1a1a1a] mb-1">Connettori</div>
             <p className="text-[13px] text-[#9A9690] mb-5">Collega i tuoi strumenti aziendali per analizzare documenti direttamente in NormaAI.</p>
@@ -243,11 +190,11 @@ export default function ModalOnboardingImpresa({ open, onClose, userId, companyI
               ))}
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setStep(3)} className="flex-1 border border-[#E5E1D8] text-[#6B6763] py-3 rounded-xl text-[13px] hover:bg-[#F0EDE8] transition-colors">
+              <button onClick={() => setStep(2)} className="flex-1 border border-[#E5E1D8] text-[#6B6763] py-3 rounded-xl text-[13px] hover:bg-[#F0EDE8] transition-colors">
                 Indietro
               </button>
               <button
-                onClick={() => setStep(5)}
+                onClick={() => setStep(4)}
                 className="flex-1 bg-accent text-white py-3 rounded-xl text-[13px] font-semibold hover:bg-[#c82d08] transition-colors"
               >
                 Salta per ora →
@@ -256,22 +203,14 @@ export default function ModalOnboardingImpresa({ open, onClose, userId, companyI
           </div>
         )}
 
-        {/* Step 5: Done */}
-        {step === 5 && (
-          <div className="text-center">
+        {/* Step 4: Done */}
+        {step === 4 && (
+          <div className="text-center py-4">
             <div className="text-[60px] mb-4">🚀</div>
             <div className="text-[24px] font-serif text-[#1a1a1a] mb-3">Tutto pronto!</div>
-            <p className="text-[13.5px] text-[#6B6763] leading-relaxed mb-6 max-w-sm mx-auto">
-              Il tuo spazio NormaAI Impresa è configurato. Inizia con una domanda normativa o carica il primo documento nel fascicolo.
+            <p className="text-[13.5px] text-[#6B6763] leading-relaxed mb-8 max-w-sm mx-auto">
+              Il tuo spazio NormaAI Impresa è configurato. Fai la tua prima domanda normativa o carica un documento nel fascicolo aziendale.
             </p>
-            <div className="bg-gold/10 border border-gold/30 rounded-xl p-4 mb-6 text-left">
-              <div className="text-[12px] text-[#9B6B00] font-semibold mb-2">💡 Prossimi passi suggeriti</div>
-              <ul className="space-y-1.5 text-[12px] text-[#7A5A00]">
-                <li>→ Chiedi alla chat: <em>&quot;Checklist GDPR per la mia azienda&quot;</em></li>
-                <li>→ Carica il tuo DVR nel fascicolo</li>
-                <li>→ Collega un professionista per escalation diretta</li>
-              </ul>
-            </div>
             <button
               onClick={onClose}
               className="w-full bg-accent text-white py-3 rounded-xl font-semibold text-[14px] hover:bg-[#c82d08] transition-colors"
