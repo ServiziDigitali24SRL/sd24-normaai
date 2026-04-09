@@ -438,12 +438,21 @@ export default function DashboardImpresa() {
                   + Carica documento
                 </button>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {["Contratti", "GDPR & Privacy", "DVR Sicurezza", "Licenze & Permessi", "Verbali CdA", "Delibere"].map(cat => (
-                  <div key={cat} className="bg-white border border-[#E5E1D8] rounded-xl p-5 hover:border-[#C8C2BA] transition-colors cursor-pointer group">
-                    <div className="text-[24px] mb-2">📁</div>
-                    <div className="text-[13px] font-medium text-[#1a1a1a] group-hover:text-accent transition-colors">{cat}</div>
-                    <div className="text-[11px] text-[#9A9690] mt-1">0 documenti</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[
+                  { emoji: "📋", label: "Contratti e accordi" },
+                  { emoji: "👥", label: "Lavoro e personale" },
+                  { emoji: "🧾", label: "Fiscale e tributario" },
+                  { emoji: "🏛️", label: "Societario" },
+                  { emoji: "⚖️", label: "Compliance" },
+                  { emoji: "🏢", label: "Immobiliare" },
+                  { emoji: "🌍", label: "Internazionale" },
+                  { emoji: "📂", label: "Altro" },
+                ].map(cat => (
+                  <div key={cat.label} className="bg-white border border-[#E5E1D8] rounded-xl p-5 hover:border-[#C8C2BA] transition-colors cursor-pointer group">
+                    <div className="text-[26px] mb-2">{cat.emoji}</div>
+                    <div className="text-[12.5px] font-medium text-[#1a1a1a] group-hover:text-accent transition-colors leading-snug">{cat.label}</div>
+                    <div className="text-[11px] text-[#9A9690] mt-1.5">0 documenti</div>
                   </div>
                 ))}
               </div>

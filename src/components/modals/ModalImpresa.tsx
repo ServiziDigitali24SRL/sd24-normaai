@@ -20,10 +20,10 @@ interface Props {
 }
 
 const PIANI = [
-  { id: "impresa_micro",   label: "Micro",   prezzo: "29",  query: "543 query/mese",  desc: "Fino a 5 dipendenti" },
-  { id: "impresa_piccola", label: "Piccola", prezzo: "149", query: "1.481 query/mese", desc: "Fino a 25 dipendenti" },
-  { id: "impresa_media",   label: "Media",   prezzo: "349", query: "3.731 query/mese", desc: "Fino a 100 dipendenti" },
-  { id: "impresa_grande",  label: "Grande",  prezzo: "799", query: "9.356 query/mese", desc: "Oltre 100 dipendenti" },
+  { id: "impresa_micro",   label: "Micro",   prezzo: "29",  query: "543 query/mese",  desc: "Fino a 5 dip. · 3 seat" },
+  { id: "impresa_piccola", label: "Piccola", prezzo: "79",  query: "1.481 query/mese", desc: "Fino a 25 dip. · 10 seat" },
+  { id: "impresa_media",   label: "Media",   prezzo: "199", query: "3.731 query/mese", desc: "Fino a 100 dip. · 50 seat" },
+  { id: "impresa_grande",  label: "Grande",  prezzo: "499", query: "9.356 query/mese", desc: "Oltre 100 dip. · illimitati" },
 ];
 
 export default function ModalImpresa({ open, onClose }: Props) {
