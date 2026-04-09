@@ -132,7 +132,7 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout,
             </>
           )}
 
-          {user && (
+          {user && userRole !== "impresa" && (
             <DocumentiSection
               isPro={isPro ?? false}
               onOpenModal={onOpenModal}
@@ -140,7 +140,7 @@ export default function Sidebar({ onOpenModal, isOpen, onToggle, user, onLogout,
             />
           )}
 
-          {user && (
+          {user && userRole !== "impresa" && (
             <>
               <SectionLabel label="Strumenti" />
               {ALL_ITEMS.filter(i => toggles[i.id]).map(item => (
