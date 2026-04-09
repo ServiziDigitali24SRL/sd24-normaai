@@ -9,12 +9,12 @@ export const metadata: Metadata = {
   title: "NormaAI — La norma è uguale per tutti.",
   description:
     "AI normativo italiano per avvocati, commercialisti, consulenti del lavoro, ingegneri e geometri. Cerca nella legislazione italiana con intelligenza artificiale.",
-  metadataBase: new URL("https://normaai.eu"),
+  metadataBase: new URL("https://normaai.it"),
   openGraph: {
     title: "NormaAI — La norma è uguale per tutti.",
     description:
       "AI normativo italiano: cerca leggi, articoli, sentenze e normative con intelligenza artificiale. Per professionisti del diritto.",
-    url: "https://normaai.eu",
+    url: "https://normaai.it",
     siteName: "NormaAI",
     type: "website",
     locale: "it_IT",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     apple: "/apple-touch-icon.png",
   },
   alternates: {
-    canonical: "https://normaai.eu",
+    canonical: "https://normaai.it",
   },
 };
 
@@ -65,7 +65,7 @@ export default function RootLayout({
               name: "NormaAI",
               applicationCategory: "BusinessApplication",
               operatingSystem: "Web",
-              url: "https://normaai.eu",
+              url: "https://normaai.it",
               description:
                 "AI normativo italiano per professionisti del diritto. Cerca leggi, articoli, sentenze e normative.",
               offers: {
@@ -77,7 +77,7 @@ export default function RootLayout({
               author: {
                 "@type": "Organization",
                 name: "Servizi Digitali 24 S.R.L.",
-                url: "https://normaai.eu",
+                url: "https://normaai.it",
               },
             }),
           }}
