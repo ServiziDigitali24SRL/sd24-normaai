@@ -93,7 +93,12 @@ export default function DashboardImpresa() {
   const [company, setCompany] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [sezione, setSezione] = useState<Sezione>("chat");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    // Su mobile (<1024px) sempre chiusa; su desktop legge localStorage
+    if (window.innerWidth < 1024) return false;
+    return localStorage.getItem("sb-open") !== "false";
+  });
 
   // Section data
   const [members, setMembers] = useState<Member[]>([]);
@@ -285,7 +290,8 @@ export default function DashboardImpresa() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(p => { const n = !p; localStorage.setItem("sb-open", String(n)); setTimeout(() => window.dispatchEvent(new CustomEvent("sb-toggle", { detail: n })), 0); return n; })}
-              className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] rounded-md text-[#6B6763] hover:bg-[#F0EDE8] transition-all"
+              className="w-9 h-9 flex flex-col items-center justify-center gap-[5px] rounded-lg border border-[#E5E1D8] bg-white text-[#6B6763] hover:bg-[#F0EDE8] hover:border-[#C8C2BA] transition-all shadow-sm"
+              aria-label="Menu"
             >
               <span className="block w-5 h-[1.5px] bg-current" />
               <span className="block w-5 h-[1.5px] bg-current" />
@@ -338,7 +344,9 @@ export default function DashboardImpresa() {
         )}
 
         {/* Tab navigation */}
-        <div className="flex items-center gap-1 px-5 border-b border-[#E5E1D8] bg-white shrink-0">
+        <div className="flex items-center gap-1 px-3 sm:px-5 border-b border-[#E5E1D8] bg-white shrink-0 overflow-x-auto scrollbar-none"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           {([
             { id: "chat", label: "Chat normativa" },
             { id: "fascicolo", label: "Fascicolo" },
