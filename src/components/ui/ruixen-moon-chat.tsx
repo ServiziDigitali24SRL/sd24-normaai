@@ -49,16 +49,6 @@ const PROFESSIONI: { emoji: string; label: string; prompts: string[] }[] = [
     ],
   },
   {
-    emoji: "🏛️",
-    label: "Notaio",
-    prompts: [
-      "Atti necessari per il trasferimento di un immobile",
-      "Come si redige un testamento olografo valido",
-      "Successione legittima: quote eredi",
-      "Costituzione di una SRL: documenti necessari",
-    ],
-  },
-  {
     emoji: "🔧",
     label: "Tecnico / Ing.",
     prompts: [
