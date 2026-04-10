@@ -4,14 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
 import {
-  Scale,
-  FileText,
-  Briefcase,
-  Building,
-  Gavel,
-  FileSearch,
-  GitCompare,
-  CalendarClock,
   ArrowUpIcon,
   Copy,
   Check,
@@ -25,15 +17,67 @@ import {
   X,
 } from "lucide-react";
 
-const QUICK_ACTIONS = [
-  { icon: Scale,          label: "Multe e sanzioni" },
-  { icon: FileText,       label: "Contratti" },
-  { icon: Briefcase,      label: "Lavoro e dipendenti" },
-  { icon: Building,       label: "Condominio" },
-  { icon: Gavel,          label: "Diffide e cause" },
-  { icon: FileSearch,     label: "Analizza documento" },
-  { icon: GitCompare,     label: "Confronta contratti" },
-  { icon: CalendarClock,  label: "Scadenze" },
+const PROFESSIONI: { emoji: string; label: string; prompts: string[] }[] = [
+  {
+    emoji: "⚖️",
+    label: "Avvocato",
+    prompts: [
+      "Come si redige una diffida formale?",
+      "Termini di prescrizione per responsabilità contrattuale",
+      "Come impugnare un licenziamento per giusta causa",
+      "Differenza tra arbitrato e mediazione",
+    ],
+  },
+  {
+    emoji: "💼",
+    label: "Commercialista",
+    prompts: [
+      "Aliquote IRES e IRAP per le SRL nel 2024",
+      "Regime forfettario: limiti e cause di esclusione",
+      "Come si calcola l'IVA per le operazioni intracomunitarie",
+      "Scadenze dichiarazione dei redditi persone fisiche",
+    ],
+  },
+  {
+    emoji: "👷",
+    label: "Consulente del Lavoro",
+    prompts: [
+      "Procedura corretta per un licenziamento per giustificato motivo",
+      "Calcolo TFR e modalità di erogazione",
+      "Obblighi DURC e sanzioni per irregolarità",
+      "Differenze tra contratto a tempo determinato e somministrazione",
+    ],
+  },
+  {
+    emoji: "🏛️",
+    label: "Notaio",
+    prompts: [
+      "Atti necessari per il trasferimento di un immobile",
+      "Come si redige un testamento olografo valido",
+      "Successione legittima: quote eredi",
+      "Costituzione di una SRL: documenti necessari",
+    ],
+  },
+  {
+    emoji: "🔧",
+    label: "Tecnico / Ing.",
+    prompts: [
+      "Obblighi DVR sicurezza sul lavoro D.Lgs 81/2008",
+      "Normativa antincendio per edifici industriali",
+      "Requisiti permesso di costruire vs SCIA",
+      "Certificazione energetica APE: quando è obbligatoria",
+    ],
+  },
+  {
+    emoji: "🏦",
+    label: "Consulente Fin.",
+    prompts: [
+      "Obblighi MiFID II per la consulenza finanziaria",
+      "Normativa antiriciclaggio D.Lgs 231/2007",
+      "Requisiti per distribuzione fondi comuni in Italia",
+      "GDPR e trattamento dati clienti nel settore finanziario",
+    ],
+  },
 ];
 
 const PLACEHOLDER_EXAMPLES = [
@@ -93,6 +137,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
   const [attachment, setAttachment] = useState<{ name: string; type: string; data: string } | null>(null);
   const [recording, setRecording] = useState(false);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [selectedProfessione, setSelectedProfessione] = useState<string | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
 
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -354,18 +399,42 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
             ))}
           </div>
 
-          {/* Quick actions */}
-          <div className="flex items-center justify-center flex-wrap gap-2 max-w-[640px] px-4 mb-6">
-            {QUICK_ACTIONS.map(({ icon: Icon, label }) => (
-              <button
-                key={label}
-                onClick={() => { setText(label); setTimeout(() => taRef.current?.focus(), 0); }}
-                className="flex items-center gap-2 rounded-full border border-[#E5E1D8] bg-white text-[#3D3A37] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] hover:border-[#C8C2BA] hover:-translate-y-[1px] transition-all duration-150 px-4 py-[7px] text-[12.5px] cursor-pointer shadow-sm"
-              >
-                <Icon className="w-[14px] h-[14px] shrink-0 text-[#6B6763]" />
-                <span>{label}</span>
-              </button>
-            ))}
+          {/* Selettore professione */}
+          <div className="w-full max-w-[640px] px-4 mb-4">
+            <p className="text-[11.5px] text-[#9A9690] text-center mb-3">Scegli il tuo professionista di riferimento</p>
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
+              {PROFESSIONI.map((p) => (
+                <button
+                  key={p.label}
+                  onClick={() => setSelectedProfessione(prev => prev === p.label ? null : p.label)}
+                  className={`flex items-center gap-1.5 rounded-full border px-3.5 py-[7px] text-[12.5px] cursor-pointer transition-all duration-150 ${
+                    selectedProfessione === p.label
+                      ? "border-accent bg-accent text-white shadow-md"
+                      : "border-[#E5E1D8] bg-white text-[#3D3A37] hover:bg-[#F0EDE8] hover:border-[#C8C2BA] shadow-sm"
+                  }`}
+                >
+                  <span>{p.emoji}</span>
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </div>
+            {selectedProfessione && (() => {
+              const prof = PROFESSIONI.find(p => p.label === selectedProfessione);
+              if (!prof) return null;
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {prof.prompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => { setText(prompt); setTimeout(() => taRef.current?.focus(), 0); }}
+                      className="text-left rounded-xl border border-[#E5E1D8] bg-white px-4 py-3 text-[12px] text-[#3D3A37] hover:bg-[#F0EDE8] hover:border-[#C8C2BA] hover:-translate-y-[1px] transition-all duration-150 shadow-sm"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Trust badges */}
