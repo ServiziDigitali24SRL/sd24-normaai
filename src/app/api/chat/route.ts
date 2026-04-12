@@ -383,37 +383,30 @@ interface SupabaseChunk {
   url: string; urn: string; status: string; similarity: number;
 }
 
-const ALL_VERTICALI = ["lavoro", "legale", "commercialista", "finanziario", "ingegnere", "avvocato", "tecnico"];
+// Verticali reali nel DB (per future query filtrate)
+// generale: 4.6M, impresa: 267K, avvocato: 95K, finanziario: 22K, commercialista: 14K, lavoro: 4K, ingegnere: 1K
 
-async function searchSupabaseVerticale(embedding: number[], verticale: string, count: number): Promise<SupabaseChunk[]> {
+async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
   try {
-    const body = { query_embedding: embedding, match_count: count, match_threshold: 0.25, only_vigente: true, filter_verticale: verticale };
+    // Usa sempre il global HNSW index (nessun filter_verticale) — copre tutti i 5M documenti incluso "generale"
+    // Il filter_verticale parziale è utile solo se si vuole limitare a un sottoinsieme specifico
+    const body: Record<string, unknown> = {
+      query_embedding: embedding,
+      match_count: 8,
+      match_threshold: 0.25,
+      only_vigente: false,
+    };
+    if (verticale) {
+      body.filter_verticale = verticale;
+    }
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return [];
     return await res.json() as SupabaseChunk[];
-  } catch { return []; }
-}
-
-async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
-  try {
-    if (verticale) {
-      // Verticale specificato → usa HNSW parziale (veloce)
-      return await searchSupabaseVerticale(embedding, verticale, 8);
-    }
-    // Nessun verticale → cerca in parallelo su tutti gli HNSW parziali (evita IVFFlat globale che va in timeout su 5M righe)
-    const results = await Promise.all(ALL_VERTICALI.map(v => searchSupabaseVerticale(embedding, v, 3)));
-    const flat = results.flat();
-    // Dedup per id e ordina per similarity desc
-    const seen = new Set<string>();
-    return flat
-      .filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; })
-      .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
-      .slice(0, 8);
   } catch { return []; }
 }
 
