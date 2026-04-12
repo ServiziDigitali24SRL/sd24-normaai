@@ -119,6 +119,7 @@ export function BtnPrimary({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`w-full py-[11px] rounded-[9px] text-[13.5px] font-medium mt-4 border-none cursor-pointer transition-all duration-150 bg-accent text-white hover:bg-accent-hover shadow-[0_2px_8px_rgba(232,52,10,0.20)] ${className}`}
     >
@@ -138,6 +139,7 @@ export function BtnOutline({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`w-full py-[11px] rounded-[9px] text-[13.5px] font-medium mt-[7px] border border-[#D5D0C8] bg-transparent text-[#1a1a1a] cursor-pointer transition-all duration-150 hover:border-[#B0A898] hover:bg-[#F7F5F2] ${className}`}
     >
@@ -160,6 +162,7 @@ export function Tabs({
       {tabs.map((t, i) => (
         <button
           key={i}
+          type="button"
           onClick={() => onSwitch(i)}
           className={`flex-1 py-[7px] text-center rounded-[6px] text-[12.5px] border-none cursor-pointer transition-all duration-150 ${
             active === i

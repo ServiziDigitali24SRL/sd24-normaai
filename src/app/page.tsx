@@ -143,10 +143,7 @@ export default function Home() {
       const u = data.user;
       setUser(u);
       if (u) checkIsPro(u.id);
-      // Redirect impresa e professionista se già loggati
-      const role = u?.user_metadata?.role;
-      if (role === "impresa") { router.replace("/dashboard-impresa"); return; }
-      if (role === "professionista") { router.replace("/dashboard"); return; }
+      // Non redirect automatico: professionisti e imprese possono usare la chat dalla homepage
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
