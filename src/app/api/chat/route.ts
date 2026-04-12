@@ -3,6 +3,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import { rateLimit } from "@/lib/rate-limit";
 import { scoreLeadQuality } from "@/lib/lead-scoring";
 import { resolveUserTier, assembleBasePrompt } from "./system-prompts";
+import {
+  traceRAGQuery,
+  traceEmbedding,
+  traceRetrieval,
+  traceGeneration,
+  scoreTrace,
+  updateTraceOutput,
+  flushLangfuse,
+} from "@/lib/langfuse";
 
 // Sentry stub — install @sentry/nextjs to enable real error tracking
 const Sentry = { captureException: (e: unknown, _ctx?: unknown) => console.error("[sentry]", e) };
@@ -11,8 +20,7 @@ export const dynamic = "force-dynamic";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
-const EMBED_VPS_URL = process.env.EMBED_VPS_URL || "http://89.167.123.25:8765"; // fallback only
+const EMBED_VPS_URL = process.env.EMBED_VPS_URL || "http://89.167.123.25:8765";
 
 // ── FEATURE 2: User Profiling ─────────────────────────────────────────────────
 
@@ -239,65 +247,36 @@ ${CITATION_RULES}${followUp}${proponi}
 ────────────────────────────────────────`;
 }
 
-// ── Embedding (OpenAI text-embedding-3-small 1536 dim — matches DB schema) ──
-// Primary: OpenAI API (1536d, matches pgvector index).
-// Fallback: VPS fastembed (384d) — ONLY if OpenAI key missing (mismatch warning).
+// ── Embedding (VPS fastembed 384d — normaai_chunks table uses 384d) ──────────
+// DB normaai_chunks stores 384d vectors (FastEmbed multilingual-e5-small).
+// 2 tentativi su VPS con backoff 1.5s. Se VPS down → null → Claude risponde senza RAG.
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
   const input = text.slice(0, 8000);
-
-  // ── PRIMARY: OpenAI text-embedding-3-small (1536d — matches DB) ──
-  if (OPENAI_API_KEY) {
-    for (let attempt = 0; attempt < 2; attempt++) {
-      try {
-        const res = await fetch("https://api.openai.com/v1/embeddings", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
-          },
-          body: JSON.stringify({
-            model: "text-embedding-3-small",
-            input,
-          }),
-          signal: AbortSignal.timeout(8000),
-        });
-        if (res.ok) {
-          const json = await res.json();
-          const emb = json?.data?.[0]?.embedding;
-          if (emb) return emb;
-        }
-        console.error(`[EMBED] OpenAI attempt ${attempt + 1}: HTTP ${res.status}`);
-      } catch (e) {
-        console.error(`[EMBED] OpenAI attempt ${attempt + 1} failed:`, String(e).slice(0, 80));
-      }
-      if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
-    }
-    console.error("[EMBED] OpenAI failed after 2 attempts");
-  }
-
-  // ── FALLBACK: VPS fastembed (384d — DIMENSION MISMATCH with DB 1536d!) ──
-  if (!OPENAI_API_KEY) {
-    console.warn("[EMBED] ⚠️ No OPENAI_API_KEY — using VPS fastembed 384d (DIMENSION MISMATCH with DB 1536d!)");
-  }
   const url = `${EMBED_VPS_URL}/embed`;
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input }),
-      signal: AbortSignal.timeout(5000),
-    });
-    if (res.ok) {
-      const json = await res.json();
-      const emb = json?.data?.[0]?.embedding;
-      if (emb) return emb;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const timeout = attempt === 0 ? 8000 : 5000;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input }),
+        signal: AbortSignal.timeout(timeout),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const emb = json?.data?.[0]?.embedding;
+        if (emb) return emb;
+      }
+      console.error(`[EMBED] VPS attempt ${attempt + 1}: HTTP ${res.status}`);
+    } catch (e) {
+      console.error(`[EMBED] VPS attempt ${attempt + 1} failed:`, String(e).slice(0, 80));
     }
-  } catch (e) {
-    console.error("[EMBED] VPS fallback failed:", String(e).slice(0, 80));
+    if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
   }
 
-  console.error("[EMBED] All embedding methods failed — Claude risponde senza RAG");
+  console.error("[EMBED] VPS down after 2 attempts — Claude risponde senza RAG");
   return null;
 }
 
@@ -665,19 +644,38 @@ export async function POST(req: NextRequest) {
   }
   // PRO: nessun controllo quota
 
+  // ── Langfuse trace ─────────────────────────────────────────────────────
+  const lfTrace = traceRAGQuery({
+    name: "rag-query",
+    userId: userId,
+    sessionId,
+    input: question,
+    metadata: { vertical: vertical ?? null, userRole, model: selectedModel, turnNumber: currentTurn },
+  });
+  const traceId = lfTrace.traceId;
+
   // ── RAG (retry + fallback + auto-detect vertical) ────────────────────────
   let ragContext = "";
   let sources: Source[] = [];
   let chunkUrns: string[] = [];
 
   try {
+    const tEmbed0 = Date.now();
     const embedding = await generateEmbedding(question);
+    const tEmbed1 = Date.now();
+    // Langfuse: log embedding step (fire-and-forget)
+    traceEmbedding(traceId, question, embedding ? embedding.length : null, tEmbed1 - tEmbed0);
+
     if (embedding) {
       // Vertical: usa quello selezionato dall'utente, oppure auto-detect dalla domanda
       const explicitVertical = getVerticale(vertical ?? null);
       const detectedVertical = explicitVertical || autoDetectVertical(question, profile);
 
+      const tRetrieval0 = Date.now();
       const chunks = await searchSupabase(embedding, detectedVertical);
+      const tRetrieval1 = Date.now();
+      // Langfuse: log retrieval step (fire-and-forget)
+      traceRetrieval(traceId, question, chunks.map(c => ({ id: String(c.id), titolo: c.titolo, fonte: c.fonte, similarity: c.similarity })), tRetrieval1 - tRetrieval0);
 
       if (chunks.length > 0) {
         ragContext = chunks.map((c, i) => `[Fonte ${i + 1}] ${c.titolo || "Normativa"} (${c.fonte || "corpus"})\n${c.chunk}`).join("\n\n---\n\n");
@@ -747,6 +745,7 @@ export async function POST(req: NextRequest) {
       const send = (obj: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
       let fullResponse = "";
+      const tGen0 = Date.now();
       try {
         const anthropic = getAnthropic();
         const anthropicStream = await anthropic.messages.create({
@@ -776,10 +775,43 @@ export async function POST(req: NextRequest) {
             send({ type: "sources", sources: citedSources, hasRag: citedSources.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0 });
             send({ type: "done", popup_suggestion: popupSuggestion ?? null });
           }
+          // Capture token usage from message_delta (Anthropic streams usage in the final event)
+          if (event.type === "message_delta") {
+            const usage = (event as unknown as { usage?: { input_tokens?: number; output_tokens?: number } }).usage;
+            if (usage) {
+              const tGen1 = Date.now();
+              traceGeneration(
+                traceId,
+                fullSystem,
+                question,
+                fullResponse,
+                selectedModel,
+                tGen1 - tGen0,
+                { input: usage.input_tokens, output: usage.output_tokens, total: (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0) },
+              );
+            }
+          }
         }
       } catch (err) {
         send({ type: "error", message: String(err) });
       } finally {
+        // If generation was not logged via message_delta, log it now
+        if (fullResponse) {
+          const tGen1 = Date.now();
+          // Update trace output with final response (fire-and-forget)
+          updateTraceOutput(traceId, fullResponse, {
+            latencyMs: tGen1 - t0,
+            model: selectedModel,
+            sourcesCount: sources.length,
+            hasGraph: graphContext.length > 0,
+            hasPrecedents: precedentsContext.length > 0,
+          });
+          // Score: has_rag (1 if RAG context was used, 0 otherwise)
+          scoreTrace(traceId, "has_rag", ragContext.length > 0 ? 1 : 0);
+          // Score: chunk_count
+          scoreTrace(traceId, "chunk_count", sources.length);
+        }
+
         controller.close();
         logAuditTrail(userId || null, sessioneId, question, fullResponse, sources, graphContext.length > 0, !!profile, Date.now() - t0).catch(() => {});
         // Increment company pool for impresa
@@ -802,11 +834,14 @@ export async function POST(req: NextRequest) {
             }
           } catch (e) { Sentry.captureException(e, { extra: { fn: "createMarketplaceLead" } }); }
         }
+
+        // Langfuse: flush pending events (fire-and-forget, never blocks response)
+        flushLangfuse().catch(() => {});
       }
     },
   });
 
   return new Response(stream, {
-    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "X-User-Id": userId || "" },
+    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive", "X-User-Id": userId || "", "X-Trace-Id": traceId },
   });
 }
