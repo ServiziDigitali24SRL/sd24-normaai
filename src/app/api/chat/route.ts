@@ -383,30 +383,59 @@ interface SupabaseChunk {
   url: string; urn: string; status: string; similarity: number;
 }
 
-// Verticali reali nel DB (per future query filtrate)
-// generale: 4.6M, impresa: 267K, avvocato: 95K, finanziario: 22K, commercialista: 14K, lavoro: 4K, ingegnere: 1K
+// Indici HNSW attivi nel DB (aggiornato 12/04/2026):
+// Partial per verticale: avvocato(95K), finanziario(22K), commercialista(14K), lavoro(4K), ingegnere(1K)
+// Partial per tipo in generale: legge(55K), decreto_legislativo(165K) - in costruzione
+// Il 91% del corpus è in verticale='generale' senza indice globale efficiente
 
-async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
+async function searchSupabaseSingle(
+  embedding: number[],
+  params: { filter_verticale?: string; filter_tipo?: string; match_count?: number }
+): Promise<SupabaseChunk[]> {
   try {
-    // Usa sempre il global HNSW index (nessun filter_verticale) — copre tutti i 5M documenti incluso "generale"
-    // Il filter_verticale parziale è utile solo se si vuole limitare a un sottoinsieme specifico
     const body: Record<string, unknown> = {
       query_embedding: embedding,
-      match_count: 8,
-      match_threshold: 0.25,
+      match_count: params.match_count ?? 4,
+      match_threshold: 0.22,
       only_vigente: false,
+      ...(params.filter_verticale ? { filter_verticale: params.filter_verticale } : {}),
+      ...(params.filter_tipo ? { filter_tipo: params.filter_tipo } : {}),
     };
-    if (verticale) {
-      body.filter_verticale = verticale;
-    }
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return [];
     return await res.json() as SupabaseChunk[];
+  } catch { return []; }
+}
+
+async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
+  try {
+    if (verticale) {
+      // Verticale specificato → HNSW parziale veloce
+      return await searchSupabaseSingle(embedding, { filter_verticale: verticale, match_count: 8 });
+    }
+    // Nessun verticale → parallele su tutti gli indici HNSW disponibili
+    const queries: Array<{ filter_verticale?: string; filter_tipo?: string; match_count: number }> = [
+      { filter_verticale: "avvocato",       match_count: 4 }, // 95K rows, HNSW ok
+      { filter_verticale: "finanziario",    match_count: 3 }, // 22K rows
+      { filter_verticale: "commercialista", match_count: 3 }, // 14K rows
+      { filter_verticale: "lavoro",         match_count: 3 }, // 4K rows
+      { filter_verticale: "ingegnere",      match_count: 2 }, // 1K rows
+      // generale sub-indicizzato per tipo (HNSW parziale su tipo specifico)
+      { filter_verticale: "generale", filter_tipo: "legge",               match_count: 4 }, // 55K rows, HNSW ok
+      { filter_verticale: "generale", filter_tipo: "decreto_legislativo", match_count: 4 }, // 165K rows, HNSW in costruzione
+    ];
+    const results = await Promise.all(queries.map(q => searchSupabaseSingle(embedding, q)));
+    const flat = results.flat();
+    const seen = new Set<string>();
+    return flat
+      .filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; })
+      .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
+      .slice(0, 8);
   } catch { return []; }
 }
 
