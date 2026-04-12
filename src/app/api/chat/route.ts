@@ -360,24 +360,23 @@ ${CITATION_RULES}${followUp}${proponi}
 ────────────────────────────────────────`;
 }
 
-// ── Embedding (OpenAI text-embedding-3-small 1536 dim) ───────────────────────
+// ── Embedding (VPS fastembed 384 dim — normaai_chunks) ───────────────────────
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) { console.error("[EMBED] OPENAI_API_KEY not set"); return null; }
+  const url = `${EMBED_VPS_URL}/embed`;
   try {
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
+    const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: text.slice(0, 8000) }),
       signal: AbortSignal.timeout(10000),
     });
     if (res.ok) {
       const json = await res.json();
       return json?.data?.[0]?.embedding ?? null;
     }
-    console.error(`[EMBED] OpenAI error: ${res.status}`);
-  } catch (e) { console.error("[EMBED] OpenAI unreachable:", String(e)); }
+    console.error(`[EMBED] VPS error: ${res.status}`);
+  } catch (e) { console.error("[EMBED] VPS unreachable:", String(e)); }
   return null;
 }
 
@@ -401,7 +400,7 @@ async function searchSupabaseSingle(
     const body: Record<string, unknown> = {
       query_embedding: embedding,
       match_count: params.match_count ?? 4,
-      match_threshold: 0.22,
+      match_threshold: 0.10,
       only_vigente: false,
       ...(params.filter_verticale ? { filter_verticale: params.filter_verticale } : {}),
       ...(params.filter_tipo ? { filter_tipo: params.filter_tipo } : {}),
