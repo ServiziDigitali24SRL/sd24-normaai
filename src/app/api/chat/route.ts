@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+const EMBED_VPS_URL = process.env.EMBED_VPS_URL || "http://89.167.123.25:8765";
 
 // ── FEATURE 2: User Profiling ─────────────────────────────────────────────────
 
@@ -352,20 +352,19 @@ ${CITATION_RULES}${followUp}${proponi}
 ────────────────────────────────────────`;
 }
 
-// ── Embedding (OpenAI text-embedding-3-small, 1536 dim) ──────────────────────
+// ── Embedding (VPS fastembed 384 dim) ────────────────────────────────────────
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
-  if (!OPENAI_API_KEY) { console.error("[EMBED] OPENAI_API_KEY non configurata"); return null; }
   try {
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
+    const res = await fetch(`${EMBED_VPS_URL}/embed`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${OPENAI_API_KEY}` },
-      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: text.slice(0, 8000) }),
       signal: AbortSignal.timeout(10000),
     });
     if (res.ok) { const json = await res.json(); return json?.data?.[0]?.embedding ?? null; }
-    console.error(`[EMBED] OpenAI error: ${res.status}`);
-  } catch (e) { console.error("[EMBED] OpenAI unreachable:", String(e)); }
+    console.error(`[EMBED] VPS error: ${res.status}`);
+  } catch (e) { console.error("[EMBED] VPS unreachable:", String(e)); }
   return null;
 }
 
