@@ -16,7 +16,7 @@ async function notifyProfessionisti(leadData: {
   if (!BREVO_API_KEY) return;
   // In produzione: query ai professionisti con categoria + città e invia email a tutti
   // Per ora logga e restituisce (i professionisti vengono notificati via webhook Supabase in futuro)
-  console.log("[OTP/VERIFY] Lead confermato, notifica professionisti:", leadData.professionistaCategoria, leadData.userCity);
+  // notifica professionisti pianificata (webhook Supabase)
 }
 
 async function sendConfirmToUser(email: string, professionistaNome: string): Promise<void> {
@@ -76,12 +76,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Codice non valido." }, { status: 400 });
     }
 
-    // Marca OTP come usato
-    await fetch(`${SUPABASE_URL}/rest/v1/lead_otp?id=eq.${record.id}`, {
+    // Marca OTP come usato — DEVE avere successo prima di creare il lead
+    const markUsedRes = await fetch(`${SUPABASE_URL}/rest/v1/lead_otp?id=eq.${record.id}`, {
       method: "PATCH",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({ used: true }),
     });
+    if (!markUsedRes.ok) {
+      return NextResponse.json({ error: "Errore interno. Riprova." }, { status: 500 });
+    }
 
     // Crea lead in marketplace_leads
     const ctx = record.lead_context ?? {};

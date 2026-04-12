@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to save" }, { status: 500 });
     }
 
-    console.log(`[BUG REPORT] saved from ${email || "anon"}`);
+    // saved
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });

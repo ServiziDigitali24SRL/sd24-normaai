@@ -300,11 +300,15 @@ export default function ChatBar({ user }: { user?: User | null }) {
         { role: "user" as const, content: msg.question },
         { role: "assistant" as const, content: msg.text.slice(0, 1000) },
       ]));
+      const chatAbort = new AbortController();
+      const chatTimeout = setTimeout(() => chatAbort.abort(), 60_000); // 60s timeout
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: q, vertical: v, userId: user?.id ?? null, attachment: att, conversationHistory, turnNumber: history.length }),
+        signal: chatAbort.signal,
       });
+      clearTimeout(chatTimeout);
       if (!res.ok || !res.body) throw new Error("HTTP " + res.status);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();

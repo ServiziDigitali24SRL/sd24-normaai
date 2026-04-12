@@ -147,7 +147,7 @@ Testo: ${body || msg.snippet || "(nessun testo)"}`;
   // Analyze with Claude
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
+    model: "claude-sonnet-4-6",
     max_tokens: 1200,
     system: `Sei NormaAI, assistente giuridico AI. Analizza questa corrispondenza email e fornisci:
 1. **Riepilogo del rapporto** — chi è questa persona, che tipo di comunicazione avete

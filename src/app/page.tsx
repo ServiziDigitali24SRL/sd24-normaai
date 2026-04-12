@@ -198,12 +198,16 @@ export default function Home() {
   const roleLabel = userRole === "privato" ? "Cittadino" : userRole === "impresa" ? "Impresa" : userRole === "professionista" ? "Professionista" : null;
 
   useEffect(() => {
-    const saved = localStorage.getItem("sb-open");
-    if (saved !== null) {
-      setSidebarOpen(saved === "true");
+    // Su mobile (<768px) sidebar SEMPRE chiusa al caricamento indipendentemente da localStorage
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
     } else {
-      // aperta solo su desktop largo (>=1024px), chiusa su tablet e mobile
-      setSidebarOpen(window.innerWidth >= 1024);
+      const saved = localStorage.getItem("sb-open");
+      if (saved !== null) {
+        setSidebarOpen(saved === "true");
+      } else {
+        setSidebarOpen(window.innerWidth >= 1024);
+      }
     }
     const onSbChange = (e: Event) => setSidebarOpen((e as CustomEvent<boolean>).detail);
     window.addEventListener("sb-toggle", onSbChange);

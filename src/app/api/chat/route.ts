@@ -364,7 +364,6 @@ ${CITATION_RULES}${followUp}${proponi}
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
   const url = `${EMBED_VPS_URL}/embed`;
-  console.log(`[EMBED] calling ${url}`);
   try {
     const res = await fetch(url, {
       method: "POST",
@@ -374,9 +373,7 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
     });
     if (res.ok) {
       const json = await res.json();
-      const emb = json?.data?.[0]?.embedding ?? null;
-      console.log(`[EMBED] ok len=${emb?.length ?? 'null'}`);
-      return emb;
+      return json?.data?.[0]?.embedding ?? null;
     }
     console.error(`[EMBED] VPS error: ${res.status}`);
   } catch (e) { console.error("[EMBED] VPS unreachable:", String(e)); }
@@ -419,7 +416,7 @@ async function searchSupabaseSingle(
       return [];
     }
     const rows = await res.json() as SupabaseChunk[];
-    if (rows.length > 0) console.log(`[RAG] ${rows.length} chunks vert=${params.filter_verticale} tipo=${params.filter_tipo}`);
+    // debug only: if (rows.length > 0) console.log(`[RAG] ${rows.length} chunks vert=${params.filter_verticale}`);
     return rows;
   } catch (e) { console.error(`[RAG] timeout/fail vert=${params.filter_verticale} tipo=${params.filter_tipo}:`, String(e).slice(0, 80)); return []; }
 }
