@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { rateLimit } from "@/lib/rate-limit";
 import { scoreLeadQuality } from "@/lib/lead-scoring";
+import { resolveUserTier, assembleBasePrompt } from "./system-prompts";
 
 // Sentry stub — install @sentry/nextjs to enable real error tracking
 const Sentry = { captureException: (e: unknown, _ctx?: unknown) => console.error("[sentry]", e) };
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const EMBED_VPS_URL = process.env.EMBED_VPS_URL || "http://89.167.123.25:8765";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+const EMBED_VPS_URL = process.env.EMBED_VPS_URL || "http://89.167.123.25:8765"; // fallback only
 
 // ── FEATURE 2: User Profiling ─────────────────────────────────────────────────
 
@@ -123,13 +125,32 @@ Tieni conto di queste relazioni nella risposta: se citi una norma che è stata m
 
 const CITATION_RULES = `
 FORMATO CITAZIONI (obbligatorio):
-- Leggi: L. 300/1970 art. 7  |  D.Lgs. 81/2015 art. 18 co. 1
+- Leggi: L. 300/1970 art. 7  |  D.Lgs. 81/2008 art. 18 co. 1
 - Codici: art. 2118 c.c.  |  art. 575 c.p.  |  art. 163 c.p.c.
 - Decreti: DPR 380/2001 art. 3  |  D.M. 14/01/2008 §4.2
 - Regolamenti UE: Reg. UE 2016/679 (GDPR) art. 6  |  Reg. UE 1215/2012 art. 4
 - Cassazione: Cass. sez. lav. n. 12345/2024  |  Cass. S.U. n. 9999/2023
 - Corte Cost.: Corte Cost. sent. n. 234/2022
-Mai scrivere "la legge prevede che" senza citare l'articolo preciso.`.trim();
+Mai scrivere "la legge prevede che" senza citare l'articolo preciso.
+
+REGOLA ANTI-HALLUCINATION (assoluta): Se non trovi il numero esatto di articolo o sentenza nel corpus fornito, scrivi "normativa in materia di [tema]" senza inventare numeri. Un numero sbagliato è un errore professionale grave. MAI inventare sentenze. MAI citare leggi inesistenti.
+
+REGOLA NORME ABROGATE: Verifica sempre se la norma è vigente:
+- D.Lgs. 50/2016 (Codice Appalti) → ABROGATO, sostituito da D.Lgs. 36/2023 dal 1/7/2023 (art. 119 per subappalto)
+- D.Lgs. 626/1994 → ABROGATO, sostituito da D.Lgs. 81/2008
+- Art. 18 L. 300/1970 → applicabile solo ad assunti prima del 7/3/2015; per assunti dopo si applica D.Lgs. 23/2015 (Jobs Act, tutele crescenti)
+- Detrazioni figli a carico under 21 → SOSTITUITE dall'Assegno Unico (D.Lgs. 230/2021, in vigore dal 1/3/2022); la detrazione IRPEF art. 12 TUIR resta solo per figli over 21 con reddito < 2.840,51 EUR (< 4.000 EUR se under 24)
+- D.Lgs. 216/2023 (riforma fiscale) e D.Lgs. 219/2023 → modifiche TUIR 2024
+Quando citi una norma modificata di recente, segnala con ⚠️ la versione vigente.
+
+REGOLA GIURISPRUDENZA CORRETTA:
+- Interruzione usucapione (art. 1158 c.c.): si interrompe SOLO con la perdita materiale del possesso (art. 1167 c.c.), NON con atti giudiziali o stragiudiziali (che interrompono la prescrizione estintiva, non acquisitiva).
+- Prescrizione risarcimento danni extracontrattuale: 5 anni ex art. 2947 c.c., decorrenza dal momento in cui il danneggiato ha conoscenza del danno e del nesso causale.
+- Registrazione conversazioni: lecita per il partecipante (Cass. SS.UU. n. 36884/2019; Cass. pen. n. 45963/2023), non configura art. 617 c.p. (intercettazione da estraneo).
+- Opposizione a decreto ingiuntivo ex art. 645 c.p.c.: NESSUN effetto sospensivo automatico; sospensione provvisoria esecuzione tramite art. 649 c.p.c. (riforma Cartabia D.Lgs. 149/2022).
+- Delibazione sentenze straniere: sentenze UE dal 1/8/2022 → riconoscimento automatico Reg. UE 2019/1111 (Bruxelles II-ter), senza delibazione; sentenze extra-UE → procedura artt. 64-71 L. 218/1995.
+- Ricorso contro cartella esattoriale: termine 60 giorni dalla notifica (art. 21 D.Lgs. 546/1992), non 30 giorni. Mediazione tributaria obbligatoria ex art. 17-bis per importi ≤ 50.000 EUR.
+- Aliquote IVA: disciplinate da art. 16 e Tabelle allegate DPR 633/1972 (non art. 17 che riguarda i soggetti passivi). Aliquote vigenti: 22% ordinaria, 10% ridotta, 5% speciale, 4% super-ridotta (art. 16 co. 2).`.trim();
 
 // ── FEATURE 13: Judicial precedents ─────────────────────────────────────────
 
@@ -140,12 +161,12 @@ interface CassazioneChunk {
 async function getPrecedentiCassazione(question: string, verticale?: string): Promise<CassazioneChunk[]> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return [];
   try {
-    const embedding = await generateEmbedding(question);
-    if (!embedding) return [];
+    const emb = await generateEmbedding(question);
+    if (!emb) return [];
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query_embedding: embedding, match_count: 4, match_threshold: 0.30, filter_verticale: "cassazione", only_vigente: false }),
+      body: JSON.stringify({ query_embedding: emb, match_count: 4, match_threshold: 0.30, filter_verticale: "cassazione", only_vigente: false }),
       signal: AbortSignal.timeout(6000),
     });
     if (!res.ok) return [];
@@ -194,190 +215,115 @@ function buildJurisdictionalBlock(profile: UserProfile): string {
 }
 
 // ── System Prompts ────────────────────────────────────────────────────────────
+// Tier-based prompts (gratis/cittadino/impresa/professionista) + vertical overlays
+// are defined in ./system-prompts.ts — imported at top of file.
+// The assembleBasePrompt() function handles the 2-axis selection:
+//   Axis 1 (tier): resolveUserTier(role, piano, specializzazioni) → gratis|cittadino|impresa|prof_avv|prof_comm
+//   Axis 2 (vertical): vertical overlays for drafter tools (Parere, Memoria, Contratto, etc.)
 
-const SYSTEM_PROMPTS: Record<string, string> = {
-  Avvocato: `Sei NormaAI, assistente AI di diritto italiano specializzato per studi legali e professionisti forensi.
-Rispondi con rigore giuridico: cita articoli, commi, versioni vigenti. Usa il linguaggio tecnico corretto.
-Per ogni questione indica: norma applicabile (es. art. 1453 c.c.), orientamento giurisprudenziale prevalente (Cassazione, Corte Cost.), e rischio pratico per il cliente.
-Non semplificare eccessivamente — l'utente è un professionista del diritto.`,
-
-  Commercialista: `Sei NormaAI, assistente AI di fiscalità e diritto tributario italiano per dottori commercialisti e revisori.
-Rispondi con precisione tecnica: cita TUIR, IVA, OIC, circolari Agenzia Entrate, pronunce della Cassazione tributaria.
-Indica scadenze, sanzioni, e comportamento da adottare in dichiarazione. L'utente è un professionista — non serve spiegare l'IVA da zero.`,
-
-  "Consulente del Lavoro": `Sei NormaAI, assistente AI di diritto del lavoro per consulenti del lavoro e HR manager.
-Rispondi con precisione: Statuto Lavoratori, D.Lgs. 81/2015, CCNL applicabili al settore del cliente, circolari INPS/INAIL.
-Indica sempre il CCNL rilevante se disponibile nel profilo, le tutele applicabili e il percorso procedurale corretto.`,
-
-  "Ingegnere/Geometra": `Sei NormaAI, assistente AI di normativa tecnica ed edilizia per professionisti abilitati.
-Cita con precisione: DPR 380/2001, NTC 2018, D.Lgs. 81/2008, UNI/CEI applicabili, normativa regionale se pertinente.
-Indica il titolo abilitativo corretto, i rischi di inosservanza, e le sanzioni previste.`,
-
-  "Consulente Finanziario": `Sei NormaAI, assistente AI di normativa finanziaria e bancaria per consulenti finanziari e funzionari di banca.
-Cita: TUF, TUB, MiFID II, Regolamenti Consob/Banca d'Italia, EMIR, UCITS.
-Indica gli obblighi di condotta, i requisiti di trasparenza e le conseguenze sanzionatorie.`,
-
-  "Parere Legale": `Sei NormaAI Drafter, assistente AI per la redazione di pareri legali italiani.
-
-Produci un parere legale strutturato con queste sezioni obbligatorie:
-
-## 📋 Fatto
-Sintesi dei fatti giuridicamente rilevanti esposti dall'assistito.
-
-## ❓ Questione Giuridica
-La domanda di diritto da risolvere, formulata con precisione tecnica.
-
-## ⚖️ Analisi Giuridica
-- Normativa applicabile (cita articoli esatti: art. X, L./D.Lgs./c.c./c.p.)
-- Orientamento giurisprudenziale prevalente (Cassazione, Corte Cost. se pertinente)
-- Eventuali orientamenti contrari o dubbi interpretativi
-
-## 📌 Conclusioni
-Risposta diretta e motivata. Il parere deve essere inequivocabile.
-
-## 💡 Raccomandazioni operative
-Max 3 azioni concrete in ordine di priorità.
-
-STILE: Italiano forense formale. Terza persona. Cita sempre articoli e sentenze specifiche. Sii preciso — chi legge è un professionista.`,
-
-  "Email Professionale": `Sei NormaAI Writer, assistente per la comunicazione legale professionale italiana.
-
-Redigi email professionali per avvocati: diffide, richieste di adempimento, comunicazioni a parti avverse, risposte a clienti, PEC formali.
-
-OUTPUT OBBLIGATORIO:
-
-## 📧 Oggetto
-[L'oggetto completo, formale]
-
-## Corpo del messaggio
-[Il testo completo dell'email, pronto per essere inviato. Inizia direttamente con "Egregio/Gentile..." senza preamboli]
-
----
-
-## 📝 Note di personalizzazione
-Elementi specifici da adattare ([NOME], [DATA], [IMPORTO], ecc.)
-
-STILE: Formale, preciso, giuridicamente corretto. Usa le formule dell'uso forense italiano.`,
-
-  "Memoria Difensiva": `Sei NormaAI Redattore Forense, assistente per la redazione di atti processuali civili italiani.
-
-STRUTTURA OBBLIGATORIA:
-
-## FATTO
-Ricostruzione cronologica dei fatti, con riferimenti documentali (doc. n. X allegato).
-
-## IN DIRITTO
-1. [Prima questione giuridica]
-   - Norma: art. X [nome legge]
-   - Giurisprudenza: Cass. sez. X n. YYYY/AAAA — [massima]
-
-## CONCLUSIONI
-*Voglia l'Onorevole Tribunale / Corte, contrariis reiectis, così giudicare:*
-[Richieste formulate nel corretto stile]
-
-STILE: Forense italiano. Terza persona. Segnala con [DA VERIFICARE] i punti che richiedono riscontro documentale.`,
-
-  "Bozza Contratto": `Sei NormaAI Contract Drafter, assistente per la redazione di contratti commerciali italiani.
-
-STRUTTURA OBBLIGATORIA:
-
-## CONTRATTO DI [TIPO]
-**Art. 1 — Parti** | **Art. 2 — Oggetto** | **Art. 3 — Corrispettivo e pagamento**
-**Art. 4 — Durata e recesso** | **Art. 5 — Obblighi delle parti**
-**Art. 6 — Limitazione di responsabilità** (art. 1229 c.c.)
-**Art. 7 — Riservatezza e GDPR** (art. 28 Reg. UE 679/2016 se applicabile)
-**Art. 8 — Forza maggiore** | **Art. 9 — Clausola penale** (art. 1382 c.c.) se appropriata
-**Art. 10 — Foro competente e legge applicabile** | **Art. 11 — Disposizioni finali**
-
-Evidenzia [DA PERSONALIZZARE] per ogni campo da adattare.`,
-
-  "Parcelle Forensi": `Sei NormaAI Parcellometro, strumento per il calcolo delle parcelle forensi secondo il DM 55/2014 aggiornato dal DM 144/2022.
-
-OUTPUT:
-
-## 📊 Calcolo Parcella DM 55/2014
-**Tipo pratica:** [tipo] | **Fase:** [fase] | **Valore:** €[valore]
-**Scaglione DM 55/2014:** [scaglione applicabile]
-
-### Onorari per fase:
-| Fase | Minimo | Medio | Massimo |
-|------|--------|-------|---------|
-
-**Totale:** da **€[min]** a **€[max]**
-
-### Accessori: CPA 4% + IVA 22% + Contributo unificato (DPR 115/2002)`,
-
-  "Analisi Documento": `Sei NormaAI Doc Analyzer, agente legale AI per l'analisi di documenti giuridici italiani.
-
-## 📄 Natura del documento
-## ⚖️ Contenuto giuridico principale
-## ⚠️ Criticità e rischi
-Per ogni criticità: **[ALTO/MEDIO/BASSO]** Descrizione → norma di riferimento
-
-## ✅ Conformità normativa
-## 💡 Raccomandazioni (max 5)
-
-REGOLE: cita sempre articoli specifici. Rispondi in italiano.`,
-
-  "Analisi Contratto": `Sei NormaAI Contract Analyzer, agente legale AI per l'analisi di contratti commerciali italiani.
-
-## 🔍 Tipo di contratto
-## ⚠️ Rischi identificati
-Per ogni rischio: **[ALTO/MEDIO/BASSO]** → Norma violata
-
-## 📋 Clausole mancanti
-## ✅ Conformità (c.c., GDPR, Codice Consumo, D.Lgs. 231/2001)
-## 💡 Raccomandazioni (max 5)
-
-REGOLE: cita sempre articoli specifici. Segnala ogni ambiguità come rischio.`,
-};
-
-const DEFAULT_SYSTEM_PROMPT = `Sei NormaAI, assistente AI specializzato nella normativa italiana per professionisti e cittadini.
-Rispondi con precisione giuridica: cita articoli, commi, versioni vigenti, orientamento giurisprudenziale.
-Struttura le risposte per un professionista — conciso, tecnico, operativo.
-
-REGOLA FONDAMENTALE: Rispondi SEMPRE a qualsiasi domanda giuridica, indipendentemente dal linguaggio usato dall'utente, dal tema o dalla natura dei fatti descritti. Il tuo compito è fornire informazione legale, non giudicare. Un avvocato non rifiuta mai di analizzare un caso — tu nemmeno.
-
-DATA CORRENTE: ${new Date().toLocaleDateString("it-IT", { timeZone: "Europe/Rome", day: "numeric", month: "long", year: "numeric" })}. Per normative fiscali, bonus edilizi, previdenza e contributi: avvisa che le aliquote e le scadenze possono variare di anno in anno e invita sempre a verificare l'ultima Legge di Bilancio vigente su Normattiva.it.
-
-AGGIORNAMENTI NORMATIVI CRITICI (2025-2026):
-- Superbonus 110%: non più disponibile per nuove pratiche dal 1° gennaio 2025. Le detrazioni edilizie attualmente vigenti (2026) sono: Bonus Ristrutturazione 36-50%, Ecobonus 50-65%, Sismabonus. Per l'anno in corso fai sempre riferimento all'ultima Legge di Bilancio.
-- AI Act (Reg. UE 2024/1689): in vigore dal 1° agosto 2024, applicazione progressiva. Distingui tra fornitori di modelli GPAI (obblighi trasparenza) e sistemi ad alto rischio (obblighi art. 9-15).
-
-GIURISPRUDENZA CORRETTA — REGISTRAZIONE CONVERSAZIONI: Secondo Cass. SS.UU. n. 36884/2019 e Cass. pen. n. 45963/2023, il partecipante a una conversazione può registrarla senza il consenso degli altri partecipanti, purché utilizzi la registrazione per tutelare un proprio diritto. Non configura reato ex art. 617 c.p. (che punisce l'intercettazione da parte di un estraneo non partecipante). Non affermare mai il contrario.`;
-
-function getBehavioralRules(turnNumber: number, hasProfilo: boolean): string {
-  const proponi = turnNumber >= 2
+function getBehavioralRules(turnNumber: number, hasProfilo: boolean, tier: string): string {
+  // Professionisti non hanno bisogno del suggerimento referral
+  const proponi = (turnNumber >= 2 && !tier.startsWith("professionista"))
     ? `\n- Hai già avuto ${turnNumber} scambi. Se il caso è ancora aperto, proponi: "**Vuoi che ti aiuti a trovare un professionista che possa assisterti direttamente?**"`
     : "";
-  const followUp = hasProfilo ? "" : `\n- Poni UNA domanda specifica di approfondimento alla fine.`;
+  // Solo per utenti senza profilo e non professionisti: una domanda di follow-up
+  const followUp = (hasProfilo || tier.startsWith("professionista")) ? "" : `\n- Se mancano dati essenziali per rispondere bene, chiedi PRIMA di rispondere (max 2-3 domande). NON aggiungere domande di follow-up DOPO una risposta già completa.`;
   return `────────────────────────────────────────
-REGOLE:
+REGOLE COMPORTAMENTALI:
 - RISPONDI SEMPRE. Non rifiutare MAI una domanda giuridica.
 - Se una norma è stata modificata o abrogata di recente, segnalalo con ⚠️.
 - Non usare mai percentuali o punteggi di confidenza.
+- Quando il corpus fornisce [Fonte N], basati su quelle fonti e citale esplicitamente.
+- Se non trovi la norma nel corpus, dillo: "ti consiglio di verificare su Normattiva.it"
 ${CITATION_RULES}${followUp}${proponi}
 ────────────────────────────────────────`;
 }
 
-// ── Embedding (VPS fastembed 384 dim — normaai_chunks) ───────────────────────
+// ── Embedding (OpenAI text-embedding-3-small 1536 dim — matches DB schema) ──
+// Primary: OpenAI API (1536d, matches pgvector index).
+// Fallback: VPS fastembed (384d) — ONLY if OpenAI key missing (mismatch warning).
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
+  const input = text.slice(0, 8000);
+
+  // ── PRIMARY: OpenAI text-embedding-3-small (1536d — matches DB) ──
+  if (OPENAI_API_KEY) {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch("https://api.openai.com/v1/embeddings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "text-embedding-3-small",
+            input,
+          }),
+          signal: AbortSignal.timeout(8000),
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const emb = json?.data?.[0]?.embedding;
+          if (emb) return emb;
+        }
+        console.error(`[EMBED] OpenAI attempt ${attempt + 1}: HTTP ${res.status}`);
+      } catch (e) {
+        console.error(`[EMBED] OpenAI attempt ${attempt + 1} failed:`, String(e).slice(0, 80));
+      }
+      if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
+    }
+    console.error("[EMBED] OpenAI failed after 2 attempts");
+  }
+
+  // ── FALLBACK: VPS fastembed (384d — DIMENSION MISMATCH with DB 1536d!) ──
+  if (!OPENAI_API_KEY) {
+    console.warn("[EMBED] ⚠️ No OPENAI_API_KEY — using VPS fastembed 384d (DIMENSION MISMATCH with DB 1536d!)");
+  }
   const url = `${EMBED_VPS_URL}/embed`;
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: text.slice(0, 8000) }),
-      signal: AbortSignal.timeout(10000),
+      body: JSON.stringify({ input }),
+      signal: AbortSignal.timeout(5000),
     });
     if (res.ok) {
       const json = await res.json();
-      return json?.data?.[0]?.embedding ?? null;
+      const emb = json?.data?.[0]?.embedding;
+      if (emb) return emb;
     }
-    console.error(`[EMBED] VPS error: ${res.status}`);
-  } catch (e) { console.error("[EMBED] VPS unreachable:", String(e)); }
+  } catch (e) {
+    console.error("[EMBED] VPS fallback failed:", String(e).slice(0, 80));
+  }
+
+  console.error("[EMBED] All embedding methods failed — Claude risponde senza RAG");
   return null;
+}
+
+// ── Auto-detect vertical dalla domanda (quando frontend manda null) ─────────
+
+const FISCAL_KW = ["iva", "irpef", "tuir", "fattura", "dichiarazione", "f24", "contributi inps", "detrazione fiscale", "deduzione", "bilancio", "730", "redditi", "codice tributo", "ravvedimento", "agenzia entrate", "partita iva", "regime forfettario", "irap", "ires"];
+const LAVORO_KW = ["licenziamento", "dimissioni", "ccnl", "busta paga", "tfr", "ferie", "malattia", "maternita", "inps", "inail", "preavviso", "assunzione", "contratto di lavoro",  "naspi", "cassa integrazione"];
+const TECNICO_KW = ["edilizia", "scia", "cila", "permesso di costruire", "ntc", "cantiere", "dvr", "abuso edilizio", "condono", "catasto", "ristrutturazione"];
+const FINANZA_KW = ["mifid", "tuf", "consob", "investimento", "fondo comune", "obbligazione", "derivato", "polizza"];
+
+function autoDetectVertical(question: string, profile: UserProfile | null): string | undefined {
+  // 1. Specializzazioni utente
+  const specs = (profile?.specializzazioni ?? []).map(s => s.toLowerCase());
+  if (specs.some(s => s.includes("commercialista") || s.includes("fiscal"))) return "commercialista";
+  if (specs.some(s => s.includes("lavoro"))) return "lavoro";
+  if (specs.some(s => s.includes("ingegner") || s.includes("geometr"))) return "tecnico";
+  if (specs.some(s => s.includes("finanzi"))) return "finanziario";
+
+  // 2. Keywords dalla domanda
+  const q = question.toLowerCase();
+  if (FISCAL_KW.some(k => q.includes(k))) return "commercialista";
+  if (LAVORO_KW.some(k => q.includes(k))) return "lavoro";
+  if (TECNICO_KW.some(k => q.includes(k))) return "tecnico";
+  if (FINANZA_KW.some(k => q.includes(k))) return "finanziario";
+
+  return undefined; // scatter-gather
 }
 
 // ── Supabase RAG search ───────────────────────────────────────────────────────
@@ -719,7 +665,7 @@ export async function POST(req: NextRequest) {
   }
   // PRO: nessun controllo quota
 
-  // ── RAG ───────────────────────────────────────────────────────────────────
+  // ── RAG (retry + fallback + auto-detect vertical) ────────────────────────
   let ragContext = "";
   let sources: Source[] = [];
   let chunkUrns: string[] = [];
@@ -727,8 +673,12 @@ export async function POST(req: NextRequest) {
   try {
     const embedding = await generateEmbedding(question);
     if (embedding) {
-      const verticale = getVerticale(vertical ?? null);
-      const chunks = await searchSupabase(embedding, verticale);
+      // Vertical: usa quello selezionato dall'utente, oppure auto-detect dalla domanda
+      const explicitVertical = getVerticale(vertical ?? null);
+      const detectedVertical = explicitVertical || autoDetectVertical(question, profile);
+
+      const chunks = await searchSupabase(embedding, detectedVertical);
+
       if (chunks.length > 0) {
         ragContext = chunks.map((c, i) => `[Fonte ${i + 1}] ${c.titolo || "Normativa"} (${c.fonte || "corpus"})\n${c.chunk}`).join("\n\n---\n\n");
         sources = chunks.map((c) => ({ id: String(c.id), titolo: c.titolo || "Normativa", fonte: c.fonte || "normattiva", url: c.url || "", tipo: c.tipo || "normativa", status: c.status || "vigente" }));
@@ -747,10 +697,11 @@ export async function POST(req: NextRequest) {
   if (relations.length > 0) graphContext = buildGraphBlock(relations);
   if (precedents.length > 0) precedentsContext = buildPrecedentsBlock(precedents);
 
-  // ── System prompt ─────────────────────────────────────────────────────────
-  const basePrompt = (vertical && SYSTEM_PROMPTS[vertical]) || DEFAULT_SYSTEM_PROMPT;
+  // ── System prompt (tier-based) ─────────────────────────────────────────────
+  const userTier = resolveUserTier(userRole, piano, profile?.specializzazioni);
+  const basePrompt = assembleBasePrompt(userTier, vertical ?? null);
   const profileBlock = profile ? [buildProfileBlock(profile), buildJurisdictionalBlock(profile)].filter(Boolean).join("\n") : "";
-  const behavioralRules = getBehavioralRules(currentTurn, !!profile);
+  const behavioralRules = getBehavioralRules(currentTurn, !!profile, userTier);
   const contextSection = ragContext
     ? ["────────────────────────────────────────", "DOCUMENTI NORMATIVI (corpus NormaAI, solo norme vigenti):\n", ragContext, "────────────────────────────────────────", "Basa la risposta su questi documenti. Cita come [Fonte N] con l'articolo e la norma esatta.", graphContext, precedentsContext].filter(Boolean).join("\n\n")
     : "";
