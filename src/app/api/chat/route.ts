@@ -299,7 +299,7 @@ function autoDetectVertical(question: string, profile: UserProfile | null): stri
   const q = question.toLowerCase();
   if (FISCAL_KW.some(k => q.includes(k))) return "commercialista";
   if (LAVORO_KW.some(k => q.includes(k))) return "lavoro";
-  if (TECNICO_KW.some(k => q.includes(k))) return "tecnico";
+  if (TECNICO_KW.some(k => q.includes(k))) return "ingegnere";
   if (FINANZA_KW.some(k => q.includes(k))) return "finanziario";
 
   return undefined; // scatter-gather
@@ -312,10 +312,11 @@ interface SupabaseChunk {
   url: string; urn: string; status: string; similarity: number;
 }
 
-// Indici HNSW attivi nel DB (aggiornato 12/04/2026):
-// Partial verticale: avvocato(95K sentenze), finanziario(22K), commercialista(14K), lavoro(4K), ingegnere(1K)
+// Indici HNSW attivi nel DB (aggiornato 13/04/2026):
+// Partial verticale: avvocato(95K), impresa(267K), finanziario(22K), commercialista(14K), lavoro(4K), ingegnere(1K)
 // Partial generale/tipo: legge(55K ✅), dlgs(165K ⏳), dpr(483K ⏳), decreto(311K ⏳), atto_eu(364K ⏳)
-// Aggiungere alle queries sotto quando indici ⏳ sono pronti (CREATE INDEX in corso)
+// Global HNSW: normaai_chunks_hnsw_global (fallback per ricerche senza verticale)
+// Ghost indices rimossi: legale, tecnico (0 righe)
 
 async function searchSupabaseSingle(
   embedding: number[],
@@ -350,11 +351,22 @@ async function searchSupabase(embedding: number[], verticale?: string): Promise<
   try {
     if (verticale) {
       // Verticale specificato → HNSW parziale veloce
-      return await searchSupabaseSingle(embedding, { filter_verticale: verticale, match_count: 8 });
+      const results = await searchSupabaseSingle(embedding, { filter_verticale: verticale, match_count: 8 });
+      // Fallback: se il verticale restituisce pochi risultati, integra con "generale"
+      if (results.length < 3) {
+        const fallback = await searchSupabaseSingle(embedding, { filter_verticale: "generale", filter_tipo: "legge", match_count: 5 });
+        const seen = new Set(results.map(c => c.id));
+        const extra = fallback.filter(c => !seen.has(c.id));
+        return [...results, ...extra]
+          .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
+          .slice(0, 8);
+      }
+      return results;
     }
     // Nessun verticale → parallele su tutti gli indici HNSW disponibili
     const queries: Array<{ filter_verticale?: string; filter_tipo?: string; match_count: number }> = [
       { filter_verticale: "avvocato",       match_count: 4 }, // 95K rows, HNSW ok
+      { filter_verticale: "impresa",        match_count: 4 }, // 267K rows, HNSW ok
       { filter_verticale: "finanziario",    match_count: 3 }, // 22K rows
       { filter_verticale: "commercialista", match_count: 3 }, // 14K rows
       { filter_verticale: "lavoro",         match_count: 3 }, // 4K rows
@@ -383,7 +395,7 @@ function getVerticale(vertical: string | null): string | undefined {
   if (!vertical) return undefined;
   const map: Record<string, string> = {
     Avvocato: "avvocato", Commercialista: "commercialista",
-    "Consulente del Lavoro": "lavoro", "Ingegnere/Geometra": "tecnico",
+    "Consulente del Lavoro": "lavoro", "Ingegnere/Geometra": "ingegnere",
     "Consulente Finanziario": "finanziario", "Analisi Contratto": "avvocato",
     "Parere Legale": "avvocato", "Email Professionale": "avvocato",
     "Memoria Difensiva": "avvocato", "Bozza Contratto": "avvocato",
