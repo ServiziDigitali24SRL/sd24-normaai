@@ -377,7 +377,7 @@ interface SupabaseChunk {
 
 async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
   try {
-    const body: Record<string, unknown> = { query_embedding: embedding, match_count: 8, match_threshold: 0.45, only_vigente: true };
+    const body: Record<string, unknown> = { query_embedding: embedding, match_count: 8, match_threshold: 0.35, only_vigente: true };
     if (verticale) body.filter_verticale = verticale;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
@@ -733,8 +733,6 @@ export async function POST(req: NextRequest) {
       const enc = new TextEncoder();
       const send = (obj: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
-      send({ type: "sources", sources, hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0 });
-
       let fullResponse = "";
       try {
         const anthropic = getAnthropic();
@@ -751,7 +749,20 @@ export async function POST(req: NextRequest) {
             fullResponse += event.delta.text;
             send({ type: "text", text: event.delta.text });
           }
-          if (event.type === "message_stop") { send({ type: "done", popup_suggestion: popupSuggestion ?? null }); }
+          if (event.type === "message_stop") {
+            // Filtra solo le fonti effettivamente citate nella risposta [Fonte N]
+            const citedIndices = new Set<number>();
+            const citationRegex = /\[Fonte\s+(\d+)(?:[,\s\-–]+(\d+))*\]/gi;
+            let match;
+            while ((match = citationRegex.exec(fullResponse)) !== null) {
+              match.slice(1).forEach(n => n && citedIndices.add(parseInt(n) - 1));
+            }
+            const citedSources = citedIndices.size > 0
+              ? sources.filter((_, i) => citedIndices.has(i))
+              : [];
+            send({ type: "sources", sources: citedSources, hasRag: citedSources.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0 });
+            send({ type: "done", popup_suggestion: popupSuggestion ?? null });
+          }
         }
       } catch (err) {
         send({ type: "error", message: String(err) });
