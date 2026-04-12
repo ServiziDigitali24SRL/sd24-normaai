@@ -1,0 +1,29 @@
+name: RAG Smoke Test
+
+on:
+  push:
+    branches:
+      - light-theme
+    paths:
+      - "src/app/api/chat/route.ts"
+  workflow_dispatch:
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install httpx
+
+      - name: Run RAG smoke test
+        run: python scripts/smoke-test-rag.py
