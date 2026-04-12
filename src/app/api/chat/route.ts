@@ -377,7 +377,7 @@ interface SupabaseChunk {
 
 async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
   try {
-    const body: Record<string, unknown> = { query_embedding: embedding, match_count: 8, match_threshold: 0.20, only_vigente: true };
+    const body: Record<string, unknown> = { query_embedding: embedding, match_count: 8, match_threshold: 0.45, only_vigente: true };
     if (verticale) body.filter_verticale = verticale;
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
