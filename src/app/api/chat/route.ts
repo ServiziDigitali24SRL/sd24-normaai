@@ -389,6 +389,40 @@ async function searchSupabase(embedding: number[], verticale?: string): Promise<
   } catch { return []; }
 }
 
+// ── Reranker (keyword + legal citation overlap) ─────────────────────────────
+
+function rerankChunks(question: string, chunks: SupabaseChunk[]): SupabaseChunk[] {
+  if (chunks.length <= 1) return chunks;
+  const qLower = question.toLowerCase();
+  const qTokens = new Set(qLower.split(/\s+/).filter(t => t.length > 3));
+  // Extract legal references from question (art. 2043, d.lgs. 81, l. 300, etc.)
+  const legalRefs = new Set(
+    (qLower.match(/(?:art\.?\s*\d+|d\.?\s*lgs\.?\s*\d+|l\.?\s*\d+|dpr\s*\d+|c\.c\.|c\.p\.|c\.p\.c\.|c\.p\.p\.)/g) ?? [])
+      .map(r => r.replace(/\s+/g, ""))
+  );
+
+  return chunks
+    .map(chunk => {
+      const cLower = chunk.chunk.toLowerCase();
+      // 1. Keyword overlap (Jaccard-like)
+      const cTokens = new Set(cLower.split(/\s+/).filter(t => t.length > 3));
+      const overlap = [...qTokens].filter(t => cTokens.has(t)).length;
+      const kwScore = qTokens.size > 0 ? overlap / qTokens.size : 0;
+
+      // 2. Legal citation match (high value if chunk contains the specific article/law)
+      const cRefs = new Set(
+        (cLower.match(/(?:art\.?\s*\d+|d\.?\s*lgs\.?\s*\d+|l\.?\s*\d+|dpr\s*\d+|c\.c\.|c\.p\.|c\.p\.c\.|c\.p\.p\.)/g) ?? [])
+          .map(r => r.replace(/\s+/g, ""))
+      );
+      const refMatch = legalRefs.size > 0 ? [...legalRefs].filter(r => cRefs.has(r)).length / legalRefs.size : 0;
+
+      // Combined score: 60% vector similarity + 20% keyword + 20% legal ref
+      const combined = (chunk.similarity ?? 0) * 0.6 + kwScore * 0.2 + refMatch * 0.2;
+      return { ...chunk, similarity: combined };
+    })
+    .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0));
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getVerticale(vertical: string | null): string | undefined {
@@ -684,7 +718,8 @@ export async function POST(req: NextRequest) {
       const detectedVertical = explicitVertical || autoDetectVertical(question, profile);
 
       const tRetrieval0 = Date.now();
-      const chunks = await searchSupabase(embedding, detectedVertical);
+      const rawChunks = await searchSupabase(embedding, detectedVertical);
+      const chunks = rerankChunks(question, rawChunks);
       const tRetrieval1 = Date.now();
       // Langfuse: log retrieval step (fire-and-forget)
       traceRetrieval(traceId, question, chunks.map(c => ({ id: String(c.id), titolo: c.titolo, fonte: c.fonte, similarity: c.similarity })), tRetrieval1 - tRetrieval0);
