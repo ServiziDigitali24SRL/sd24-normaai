@@ -388,9 +388,9 @@ interface SupabaseChunk {
 }
 
 // Indici HNSW attivi nel DB (aggiornato 12/04/2026):
-// Partial per verticale: avvocato(95K), finanziario(22K), commercialista(14K), lavoro(4K), ingegnere(1K)
-// Partial per tipo in generale: legge(55K), decreto_legislativo(165K) - in costruzione
-// Il 91% del corpus è in verticale='generale' senza indice globale efficiente
+// Partial verticale: avvocato(95K sentenze), finanziario(22K), commercialista(14K), lavoro(4K), ingegnere(1K)
+// Partial generale/tipo: legge(55K ✅), dlgs(165K ⏳), dpr(483K ⏳), decreto(311K ⏳), atto_eu(364K ⏳)
+// Aggiungere alle queries sotto quando indici ⏳ sono pronti (CREATE INDEX in corso)
 
 async function searchSupabaseSingle(
   embedding: number[],
@@ -434,9 +434,9 @@ async function searchSupabase(embedding: number[], verticale?: string): Promise<
       { filter_verticale: "commercialista", match_count: 3 }, // 14K rows
       { filter_verticale: "lavoro",         match_count: 3 }, // 4K rows
       { filter_verticale: "ingegnere",      match_count: 2 }, // 1K rows
-      // generale sub-indicizzato per tipo (HNSW parziale su tipo specifico)
-      { filter_verticale: "generale", filter_tipo: "legge",               match_count: 4 }, // 55K rows, HNSW ok
-      { filter_verticale: "generale", filter_tipo: "decreto_legislativo", match_count: 4 }, // 165K rows, HNSW in costruzione
+      // generale/tipo — solo tipi con HNSW parziale confermato
+      { filter_verticale: "generale", filter_tipo: "legge", match_count: 5 }, // 55K rows, HNSW ok
+      // dlgs/dpr/decreto/atto_eu: indici in costruzione, aggiungerli appena pronti
     ];
     const results = await Promise.all(queries.map(q => searchSupabaseSingle(embedding, q)));
     const flat = results.flat();
