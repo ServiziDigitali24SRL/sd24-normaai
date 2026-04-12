@@ -363,14 +363,21 @@ ${CITATION_RULES}${followUp}${proponi}
 // ── Embedding (VPS fastembed 384 dim) ────────────────────────────────────────
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
+  const url = `${EMBED_VPS_URL}/embed`;
+  console.log(`[EMBED] calling ${url}`);
   try {
-    const res = await fetch(`${EMBED_VPS_URL}/embed`, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ input: text.slice(0, 8000) }),
       signal: AbortSignal.timeout(10000),
     });
-    if (res.ok) { const json = await res.json(); return json?.data?.[0]?.embedding ?? null; }
+    if (res.ok) {
+      const json = await res.json();
+      const emb = json?.data?.[0]?.embedding ?? null;
+      console.log(`[EMBED] ok len=${emb?.length ?? 'null'}`);
+      return emb;
+    }
     console.error(`[EMBED] VPS error: ${res.status}`);
   } catch (e) { console.error("[EMBED] VPS unreachable:", String(e)); }
   return null;
@@ -407,9 +414,14 @@ async function searchSupabaseSingle(
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return [];
-    return await res.json() as SupabaseChunk[];
-  } catch { return []; }
+    if (!res.ok) {
+      console.error(`[RAG] err ${res.status} vert=${params.filter_verticale} tipo=${params.filter_tipo}`);
+      return [];
+    }
+    const rows = await res.json() as SupabaseChunk[];
+    if (rows.length > 0) console.log(`[RAG] ${rows.length} chunks vert=${params.filter_verticale} tipo=${params.filter_tipo}`);
+    return rows;
+  } catch (e) { console.error(`[RAG] timeout/fail vert=${params.filter_verticale} tipo=${params.filter_tipo}:`, String(e).slice(0, 80)); return []; }
 }
 
 async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
