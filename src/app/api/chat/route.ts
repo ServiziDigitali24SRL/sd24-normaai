@@ -360,23 +360,24 @@ ${CITATION_RULES}${followUp}${proponi}
 ────────────────────────────────────────`;
 }
 
-// ── Embedding (VPS fastembed 384 dim) ────────────────────────────────────────
+// ── Embedding (OpenAI text-embedding-3-small 1536 dim) ───────────────────────
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
-  const url = `${EMBED_VPS_URL}/embed`;
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) { console.error("[EMBED] OPENAI_API_KEY not set"); return null; }
   try {
-    const res = await fetch(url, {
+    const res = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ input: text.slice(0, 8000) }),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ model: "text-embedding-3-small", input: text.slice(0, 8000) }),
       signal: AbortSignal.timeout(10000),
     });
     if (res.ok) {
       const json = await res.json();
       return json?.data?.[0]?.embedding ?? null;
     }
-    console.error(`[EMBED] VPS error: ${res.status}`);
-  } catch (e) { console.error("[EMBED] VPS unreachable:", String(e)); }
+    console.error(`[EMBED] OpenAI error: ${res.status}`);
+  } catch (e) { console.error("[EMBED] OpenAI unreachable:", String(e)); }
   return null;
 }
 
