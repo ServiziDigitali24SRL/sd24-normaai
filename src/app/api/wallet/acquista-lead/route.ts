@@ -82,14 +82,15 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Logga transazione wallet
-    await admin.from("wallet_transactions").insert({
+    // Log transazione wallet — non-blocking, ignora errori
+    void admin.from("wallet_transactions").insert({
       user_id: user.id,
       tipo: "acquisto_lead",
       importo: -prezzoEuro,
       lead_id: leadId,
       note: `Acquisto lead ${lead.vertical_id} — €${prezzoEuro}`,
       created_at: new Date().toISOString(),
-    }).then(() => {}).catch(() => {}); // non-blocking
+    });
 
     return NextResponse.json({
       ok: true,
