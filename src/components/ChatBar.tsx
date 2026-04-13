@@ -7,9 +7,6 @@ import type { User } from "@supabase/supabase-js";
 const PILLS = [
   { label: "Avvocato", hint: "Diritto civile, penale, amministrativo…" },
   { label: "Commercialista", hint: "Fiscalità, IVA, dichiarazioni…" },
-  { label: "Consulente del Lavoro", hint: "CCNL, buste paga, INPS…" },
-  { label: "Ingegnere/Geometra", hint: "Edilizia, urbanistica, sicurezza…" },
-  { label: "Consulente Finanziario", hint: "TUF, MiFID II, antiriciclaggio…" },
 ];
 
 const CONTRACT_VERTICAL = "Analisi Contratto";

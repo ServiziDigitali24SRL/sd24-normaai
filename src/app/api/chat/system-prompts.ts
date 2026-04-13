@@ -543,19 +543,8 @@ Segnala ogni ambiguità come rischio.`,
 // e l'utente seleziona un vertical professionale
 // ══════════════════════════════════════════════════════════════════════════════
 
-export const VERTICAL_PERSONA: Record<string, string> = {
-  "Consulente del Lavoro": `Verticale attivo: DIRITTO DEL LAVORO.
-Rispondi con focus su: Statuto Lavoratori, D.Lgs. 81/2015, CCNL, circolari INPS/INAIL.
-Indica il CCNL rilevante se possibile, tutele applicabili e percorso procedurale.`,
-
-  "Ingegnere/Geometra": `Verticale attivo: NORMATIVA TECNICA ED EDILIZIA.
-Rispondi con focus su: DPR 380/2001, NTC 2018, D.Lgs. 81/2008, UNI/CEI, normativa regionale.
-Indica il titolo abilitativo corretto, rischi di inosservanza e sanzioni previste.`,
-
-  "Consulente Finanziario": `Verticale attivo: NORMATIVA FINANZIARIA E BANCARIA.
-Rispondi con focus su: TUF, TUB, MiFID II, Regolamenti Consob/Banca d'Italia, EMIR, UCITS.
-Indica obblighi di condotta, requisiti di trasparenza e conseguenze sanzionatorie.`,
-};
+// VERTICAL_PERSONA rimosso — i bottoni UI "Avvocato" e "Commercialista"
+// non aggiungono overlay al prompt: il tier li copre già.
 
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -623,19 +612,9 @@ export function getTierPrompt(tier: UserTier): string {
  */
 export function assembleBasePrompt(tier: UserTier, vertical: string | null): string {
   const base = getTierPrompt(tier);
-
   if (!vertical) return base;
-
-  // Vertical drafter templates — sempre applicati sopra qualsiasi tier
-  if (VERTICAL_OVERLAYS[vertical]) {
-    return `${base}\n\n${VERTICAL_OVERLAYS[vertical]}`;
-  }
-
-  // Vertical persona — solo se tier NON è già professionista (evita ridondanza)
-  if (VERTICAL_PERSONA[vertical] && !tier.startsWith("professionista")) {
-    return `${base}\n\n${VERTICAL_PERSONA[vertical]}`;
-  }
-
-  // "Avvocato" o "Commercialista" selezionati → il tier li copre già
+  // Vertical drafter templates (Parere Legale, Memoria Difensiva, ecc.) → tier + overlay
+  if (VERTICAL_OVERLAYS[vertical]) return `${base}\n\n${VERTICAL_OVERLAYS[vertical]}`;
+  // "Avvocato" / "Commercialista" UI pills → il tier li copre già, nessun overlay
   return base;
 }

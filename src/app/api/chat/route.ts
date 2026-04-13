@@ -280,30 +280,7 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
   return null;
 }
 
-// ── Auto-detect vertical dalla domanda (quando frontend manda null) ─────────
-
-const FISCAL_KW = ["iva", "irpef", "tuir", "fattura", "dichiarazione", "f24", "contributi inps", "detrazione fiscale", "deduzione", "bilancio", "730", "redditi", "codice tributo", "ravvedimento", "agenzia entrate", "partita iva", "regime forfettario", "irap", "ires"];
-const LAVORO_KW = ["licenziamento", "dimissioni", "ccnl", "busta paga", "tfr", "ferie", "malattia", "maternita", "inps", "inail", "preavviso", "assunzione", "contratto di lavoro",  "naspi", "cassa integrazione"];
-const TECNICO_KW = ["edilizia", "scia", "cila", "permesso di costruire", "ntc", "cantiere", "dvr", "abuso edilizio", "condono", "catasto", "ristrutturazione"];
-const FINANZA_KW = ["mifid", "tuf", "consob", "investimento", "fondo comune", "obbligazione", "derivato", "polizza"];
-
-function autoDetectVertical(question: string, profile: UserProfile | null): string | undefined {
-  // 1. Specializzazioni utente
-  const specs = (profile?.specializzazioni ?? []).map(s => s.toLowerCase());
-  if (specs.some(s => s.includes("commercialista") || s.includes("fiscal"))) return "commercialista";
-  if (specs.some(s => s.includes("lavoro"))) return "lavoro";
-  if (specs.some(s => s.includes("ingegner") || s.includes("geometr"))) return "tecnico";
-  if (specs.some(s => s.includes("finanzi"))) return "finanziario";
-
-  // 2. Keywords dalla domanda
-  const q = question.toLowerCase();
-  if (FISCAL_KW.some(k => q.includes(k))) return "commercialista";
-  if (LAVORO_KW.some(k => q.includes(k))) return "lavoro";
-  if (TECNICO_KW.some(k => q.includes(k))) return "ingegnere";
-  if (FINANZA_KW.some(k => q.includes(k))) return "finanziario";
-
-  return undefined; // scatter-gather
-}
+// autoDetectVertical rimosso — RAG è globale su tutto il corpus, nessun filtro verticale.
 
 // ── Supabase RAG search ───────────────────────────────────────────────────────
 
@@ -391,13 +368,13 @@ function rerankChunks(question: string, chunks: SupabaseChunk[]): SupabaseChunk[
 
 function getVerticale(vertical: string | null): string | undefined {
   if (!vertical) return undefined;
+  // Usato solo per lead scoring e getPrecedentiCassazione — non per RAG filter
   const map: Record<string, string> = {
     Avvocato: "avvocato", Commercialista: "commercialista",
-    "Consulente del Lavoro": "lavoro", "Ingegnere/Geometra": "ingegnere",
-    "Consulente Finanziario": "finanziario", "Analisi Contratto": "avvocato",
-    "Parere Legale": "avvocato", "Email Professionale": "avvocato",
-    "Memoria Difensiva": "avvocato", "Bozza Contratto": "avvocato",
-    "Parcelle Forensi": "avvocato", "Analisi Documento": "avvocato",
+    "Analisi Contratto": "avvocato", "Parere Legale": "avvocato",
+    "Email Professionale": "avvocato", "Memoria Difensiva": "avvocato",
+    "Bozza Contratto": "avvocato", "Parcelle Forensi": "avvocato",
+    "Analisi Documento": "avvocato",
   };
   return map[vertical];
 }
