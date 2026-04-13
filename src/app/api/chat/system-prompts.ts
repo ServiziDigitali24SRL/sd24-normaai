@@ -708,7 +708,8 @@ export function resolveUserTier(
     const specs = (specializzazioni ?? []).map(s => s.toLowerCase());
     const isComm = specs.some(s =>
       s.includes("commercialista") || s.includes("revisore") ||
-      s.includes("fiscale") || s.includes("tributar") || s.includes("contabil")
+      s.includes("fiscal") || s.includes("tributar") || s.includes("contabil") ||
+      s.includes("iva") || s.includes("tuir") || s.includes("bilancio") || s.includes("oic")
     );
     if (isComm) return "professionista_commercialista";
     // Default: avvocato (covers avvocato, consulente lavoro, generico legale)
