@@ -734,7 +734,7 @@ export async function POST(req: NextRequest) {
         const anthropic = getAnthropic();
         const anthropicStream = await anthropic.messages.create({
           model: selectedModel,
-          max_tokens: (vertical && ["Parere Legale", "Memoria Difensiva", "Bozza Contratto", "Analisi Documento", "Analisi Contratto"].includes(vertical)) ? 4096 : 2000,
+          max_tokens: (vertical && ["Parere Legale", "Memoria Difensiva", "Bozza Contratto", "Analisi Documento", "Analisi Contratto"].includes(vertical)) ? 4096 : 3000,
           system: fullSystem,
           messages,
           stream: true,
