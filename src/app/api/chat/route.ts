@@ -371,13 +371,13 @@ async function searchSupabase(embedding: number[], verticale?: string): Promise<
       { filter_verticale: "commercialista", match_count: 3 }, // 14K rows
       { filter_verticale: "lavoro",         match_count: 3 }, // 4K rows
       { filter_verticale: "ingegnere",      match_count: 2 }, // 1K rows
-      // generale/tipo — solo tipi con HNSW parziale confermato
-      { filter_verticale: "generale", filter_tipo: "legge",      match_count: 5 }, // 55K rows, HNSW ok
-      // TODO: aggiungere quando HNSW pronti:
-      //   { filter_verticale: "generale", filter_tipo: "documento",  match_count: 5 }, // 1.47M (building)
-      //   { filter_verticale: "generale", filter_tipo: "decreto_legislativo", match_count: 4 }, // 165K (building)
-      //   { filter_verticale: "generale", filter_tipo: "decreto_del_presidente_della_repubblica", match_count: 3 }, // 483K (to start)
-      //   { filter_verticale: "generale", filter_tipo: "atto_eu", match_count: 3 }, // 364K (building)
+      // generale/tipo — HNSW parziali (building via Edge Function 13/04/2026)
+      { filter_verticale: "generale", filter_tipo: "legge",                                        match_count: 5 }, // 55K HNSW ✅
+      { filter_verticale: "generale", filter_tipo: "decreto_legislativo",                          match_count: 4 }, // 165K HNSW ✅
+      { filter_verticale: "generale", filter_tipo: "decreto",                                      match_count: 4 }, // 311K HNSW ✅
+      { filter_verticale: "generale", filter_tipo: "atto_eu",                                      match_count: 3 }, // 364K HNSW ✅
+      { filter_verticale: "generale", filter_tipo: "decreto_del_presidente_della_repubblica",      match_count: 3 }, // 483K HNSW ✅
+      { filter_verticale: "generale", filter_tipo: "documento",                                    match_count: 5 }, // 1.47M HNSW ✅
     ];
     const results = await Promise.all(queries.map(q => searchSupabaseSingle(embedding, q)));
     const flat = results.flat();
