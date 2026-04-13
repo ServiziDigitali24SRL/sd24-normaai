@@ -347,46 +347,10 @@ async function searchSupabaseSingle(
   } catch (e) { console.error(`[RAG] timeout/fail vert=${params.filter_verticale} tipo=${params.filter_tipo}:`, String(e).slice(0, 80)); return []; }
 }
 
-async function searchSupabase(embedding: number[], verticale?: string): Promise<SupabaseChunk[]> {
-  try {
-    if (verticale) {
-      // Verticale specificato → HNSW parziale veloce
-      const results = await searchSupabaseSingle(embedding, { filter_verticale: verticale, match_count: 8 });
-      // Fallback: se il verticale restituisce pochi risultati, integra con "generale"
-      if (results.length < 3) {
-        const fallback = await searchSupabaseSingle(embedding, { filter_verticale: "generale", filter_tipo: "legge", match_count: 5 });
-        const seen = new Set(results.map(c => c.id));
-        const extra = fallback.filter(c => !seen.has(c.id));
-        return [...results, ...extra]
-          .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
-          .slice(0, 8);
-      }
-      return results;
-    }
-    // Nessun verticale → parallele su tutti gli indici HNSW disponibili
-    const queries: Array<{ filter_verticale?: string; filter_tipo?: string; match_count: number }> = [
-      { filter_verticale: "avvocato",       match_count: 4 }, // 95K rows, HNSW ok
-      { filter_verticale: "impresa",        match_count: 4 }, // 267K rows, HNSW ok
-      { filter_verticale: "finanziario",    match_count: 3 }, // 22K rows
-      { filter_verticale: "commercialista", match_count: 3 }, // 14K rows
-      { filter_verticale: "lavoro",         match_count: 3 }, // 4K rows
-      { filter_verticale: "ingegnere",      match_count: 2 }, // 1K rows
-      // generale/tipo — HNSW parziali (building via Edge Function 13/04/2026)
-      { filter_verticale: "generale", filter_tipo: "legge",                                        match_count: 5 }, // 55K HNSW ✅
-      { filter_verticale: "generale", filter_tipo: "decreto_legislativo",                          match_count: 4 }, // 165K HNSW ✅
-      { filter_verticale: "generale", filter_tipo: "decreto",                                      match_count: 4 }, // 311K HNSW ✅
-      { filter_verticale: "generale", filter_tipo: "atto_eu",                                      match_count: 3 }, // 364K HNSW ✅
-      { filter_verticale: "generale", filter_tipo: "decreto_del_presidente_della_repubblica",      match_count: 3 }, // 483K HNSW ✅
-      { filter_verticale: "generale", filter_tipo: "documento",                                    match_count: 5 }, // 1.47M HNSW ✅
-    ];
-    const results = await Promise.all(queries.map(q => searchSupabaseSingle(embedding, q)));
-    const flat = results.flat();
-    const seen = new Set<string>();
-    return flat
-      .filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; })
-      .sort((a, b) => (b.similarity ?? 0) - (a.similarity ?? 0))
-      .slice(0, 8);
-  } catch { return []; }
+async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
+  // Ricerca globale su tutto il corpus (5M+ chunks) — nessun filtro verticale.
+  // I "verticali" UI sono solo selettori di tier prompt, non filtri RAG.
+  return searchSupabaseSingle(embedding, { match_count: 12 });
 }
 
 // ── Reranker (keyword + legal citation overlap) ─────────────────────────────
@@ -713,12 +677,8 @@ export async function POST(req: NextRequest) {
     traceEmbedding(traceId, question, embedding ? embedding.length : null, tEmbed1 - tEmbed0);
 
     if (embedding) {
-      // Vertical: usa quello selezionato dall'utente, oppure auto-detect dalla domanda
-      const explicitVertical = getVerticale(vertical ?? null);
-      const detectedVertical = explicitVertical || autoDetectVertical(question, profile);
-
       const tRetrieval0 = Date.now();
-      const rawChunks = await searchSupabase(embedding, detectedVertical);
+      const rawChunks = await searchSupabase(embedding);
       const chunks = rerankChunks(question, rawChunks);
       const tRetrieval1 = Date.now();
       // Langfuse: log retrieval step (fire-and-forget)
