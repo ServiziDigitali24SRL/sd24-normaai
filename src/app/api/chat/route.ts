@@ -391,8 +391,8 @@ const OPUS_KEYWORDS = ["licenziamento", "ricorso", "causa", "cartella", "ispezio
 const OPUS_VERTICALS = ["Parere Legale", "Memoria Difensiva", "Bozza Contratto", "Analisi Contratto", "DVR", "Compliance"];
 
 function selectModel(role: string | null, vertical: string | null, question: string, attachment: Attachment | undefined, isTrial: boolean): { model: string; poolWeight: number } {
-  if (!role || role === "privato") return { model: "claude-haiku-4-5-20251001", poolWeight: 0 };
-  if (isTrial) return { model: "claude-haiku-4-5-20251001", poolWeight: 0 };
+  if (!role || role === "privato") return { model: "claude-sonnet-4-6", poolWeight: 0 };
+  if (isTrial) return { model: "claude-sonnet-4-6", poolWeight: 0 };
   if (role === "impresa" || role === "professionista") {
     if (vertical && OPUS_VERTICALS.includes(vertical)) return { model: "claude-opus-4-6", poolWeight: 5 };
     const q = question.toLowerCase();
