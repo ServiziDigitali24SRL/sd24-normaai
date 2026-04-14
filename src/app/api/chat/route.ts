@@ -289,11 +289,12 @@ interface SupabaseChunk {
   url: string; urn: string; status: string; similarity: number;
 }
 
-// Indici HNSW attivi nel DB (aggiornato 13/04/2026):
-// Partial verticale: avvocato(95K), impresa(267K), finanziario(22K), commercialista(14K), lavoro(4K), ingegnere(1K)
-// Partial generale/tipo: legge(55K ✅), dlgs(165K ⏳), dpr(483K ⏳), decreto(311K ⏳), atto_eu(364K ⏳)
-// Global HNSW: normaai_chunks_hnsw_global (fallback per ricerche senza verticale)
-// Ghost indices rimossi: legale, tecnico (0 righe)
+// Indici HNSW attivi nel DB (aggiornato 14/04/2026):
+// Scatter-gather JS-side: 13 RPC in parallelo via Promise.all, ciascuna su indice partial.
+// Ogni shard usa il proprio WHERE identico al suo partial index → Postgres usa l'indice HNSW.
+// Merge + dedup lato JS. Copertura: ~6.5M/6.87M chunks (~95% corpus embeddato).
+// Non copre: regio_decreto (~277K, no HNSW), chunks micro-verticali senza HNSW.
+// Global HNSW (273MB) e global_v2 (740MB) non usati — coprono <10% corpus.
 
 async function searchSupabaseSingle(
   embedding: number[],
@@ -312,7 +313,7 @@ async function searchSupabaseSingle(
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) {
       console.error(`[RAG] err ${res.status} vert=${params.filter_verticale} tipo=${params.filter_tipo}`);
@@ -324,9 +325,40 @@ async function searchSupabaseSingle(
   } catch (e) { console.error(`[RAG] timeout/fail vert=${params.filter_verticale} tipo=${params.filter_tipo}:`, String(e).slice(0, 80)); return []; }
 }
 
+// Shards per scatter-gather: ogni entry = params per searchSupabaseSingle
+// WHERE deve essere identico alla definizione del partial HNSW index per forcing index scan.
+const SCATTER_SHARDS: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
+  { filter_verticale: "generale", filter_tipo: "documento" },
+  { filter_verticale: "generale", filter_tipo: "decreto" },
+  { filter_verticale: "generale", filter_tipo: "atto_eu" },
+  { filter_verticale: "generale", filter_tipo: "decreto_del_presidente_della_repubblica" },
+  { filter_verticale: "generale", filter_tipo: "legge" },
+  { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
+  { filter_tipo: "gazzetta_ufficiale" },
+  { filter_verticale: "impresa" },
+  { filter_verticale: "avvocato" },
+  { filter_verticale: "commercialista" },
+  { filter_verticale: "lavoro" },
+  { filter_verticale: "finanziario" },
+  { filter_verticale: "ingegnere" },
+];
+
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
-  // Global HNSW index su tutti 6.87M chunks — Option A (indice globale vero)
-  return searchSupabaseSingle(embedding, { match_count: 12 });
+  // Scatter-gather JS-side: 13 shard in parallelo, ciascuno su indice HNSW partial.
+  // Merge + dedup per id, top 12 per similarity.
+  const PER_SHARD = 4; // candidati per shard → 13*4=52 candidati → top 12
+  const shardResults = await Promise.all(
+    SCATTER_SHARDS.map(params => searchSupabaseSingle(embedding, { ...params, match_count: PER_SHARD }))
+  );
+  // Merge: dedup per id, top similarity
+  const seen = new Map<string, SupabaseChunk>();
+  for (const shard of shardResults) {
+    for (const chunk of shard) {
+      const existing = seen.get(chunk.id);
+      if (!existing || chunk.similarity > existing.similarity) seen.set(chunk.id, chunk);
+    }
+  }
+  return Array.from(seen.values()).sort((a, b) => b.similarity - a.similarity).slice(0, 12);
 }
 
 // ── Reranker (keyword + legal citation overlap) ─────────────────────────────
