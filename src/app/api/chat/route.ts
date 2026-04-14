@@ -254,7 +254,6 @@ ${CITATION_RULES}${followUp}${proponi}
 async function generateEmbedding(text: string): Promise<number[] | null> {
   const input = text.slice(0, 8000);
   const url = `${EMBED_VPS_URL}/embed`;
-  console.log(`[EMBED] calling ${url}`);
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
