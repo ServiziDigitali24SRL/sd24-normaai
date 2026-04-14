@@ -660,10 +660,12 @@ export async function POST(req: NextRequest) {
   let sources: Source[] = [];
   let chunkUrns: string[] = [];
 
+  console.log(`[RAG-START] question="${question.slice(0,50)}" vertical=${vertical}`);
   try {
     const tEmbed0 = Date.now();
     const embedding = await generateEmbedding(question);
     const tEmbed1 = Date.now();
+    console.log(`[RAG-EMBED] dim=${embedding?.length ?? 'null'} ms=${tEmbed1-tEmbed0}`);
     traceEmbedding(traceId, question, embedding ? embedding.length : null, tEmbed1 - tEmbed0);
 
     if (embedding) {
