@@ -312,7 +312,7 @@ async function searchSupabaseSingle(
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(20000),
     });
     if (!res.ok) {
       console.error(`[RAG] err ${res.status} vert=${params.filter_verticale} tipo=${params.filter_tipo}`);
@@ -325,8 +325,7 @@ async function searchSupabaseSingle(
 }
 
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
-  // Ricerca globale su tutto il corpus (5M+ chunks) — nessun filtro verticale.
-  // I "verticali" UI sono solo selettori di tier prompt, non filtri RAG.
+  // Global HNSW index su tutti 6.87M chunks — Option A (indice globale vero)
   return searchSupabaseSingle(embedding, { match_count: 12 });
 }
 
