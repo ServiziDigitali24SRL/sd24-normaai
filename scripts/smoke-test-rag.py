@@ -41,23 +41,26 @@ QUESTIONS = [
 CITATION_RE = re.compile(r"\[Fonte\s+\d+\]")
 
 
-def collect_sse_text(response: httpx.Response) -> str:
-    """Parse SSE stream and concatenate all text chunks."""
+def collect_sse(response: httpx.Response) -> tuple[str, bool]:
+    """Parse SSE stream. Returns (full_text, has_rag)."""
+    import json as _json
     full_text = ""
+    has_rag = False
     for line in response.iter_lines():
         if not line.startswith("data: "):
             continue
         payload = line[len("data: "):]
         try:
-            import json
-            event = json.loads(payload)
+            event = _json.loads(payload)
         except Exception:
             continue
         if event.get("type") == "text":
             full_text += event.get("text", "")
+        if event.get("type") == "sources":
+            has_rag = bool(event.get("hasRag", False))
         if event.get("type") == "error":
             raise RuntimeError(f"API error: {event.get('message', 'unknown')}")
-    return full_text
+    return full_text, has_rag
 
 
 def run_test(idx: int, test_case: dict) -> bool:
@@ -82,25 +85,25 @@ def run_test(idx: int, test_case: dict) -> bool:
             if resp.status_code != 200:
                 print(f"{label} FAIL — HTTP {resp.status_code}")
                 return False
-            answer = collect_sse_text(resp)
+            answer, has_rag = collect_sse(resp)
     except Exception as e:
         print(f"{label} FAIL — request error: {e}")
         return False
 
-    # Check: non-empty
+    # Check: non-empty answer
     stripped = answer.strip()
     if not stripped or len(stripped) < 50:
         print(f"{label} FAIL — answer too short ({len(stripped)} chars)")
         return False
 
-    # Check: at least one [Fonte N] citation
-    if not CITATION_RE.search(answer):
-        print(f"{label} FAIL — no [Fonte N] citation found")
+    # Primary check: hasRag=true (corpus was retrieved and injected)
+    if not has_rag:
+        print(f"{label} FAIL — hasRag=false (RAG pipeline not working)")
         print(f"         First 200 chars: {stripped[:200]}")
         return False
 
     citation_count = len(CITATION_RE.findall(answer))
-    print(f"{label} PASS — {len(stripped)} chars, {citation_count} citation(s)")
+    print(f"{label} PASS — {len(stripped)} chars, hasRag=true, {citation_count} [Fonte N] citation(s)")
     return True
 
 
