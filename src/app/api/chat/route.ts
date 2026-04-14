@@ -300,6 +300,7 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
     { filter_verticale: "lavoro" },
     { filter_verticale: "finanziario" },
     { filter_verticale: "avvocato" },
+    { filter_verticale: "ingegnere" },
   ];
 
   const t0 = Date.now();
@@ -748,7 +749,7 @@ export async function POST(req: NextRequest) {
       const enc = new TextEncoder();
       const send = (obj: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
-      send({ type: "debug_rag", ...ragDebugInfo });
+      // debug: ragDebugInfo available here for troubleshooting
       let fullResponse = "";
       const tGen0 = Date.now();
       try {

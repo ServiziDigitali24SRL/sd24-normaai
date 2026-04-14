@@ -22,7 +22,7 @@ QUESTIONS = [
     },
     {
         "vertical": "commercialista",
-        "question": "Quali sono le aliquote IVA vigenti in Italia?",
+        "question": "Qual è l'orientamento della Cassazione sulla prescrizione dei crediti tributari dell'Erario?",
     },
     {
         "vertical": "avvocato",
@@ -30,7 +30,7 @@ QUESTIONS = [
     },
     {
         "vertical": "ingegnere",
-        "question": "Cosa prevede il DPR 380/2001 riguardo al permesso di costruire?",
+        "question": "Qual è la responsabilità del direttore dei lavori per vizi dell'opera secondo la Cassazione?",
     },
     {
         "vertical": "finanziario",
