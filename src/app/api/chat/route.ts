@@ -290,30 +290,51 @@ interface SupabaseChunk {
 }
 
 // Indici HNSW attivi nel DB (aggiornato 14/04/2026):
-// Single global query su hnsw_global_v2 (987MB, 100% corpus, no filter).
-// Postgres usa automaticamente l'indice HNSW globale per la ricerca vettoriale.
-// Una sola query → nessun problema di saturazione connection pool.
+// Scatter su 6 HNSW validi (889MB totali) — indici attivi in Supabase.
+// 2 wave da 3 per non saturare connection pool free tier.
+// Copertura: avvocato, legge, dlgs, finanziario, commercialista, lavoro.
 
-async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
+const SHARDS: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
+  { filter_verticale: "avvocato" },
+  { filter_verticale: "commercialista" },
+  { filter_verticale: "lavoro" },
+  { filter_tipo: "legge" },
+  { filter_tipo: "decreto_legislativo" },
+  { filter_verticale: "finanziario" },
+];
+
+async function searchSupabaseSingle(
+  embedding: number[],
+  shard: { filter_verticale?: string; filter_tipo?: string }
+): Promise<SupabaseChunk[]> {
   try {
-    const body = {
+    const body: Record<string, unknown> = {
       query_embedding: embedding,
-      match_count: 12,
+      match_count: 3,
       match_threshold: 0.10,
       only_vigente: false,
+      ...shard,
     };
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(10000),
     });
-    if (!res.ok) {
-      console.error(`[RAG] err ${res.status}`);
-      return [];
-    }
+    if (!res.ok) return [];
     return await res.json() as SupabaseChunk[];
-  } catch (e) { console.error(`[RAG] timeout/fail:`, String(e).slice(0, 80)); return []; }
+  } catch { return []; }
+}
+
+async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
+  const wave1 = await Promise.all(SHARDS.slice(0, 3).map(s => searchSupabaseSingle(embedding, s)));
+  const wave2 = await Promise.all(SHARDS.slice(3).map(s => searchSupabaseSingle(embedding, s)));
+  const seen = new Map<string, SupabaseChunk>();
+  for (const chunk of [...wave1.flat(), ...wave2.flat()]) {
+    const ex = seen.get(chunk.id);
+    if (!ex || chunk.similarity > ex.similarity) seen.set(chunk.id, chunk);
+  }
+  return Array.from(seen.values()).sort((a, b) => b.similarity - a.similarity).slice(0, 12);
 }
 
 // ── Reranker (keyword + legal citation overlap) ─────────────────────────────
