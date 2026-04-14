@@ -290,43 +290,38 @@ interface SupabaseChunk {
 }
 
 // Indici HNSW attivi nel DB (aggiornato 14/04/2026):
-// RAG via VPS scatter-service (porta 8003).
-// VPS fa embed (384d FastEmbed, ~0.1s) + scatter-gather HNSW (~2-3s verso Supabase).
-// Molto più veloce di Vercel→Supabase diretto (~10-15s sotto carico).
+// Scatter su 3 shards piccoli in parallelo.
+// RPC ha statement_timeout=6s quindi ogni query si auto-cancella se il DB è sotto carico.
+// Dimensioni: commercialista 28MB, lavoro 15MB, finanziario 41MB — totale 84MB in RAM.
 
-const VPS_SEARCH_URL = "http://89.167.123.25:8003/search";
+async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
+  const shards = [
+    { filter_verticale: "commercialista" },
+    { filter_verticale: "lavoro" },
+    { filter_verticale: "finanziario" },
+    { filter_verticale: "avvocato" },
+  ];
 
-async function searchVPS(question: string): Promise<SupabaseChunk[]> {
-  try {
-    const res = await fetch(VPS_SEARCH_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: question, top_k: 12 }),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!res.ok) return [];
-    const data = await res.json() as { results: Array<{ id: string; titolo: string; chunk: string; fonte: string; tipo: string; data: string; url: string; similarity: number }> };
-    return (data.results || []).map(r => ({
-      id: r.id,
-      titolo: r.titolo,
-      chunk: r.chunk,
-      fonte: r.fonte,
-      tipo: r.tipo,
-      data: r.data,
-      url: r.url,
-      similarity: r.similarity,
-      urn: undefined as unknown as string,
-      status: "vigente",
-    })) as SupabaseChunk[];
-  } catch (e) {
-    console.error("[RAG] VPS search failed:", String(e).slice(0, 80));
-    return [];
+  const results = await Promise.all(shards.map(async (shard) => {
+    try {
+      const body = { query_embedding: embedding, match_count: 4, match_threshold: 0.10, only_vigente: false, ...shard };
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) return await res.json() as SupabaseChunk[];
+    } catch { /* timeout */ }
+    return [] as SupabaseChunk[];
+  }));
+
+  const seen = new Map<string, SupabaseChunk>();
+  for (const chunk of results.flat()) {
+    const ex = seen.get(chunk.id);
+    if (!ex || chunk.similarity > ex.similarity) seen.set(chunk.id, chunk);
   }
-}
-
-// Mantiene la firma originale (chiamata con embedding non usato — searchVPS usa query testuale)
-async function searchSupabase(_embedding: number[]): Promise<SupabaseChunk[]> {
-  return [];  // unused — searchVPS called directly in main handler
+  return Array.from(seen.values()).sort((a, b) => b.similarity - a.similarity).slice(0, 12);
 }
 
 // ── Reranker (keyword + legal citation overlap) ─────────────────────────────
@@ -654,21 +649,25 @@ export async function POST(req: NextRequest) {
   let chunkUrns: string[] = [];
 
   try {
-    const tRetrieval0 = Date.now();
-    // VPS scatter-service: embed (384d) + HNSW scatter-gather, ~8-10s, molto più veloce di Vercel→Supabase
-    const rawChunks = await searchVPS(question);
-    const chunks = rerankChunks(question, rawChunks);
-    const tRetrieval1 = Date.now();
-    traceRetrieval(traceId, question, chunks.map(c => ({ id: String(c.id), titolo: c.titolo, fonte: c.fonte, similarity: c.similarity })), tRetrieval1 - tRetrieval0);
-    // Langfuse: log embedding as placeholder (VPS does it internally)
-    traceEmbedding(traceId, question, 384, tRetrieval1 - tRetrieval0);
+    const tEmbed0 = Date.now();
+    const embedding = await generateEmbedding(question);
+    const tEmbed1 = Date.now();
+    traceEmbedding(traceId, question, embedding ? embedding.length : null, tEmbed1 - tEmbed0);
 
-    if (chunks.length > 0) {
-      ragContext = chunks.map((c, i) => `[Fonte ${i + 1}] ${c.titolo || "Normativa"} (${c.fonte || "corpus"})\n${c.chunk}`).join("\n\n---\n\n");
-      sources = chunks.map((c) => ({ id: String(c.id), titolo: c.titolo || "Normativa", fonte: c.fonte || "normattiva", url: c.url || "", tipo: c.tipo || "normativa", status: c.status || "vigente" }));
-      chunkUrns = chunks.map((c) => c.urn).filter(Boolean) as string[];
+    if (embedding) {
+      const tRetrieval0 = Date.now();
+      const rawChunks = await searchSupabase(embedding);
+      const chunks = rerankChunks(question, rawChunks);
+      const tRetrieval1 = Date.now();
+      traceRetrieval(traceId, question, chunks.map(c => ({ id: String(c.id), titolo: c.titolo, fonte: c.fonte, similarity: c.similarity })), tRetrieval1 - tRetrieval0);
+
+      if (chunks.length > 0) {
+        ragContext = chunks.map((c, i) => `[Fonte ${i + 1}] ${c.titolo || "Normativa"} (${c.fonte || "corpus"})\n${c.chunk}`).join("\n\n---\n\n");
+        sources = chunks.map((c) => ({ id: String(c.id), titolo: c.titolo || "Normativa", fonte: c.fonte || "normattiva", url: c.url || "", tipo: c.tipo || "normativa", status: c.status || "vigente" }));
+        chunkUrns = chunks.map((c) => c.urn).filter(Boolean) as string[];
+      }
     }
-  } catch (e) { Sentry.captureException(e, { extra: { fn: "rag_vps" } }); }
+  } catch (e) { Sentry.captureException(e, { extra: { fn: "rag_embedding" } }); }
 
   // ── Graph + Precedents ────────────────────────────────────────────────────
   let graphContext = "";
