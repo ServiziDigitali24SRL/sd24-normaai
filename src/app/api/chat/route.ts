@@ -295,12 +295,16 @@ interface SupabaseChunk {
 // Dimensioni: commercialista 28MB, lavoro 15MB, finanziario 41MB — totale 84MB in RAM.
 
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
+  // Shard strategy:
+  // - verticale-only → hits partial HNSW indexes (Cassazione jurisprudence)
+  // - generale+tipo → hits hnsw_dlgs and hnsw_legge (actual legislation: D.Lgs, DPR, Legge)
   const shards = [
+    { filter_verticale: "avvocato" },
     { filter_verticale: "commercialista" },
     { filter_verticale: "lavoro" },
     { filter_verticale: "finanziario" },
-    { filter_verticale: "avvocato" },
-    { filter_verticale: "ingegnere" },
+    { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
+    { filter_verticale: "generale", filter_tipo: "legge" },
   ];
 
   const t0 = Date.now();
@@ -312,7 +316,7 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(15000),
       });
       const ms = Date.now() - st;
       if (res.ok) {
