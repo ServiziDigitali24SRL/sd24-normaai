@@ -325,38 +325,43 @@ async function searchSupabaseSingle(
   } catch (e) { console.error(`[RAG] timeout/fail vert=${params.filter_verticale} tipo=${params.filter_tipo}:`, String(e).slice(0, 80)); return []; }
 }
 
-// Shards per scatter-gather: ogni entry = params per searchSupabaseSingle
-// WHERE deve essere identico alla definizione del partial HNSW index per forcing index scan.
-const SCATTER_SHARDS: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
+// Scatter-gather: 2 waves per non saturare il connection pool Supabase free.
+// Wave 1 (fonti normative principali): documento, decreto, dlgs, dpr, legge, gazzetta
+// Wave 2 (verticali professionali): avvocato, commercialista, impresa, lavoro
+// Merge globale → top 12 per similarity.
+const SCATTER_WAVE1: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
   { filter_verticale: "generale", filter_tipo: "documento" },
-  { filter_verticale: "generale", filter_tipo: "decreto" },
-  { filter_verticale: "generale", filter_tipo: "atto_eu" },
+  { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
   { filter_verticale: "generale", filter_tipo: "decreto_del_presidente_della_repubblica" },
   { filter_verticale: "generale", filter_tipo: "legge" },
-  { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
   { filter_tipo: "gazzetta_ufficiale" },
-  { filter_verticale: "impresa" },
+];
+
+const SCATTER_WAVE2: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
+  { filter_verticale: "generale", filter_tipo: "decreto" },
   { filter_verticale: "avvocato" },
   { filter_verticale: "commercialista" },
+  { filter_verticale: "impresa" },
   { filter_verticale: "lavoro" },
-  { filter_verticale: "finanziario" },
-  { filter_verticale: "ingegnere" },
 ];
 
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
-  // Scatter-gather JS-side: 13 shard in parallelo, ciascuno su indice HNSW partial.
-  // Merge + dedup per id, top 12 per similarity.
-  const PER_SHARD = 3; // candidati per shard → 13*3=39 candidati → top 12
-  const shardResults = await Promise.all(
-    SCATTER_SHARDS.map(params => searchSupabaseSingle(embedding, { ...params, match_count: PER_SHARD }))
+  const PER_SHARD = 3;
+
+  // Wave 1: fonti normative principali in parallelo
+  const wave1 = await Promise.all(
+    SCATTER_WAVE1.map(p => searchSupabaseSingle(embedding, { ...p, match_count: PER_SHARD }))
   );
-  // Merge: dedup per id, top similarity
+  // Wave 2: verticali professionali in parallelo
+  const wave2 = await Promise.all(
+    SCATTER_WAVE2.map(p => searchSupabaseSingle(embedding, { ...p, match_count: PER_SHARD }))
+  );
+
+  // Merge + dedup per id → top 12
   const seen = new Map<string, SupabaseChunk>();
-  for (const shard of shardResults) {
-    for (const chunk of shard) {
-      const existing = seen.get(chunk.id);
-      if (!existing || chunk.similarity > existing.similarity) seen.set(chunk.id, chunk);
-    }
+  for (const chunk of [...wave1.flat(), ...wave2.flat()]) {
+    const ex = seen.get(chunk.id);
+    if (!ex || chunk.similarity > ex.similarity) seen.set(chunk.id, chunk);
   }
   return Array.from(seen.values()).sort((a, b) => b.similarity - a.similarity).slice(0, 12);
 }
