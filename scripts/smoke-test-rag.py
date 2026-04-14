@@ -18,7 +18,7 @@ SMOKE_KEY = os.environ.get("SMOKE_KEY", "")
 QUESTIONS = [
     {
         "vertical": "lavoro",
-        "question": "Quali sono i termini di preavviso per il licenziamento secondo il CCNL?",
+        "question": "Qual è l'orientamento della Cassazione sul licenziamento per giustificato motivo oggettivo?",
     },
     {
         "vertical": "commercialista",
