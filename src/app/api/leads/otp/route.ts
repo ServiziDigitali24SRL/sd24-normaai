@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendOtpSms } from "@/lib/twilio";
 
 export const dynamic = "force-dynamic";
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+const BREVO_API_KEY = process.env.BREVO_API_KEY ?? "";
 
 function generateOtp(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-async function sendOtpEmail(email: string, otp: string, professionistaNome: string): Promise<boolean> {
+async function sendOtpEmail(
+  email: string,
+  otp: string,
+  professionistaNome: string
+): Promise<boolean> {
   if (!BREVO_API_KEY) {
     console.error("[OTP] BREVO_API_KEY non configurata");
     return false;
@@ -23,7 +28,7 @@ async function sendOtpEmail(email: string, otp: string, professionistaNome: stri
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        sender: { name: "NormaAI", email: "noreply@normaai.eu" },
+        sender: { name: "NormaAI", email: "noreply@normaai.it" },
         to: [{ email }],
         subject: `Il tuo codice di conferma NormaAI: ${otp}`,
         htmlContent: `
@@ -36,7 +41,9 @@ async function sendOtpEmail(email: string, otp: string, professionistaNome: stri
             <div style="background:#F7F5F2;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
               <div style="font-size:40px;font-weight:700;letter-spacing:0.3em;color:#1a1a1a;font-family:monospace;">${otp}</div>
             </div>
-            <div style="font-size:12px;color:#9A9690;">Il codice scade in 10 minuti. Se non hai richiesto questo codice, ignora questa email.</div>
+            <div style="font-size:12px;color:#9A9690;">
+              Il codice scade in 10 minuti. Se non hai richiesto questo codice, ignora questa email.
+            </div>
           </div>
         `,
       }),
@@ -50,14 +57,17 @@ async function sendOtpEmail(email: string, otp: string, professionistaNome: stri
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, email, leadContext } = await req.json();
+    const { userId, email, phone, leadContext } = await req.json();
 
     if (!userId || !email) {
-      return NextResponse.json({ error: "userId e email sono obbligatori" }, { status: 400 });
+      return NextResponse.json(
+        { error: "userId e email sono obbligatori" },
+        { status: 400 }
+      );
     }
 
     const otp = generateOtp();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // +10 min
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     // Salva OTP in Supabase
     const res = await fetch(`${SUPABASE_URL}/rest/v1/lead_otp`, {
@@ -84,13 +94,21 @@ export async function POST(req: NextRequest) {
     }
 
     const professionistaNome = leadContext?.professionistaNome ?? "il professionista";
-    const sent = await sendOtpEmail(email, otp, professionistaNome);
 
-    if (!sent) {
-      return NextResponse.json({ error: "Errore invio email. Riprova." }, { status: 500 });
+    // Invia OTP via email + SMS in parallelo
+    const [emailSent, smsSent] = await Promise.all([
+      sendOtpEmail(email, otp, professionistaNome),
+      phone ? sendOtpSms(phone, otp) : Promise.resolve(false),
+    ]);
+
+    if (!emailSent && !smsSent) {
+      return NextResponse.json(
+        { error: "Errore invio codice. Riprova." },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, channels: { email: emailSent, sms: !!phone && smsSent } });
   } catch (e) {
     console.error("[OTP] Errore:", e);
     return NextResponse.json({ error: "Errore interno" }, { status: 500 });
