@@ -18,9 +18,6 @@ const VERTICALS = [
   { value: "", label: "Tutte le aree" },
   { value: "avvocato", label: "Diritto Civile" },
   { value: "commercialista", label: "Fisco e Tributi" },
-  { value: "lavoro", label: "Diritto del Lavoro" },
-  { value: "tecnico", label: "Edilizia e Tecnica" },
-  { value: "finanziario", label: "Finanza" },
 ];
 
 const TIER_LABELS: Record<string, { label: string; color: string }> = {

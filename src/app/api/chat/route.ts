@@ -214,6 +214,25 @@ async function logAuditTrail(userId: string | null, sessioneId: string, query: s
   } catch (e) { Sentry.captureException(e, { extra: { fn: "logAuditTrail" } }); }
 }
 
+async function logQuery(userId: string | null, verticalId: string | null, question: string, answer: string, sources: Source[], model: string, latenzaMs: number): Promise<void> {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/queries`, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify({
+        user_id: userId || null,
+        vertical_id: verticalId || "generico",
+        question: question.slice(0, 2000),
+        answer: answer.slice(0, 5000),
+        sources: sources.map((s) => ({ id: s.id, titolo: s.titolo, fonte: s.fonte, url: s.url })),
+        model,
+        response_time_ms: latenzaMs,
+      }),
+    });
+  } catch (e) { Sentry.captureException(e, { extra: { fn: "logQuery" } }); }
+}
+
 // ── FEATURE 12: Jurisdictional Layering ──────────────────────────────────────
 
 function buildJurisdictionalBlock(profile: UserProfile): string {
@@ -827,6 +846,7 @@ export async function POST(req: NextRequest) {
 
         controller.close();
         logAuditTrail(userId || null, sessioneId, question, fullResponse, sources, graphContext.length > 0, !!profile, Date.now() - t0).catch(() => {});
+        logQuery(userId || null, vertical || null, question, fullResponse, sources, selectedModel, Date.now() - t0).catch(() => {});
         // Increment company pool for impresa
         if (companyProfile?.id && poolWeight > 0) {
           incrementCompanyPool(companyProfile.id, poolWeight, getItalianMonth()).catch(() => {});

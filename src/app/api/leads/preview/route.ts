@@ -26,14 +26,6 @@ function verticalLabel(verticalId: string | null): string {
   const map: Record<string, string> = {
     avvocato: "Diritto Civile",
     commercialista: "Fisco e Tributi",
-    "consulente-del-lavoro": "Diritto del Lavoro",
-    "ingegnere-geometra": "Edilizia e Tecnica",
-    "consulente-finanziario": "Finanza",
-    lavoro: "Diritto del Lavoro",
-    fisco: "Fisco e Tributi",
-    legale: "Diritto Civile",
-    tecnico: "Edilizia e Tecnica",
-    finanziario: "Finanza",
     generico: "Consulenza Legale",
   };
   if (!verticalId) return "Consulenza Legale";
