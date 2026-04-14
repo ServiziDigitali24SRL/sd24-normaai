@@ -313,7 +313,7 @@ async function searchSupabaseSingle(
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) {
       console.error(`[RAG] err ${res.status} vert=${params.filter_verticale} tipo=${params.filter_tipo}`);
@@ -346,7 +346,7 @@ const SCATTER_SHARDS: Array<{ filter_verticale?: string; filter_tipo?: string }>
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
   // Scatter-gather JS-side: 13 shard in parallelo, ciascuno su indice HNSW partial.
   // Merge + dedup per id, top 12 per similarity.
-  const PER_SHARD = 4; // candidati per shard → 13*4=52 candidati → top 12
+  const PER_SHARD = 3; // candidati per shard → 13*3=39 candidati → top 12
   const shardResults = await Promise.all(
     SCATTER_SHARDS.map(params => searchSupabaseSingle(embedding, { ...params, match_count: PER_SHARD }))
   );
