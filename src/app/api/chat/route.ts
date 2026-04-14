@@ -290,50 +290,48 @@ interface SupabaseChunk {
 }
 
 // Indici HNSW attivi nel DB (aggiornato 14/04/2026):
-// Scatter su 6 HNSW validi (889MB totali) — indici attivi in Supabase.
-// 2 wave da 3 per non saturare connection pool free tier.
-// Copertura: avvocato, legge, dlgs, finanziario, commercialista, lavoro.
+// RAG sequenziale: 1 shard alla volta per non saturare Supabase free tier.
+// Usa commercialista/avvocato/lavoro/finanziario/legge/dlgs in ordine.
+// Prende il primo shard che risponde ≥6 risultati, altrimenti accumula fino a 12.
 
 const SHARDS: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
-  { filter_verticale: "avvocato" },
   { filter_verticale: "commercialista" },
+  { filter_verticale: "avvocato" },
   { filter_verticale: "lavoro" },
+  { filter_verticale: "finanziario" },
   { filter_tipo: "legge" },
   { filter_tipo: "decreto_legislativo" },
-  { filter_verticale: "finanziario" },
 ];
 
-async function searchSupabaseSingle(
-  embedding: number[],
-  shard: { filter_verticale?: string; filter_tipo?: string }
-): Promise<SupabaseChunk[]> {
-  try {
-    const body: Record<string, unknown> = {
-      query_embedding: embedding,
-      match_count: 3,
-      match_threshold: 0.10,
-      only_vigente: false,
-      ...shard,
-    };
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
-      method: "POST",
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!res.ok) return [];
-    return await res.json() as SupabaseChunk[];
-  } catch { return []; }
-}
-
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
-  const wave1 = await Promise.all(SHARDS.slice(0, 3).map(s => searchSupabaseSingle(embedding, s)));
-  const wave2 = await Promise.all(SHARDS.slice(3).map(s => searchSupabaseSingle(embedding, s)));
   const seen = new Map<string, SupabaseChunk>();
-  for (const chunk of [...wave1.flat(), ...wave2.flat()]) {
-    const ex = seen.get(chunk.id);
-    if (!ex || chunk.similarity > ex.similarity) seen.set(chunk.id, chunk);
+
+  for (const shard of SHARDS) {
+    if (seen.size >= 12) break;
+    try {
+      const body: Record<string, unknown> = {
+        query_embedding: embedding,
+        match_count: 6,
+        match_threshold: 0.10,
+        only_vigente: false,
+        ...shard,
+      };
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
+        method: "POST",
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const rows = await res.json() as SupabaseChunk[];
+        for (const chunk of rows) {
+          const ex = seen.get(chunk.id);
+          if (!ex || chunk.similarity > ex.similarity) seen.set(chunk.id, chunk);
+        }
+      }
+    } catch { /* timeout — skip shard */ }
   }
+
   return Array.from(seen.values()).sort((a, b) => b.similarity - a.similarity).slice(0, 12);
 }
 
