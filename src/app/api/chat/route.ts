@@ -295,20 +295,24 @@ interface SupabaseChunk {
 // Dimensioni: commercialista 28MB, lavoro 15MB, finanziario 41MB — totale 84MB in RAM.
 
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
-  // Shard strategy:
-  // - verticale-only → hits partial HNSW indexes (Cassazione jurisprudence)
-  // - generale+tipo → hits hnsw_dlgs and hnsw_legge (actual legislation: D.Lgs, DPR, Legge)
+  // Shard strategy (sequential with early exit):
+  // - Run shards one at a time to avoid saturating Supabase free-tier connection pool
+  // - Stop early once we have TARGET_CHUNKS results above threshold
+  // - Order: legislation first (most useful), then jurisprudence
   const shards = [
+    { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
+    { filter_verticale: "generale", filter_tipo: "legge" },
     { filter_verticale: "avvocato" },
     { filter_verticale: "commercialista" },
     { filter_verticale: "lavoro" },
     { filter_verticale: "finanziario" },
-    { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
-    { filter_verticale: "generale", filter_tipo: "legge" },
   ];
 
+  const TARGET_CHUNKS = 8;
+  const all: SupabaseChunk[] = [];
   const t0 = Date.now();
-  const results = await Promise.all(shards.map(async (shard) => {
+
+  for (const shard of shards) {
     const st = Date.now();
     try {
       const body = { query_embedding: embedding, match_count: 4, match_threshold: 0.10, only_vigente: false, ...shard };
@@ -316,25 +320,26 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(12000),
       });
       const ms = Date.now() - st;
       if (res.ok) {
         const rows = await res.json() as SupabaseChunk[];
-        console.log(`[RAG] shard=${shard.filter_verticale} rows=${rows.length} ms=${ms}`);
-        return rows;
+        console.log(`[RAG] shard=${(shard as Record<string,string>).filter_verticale}/${(shard as Record<string,string>).filter_tipo ?? "*"} rows=${rows.length} ms=${ms}`);
+        all.push(...rows);
+      } else {
+        const errBody = await res.text().catch(() => "");
+        console.error(`[RAG] shard HTTP=${res.status} ms=${ms} body=${errBody.slice(0, 150)}`);
       }
-      const errBody = await res.text().catch(() => "");
-      console.error(`[RAG] shard=${shard.filter_verticale} HTTP=${res.status} ms=${ms} body=${errBody.slice(0, 200)}`);
     } catch (e) {
-      console.error(`[RAG] shard=${shard.filter_verticale} CATCH ms=${Date.now()-st} err=${String(e).slice(0,120)}`);
+      console.error(`[RAG] shard CATCH ms=${Date.now()-st} err=${String(e).slice(0, 100)}`);
     }
-    return [] as SupabaseChunk[];
-  }));
-  console.log(`[RAG] total shards done in ${Date.now()-t0}ms`);
+    if (all.length >= TARGET_CHUNKS) break; // early exit — enough context
+  }
+  console.log(`[RAG] done in ${Date.now()-t0}ms total=${all.length} chunks`);
 
   const seen = new Map<string, SupabaseChunk>();
-  for (const chunk of results.flat()) {
+  for (const chunk of all) {
     const ex = seen.get(chunk.id);
     if (!ex || chunk.similarity > ex.similarity) seen.set(chunk.id, chunk);
   }
