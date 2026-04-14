@@ -655,7 +655,7 @@ export async function POST(req: NextRequest) {
     }
   } else if (!isPro) {
     // FREE REGISTRATO: 10 query/giorno (fuso orario italiano)
-    const { count, limit } = await checkAndIncrementDaily(userId);
+    const { count, limit } = await checkAndIncrementDaily(userId!);
     if (count > limit) {
       return new Response(
         JSON.stringify({
