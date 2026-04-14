@@ -290,80 +290,30 @@ interface SupabaseChunk {
 }
 
 // Indici HNSW attivi nel DB (aggiornato 14/04/2026):
-// Scatter-gather JS-side: 13 RPC in parallelo via Promise.all, ciascuna su indice partial.
-// Ogni shard usa il proprio WHERE identico al suo partial index → Postgres usa l'indice HNSW.
-// Merge + dedup lato JS. Copertura: ~6.5M/6.87M chunks (~95% corpus embeddato).
-// Non copre: regio_decreto (~277K, no HNSW), chunks micro-verticali senza HNSW.
-// Global HNSW (273MB) e global_v2 (740MB) non usati — coprono <10% corpus.
+// Single global query su hnsw_global_v2 (987MB, 100% corpus, no filter).
+// Postgres usa automaticamente l'indice HNSW globale per la ricerca vettoriale.
+// Una sola query → nessun problema di saturazione connection pool.
 
-async function searchSupabaseSingle(
-  embedding: number[],
-  params: { filter_verticale?: string; filter_tipo?: string; match_count?: number }
-): Promise<SupabaseChunk[]> {
+async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
   try {
-    const body: Record<string, unknown> = {
+    const body = {
       query_embedding: embedding,
-      match_count: params.match_count ?? 4,
+      match_count: 12,
       match_threshold: 0.10,
       only_vigente: false,
-      ...(params.filter_verticale ? { filter_verticale: params.filter_verticale } : {}),
-      ...(params.filter_tipo ? { filter_tipo: params.filter_tipo } : {}),
     };
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(25000),
     });
     if (!res.ok) {
-      console.error(`[RAG] err ${res.status} vert=${params.filter_verticale} tipo=${params.filter_tipo}`);
+      console.error(`[RAG] err ${res.status}`);
       return [];
     }
-    const rows = await res.json() as SupabaseChunk[];
-    // debug only: if (rows.length > 0) console.log(`[RAG] ${rows.length} chunks vert=${params.filter_verticale}`);
-    return rows;
-  } catch (e) { console.error(`[RAG] timeout/fail vert=${params.filter_verticale} tipo=${params.filter_tipo}:`, String(e).slice(0, 80)); return []; }
-}
-
-// Scatter-gather: 2 waves per non saturare il connection pool Supabase free.
-// Wave 1 (fonti normative principali): documento, decreto, dlgs, dpr, legge, gazzetta
-// Wave 2 (verticali professionali): avvocato, commercialista, impresa, lavoro
-// Merge globale → top 12 per similarity.
-const SCATTER_WAVE1: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
-  { filter_verticale: "generale", filter_tipo: "documento" },
-  { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
-  { filter_verticale: "generale", filter_tipo: "decreto_del_presidente_della_repubblica" },
-  { filter_verticale: "generale", filter_tipo: "legge" },
-  { filter_tipo: "gazzetta_ufficiale" },
-];
-
-const SCATTER_WAVE2: Array<{ filter_verticale?: string; filter_tipo?: string }> = [
-  { filter_verticale: "generale", filter_tipo: "decreto" },
-  { filter_verticale: "avvocato" },
-  { filter_verticale: "commercialista" },
-  { filter_verticale: "impresa" },
-  { filter_verticale: "lavoro" },
-];
-
-async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
-  const PER_SHARD = 3;
-
-  // Wave 1: fonti normative principali in parallelo
-  const wave1 = await Promise.all(
-    SCATTER_WAVE1.map(p => searchSupabaseSingle(embedding, { ...p, match_count: PER_SHARD }))
-  );
-  // Wave 2: verticali professionali in parallelo
-  const wave2 = await Promise.all(
-    SCATTER_WAVE2.map(p => searchSupabaseSingle(embedding, { ...p, match_count: PER_SHARD }))
-  );
-
-  // Merge + dedup per id → top 12
-  const seen = new Map<string, SupabaseChunk>();
-  for (const chunk of [...wave1.flat(), ...wave2.flat()]) {
-    const ex = seen.get(chunk.id);
-    if (!ex || chunk.similarity > ex.similarity) seen.set(chunk.id, chunk);
-  }
-  return Array.from(seen.values()).sort((a, b) => b.similarity - a.similarity).slice(0, 12);
+    return await res.json() as SupabaseChunk[];
+  } catch (e) { console.error(`[RAG] timeout/fail:`, String(e).slice(0, 80)); return []; }
 }
 
 // ── Reranker (keyword + legal citation overlap) ─────────────────────────────
