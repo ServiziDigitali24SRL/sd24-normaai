@@ -319,7 +319,7 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(12000),
+        signal: AbortSignal.timeout(30000),
       });
       const ms = Date.now() - st;
       if (res.ok) {
