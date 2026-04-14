@@ -26,4 +26,6 @@ jobs:
         run: pip install httpx
 
       - name: Run RAG smoke test
+        env:
+          SMOKE_KEY: ${{ secrets.SMOKE_KEY }}
         run: python scripts/smoke-test-rag.py

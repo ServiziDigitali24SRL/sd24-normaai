@@ -539,6 +539,12 @@ function buildUserContent(question: string, attachment?: Attachment) {
 export async function POST(req: NextRequest) {
   const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const sessionId = req.headers.get("x-session-id") || `anon-${clientIp}`;
+
+  // Smoke test bypass — skip rate limit + auth for CI/CD health checks
+  const smokeKey = req.headers.get("x-smoke-key");
+  const validSmokeKey = process.env.SMOKE_KEY;
+  const isSmokeTest = !!(validSmokeKey && smokeKey && smokeKey === validSmokeKey);
+
   const { question, vertical, userId: clientUserId, attachment, conversationHistory, turnNumber } = await req.json();
 
   // CVE-05: risolvi userId SEMPRE dalla sessione cookie
@@ -576,11 +582,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Rate limit a minuto (anti-flood)
-  const rateLimitKey = userId ? `user:${userId}` : `ip:${clientIp}`;
-  const { allowed, remaining } = await rateLimit(rateLimitKey, userId ? 100 : 20, 60_000);
-  if (!allowed) {
-    return new Response(JSON.stringify({ error: "Troppe richieste. Riprova tra un minuto.", remaining }), { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60" } });
+  // Rate limit a minuto (anti-flood) — skip for smoke tests
+  if (!isSmokeTest) {
+    const rateLimitKey = userId ? `user:${userId}` : `ip:${clientIp}`;
+    const { allowed, remaining } = await rateLimit(rateLimitKey, userId ? 100 : 20, 60_000);
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: "Troppe richieste. Riprova tra un minuto.", remaining }), { status: 429, headers: { "Content-Type": "application/json", "Retry-After": "60" } });
+    }
   }
 
   if (!question?.trim()) {
@@ -599,7 +607,7 @@ export async function POST(req: NextRequest) {
   const piano = profile?.piano ?? null;
   const isPro = piano === "cittadino_pro" || piano === "professionista" || piano === "impresa" || piano === "api_developer" || piano === "api_pro";
 
-  if (!userId) {
+  if (!userId && !isSmokeTest) {
     // ANONIMO: 10 query/mese per IP
     const { count, limit } = await checkAndIncrementAnonymous(clientIp, sessionId);
     if (count > limit) {

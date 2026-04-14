@@ -7,10 +7,12 @@ Exit 0 if all pass, exit 1 if any fail.
 
 import sys
 import re
+import os
 import httpx
 
 API_URL = "https://normaai.it/api/chat"
 TIMEOUT = 60  # seconds per request (streaming can be slow)
+SMOKE_KEY = os.environ.get("SMOKE_KEY", "")
 
 # One question per vertical — simple, unambiguous, should always hit the corpus.
 QUESTIONS = [
@@ -67,11 +69,14 @@ def run_test(idx: int, test_case: dict) -> bool:
     print(f"{label} Asking: {question[:70]}...")
 
     try:
+        headers = {"Content-Type": "application/json"}
+        if SMOKE_KEY:
+            headers["x-smoke-key"] = SMOKE_KEY
         with httpx.stream(
             "POST",
             API_URL,
             json={"question": question, "vertical": vertical},
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             timeout=TIMEOUT,
         ) as resp:
             if resp.status_code != 200:
