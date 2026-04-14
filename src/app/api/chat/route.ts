@@ -302,7 +302,9 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
     { filter_verticale: "avvocato" },
   ];
 
+  const t0 = Date.now();
   const results = await Promise.all(shards.map(async (shard) => {
+    const st = Date.now();
     try {
       const body = { query_embedding: embedding, match_count: 4, match_threshold: 0.10, only_vigente: false, ...shard };
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/match_normaai_chunks`, {
@@ -311,10 +313,20 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(8000),
       });
-      if (res.ok) return await res.json() as SupabaseChunk[];
-    } catch { /* timeout */ }
+      const ms = Date.now() - st;
+      if (res.ok) {
+        const rows = await res.json() as SupabaseChunk[];
+        console.log(`[RAG] shard=${shard.filter_verticale} rows=${rows.length} ms=${ms}`);
+        return rows;
+      }
+      const errBody = await res.text().catch(() => "");
+      console.error(`[RAG] shard=${shard.filter_verticale} HTTP=${res.status} ms=${ms} body=${errBody.slice(0, 200)}`);
+    } catch (e) {
+      console.error(`[RAG] shard=${shard.filter_verticale} CATCH ms=${Date.now()-st} err=${String(e).slice(0,120)}`);
+    }
     return [] as SupabaseChunk[];
   }));
+  console.log(`[RAG] total shards done in ${Date.now()-t0}ms`);
 
   const seen = new Map<string, SupabaseChunk>();
   for (const chunk of results.flat()) {
