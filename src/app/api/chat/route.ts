@@ -660,11 +660,14 @@ export async function POST(req: NextRequest) {
   let sources: Source[] = [];
   let chunkUrns: string[] = [];
 
+  const ragDebugInfo: Record<string, unknown> = { started: true };
   console.log(`[RAG-START] question="${question.slice(0,50)}" vertical=${vertical}`);
   try {
     const tEmbed0 = Date.now();
     const embedding = await generateEmbedding(question);
     const tEmbed1 = Date.now();
+    ragDebugInfo.embedDim = embedding?.length ?? null;
+    ragDebugInfo.embedMs = tEmbed1 - tEmbed0;
     console.log(`[RAG-EMBED] dim=${embedding?.length ?? 'null'} ms=${tEmbed1-tEmbed0}`);
     traceEmbedding(traceId, question, embedding ? embedding.length : null, tEmbed1 - tEmbed0);
 
@@ -673,6 +676,9 @@ export async function POST(req: NextRequest) {
       const rawChunks = await searchSupabase(embedding);
       const chunks = rerankChunks(question, rawChunks);
       const tRetrieval1 = Date.now();
+      ragDebugInfo.rawChunks = rawChunks.length;
+      ragDebugInfo.chunks = chunks.length;
+      ragDebugInfo.retrievalMs = tRetrieval1 - tRetrieval0;
       traceRetrieval(traceId, question, chunks.map(c => ({ id: String(c.id), titolo: c.titolo, fonte: c.fonte, similarity: c.similarity })), tRetrieval1 - tRetrieval0);
 
       if (chunks.length > 0) {
@@ -742,6 +748,7 @@ export async function POST(req: NextRequest) {
       const enc = new TextEncoder();
       const send = (obj: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
+      send({ type: "debug_rag", ...ragDebugInfo });
       let fullResponse = "";
       const tGen0 = Date.now();
       try {
