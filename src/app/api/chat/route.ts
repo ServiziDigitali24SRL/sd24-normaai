@@ -308,7 +308,6 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
     { filter_verticale: "finanziario" },
   ];
 
-  const TARGET_CHUNKS = 8;
   const all: SupabaseChunk[] = [];
   const t0 = Date.now();
 
@@ -334,7 +333,6 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
     } catch (e) {
       console.error(`[RAG] shard CATCH ms=${Date.now()-st} err=${String(e).slice(0, 100)}`);
     }
-    if (all.length >= TARGET_CHUNKS) break; // early exit — enough context
   }
   console.log(`[RAG] done in ${Date.now()-t0}ms total=${all.length} chunks`);
 
