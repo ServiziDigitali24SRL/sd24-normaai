@@ -12,7 +12,7 @@ on:
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -26,22 +26,14 @@ jobs:
       - name: Install dependencies
         run: pip install httpx
 
-      - name: Wait for Vercel production deploy
+      - name: Deploy to Vercel production
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          echo "Waiting for Vercel to deploy..."
-          for i in $(seq 1 20); do
-            STATE=$(curl -s "https://api.vercel.com/v13/deployments?projectId=normaai-app&teamId=team_OkFdfLJm51it2v17oR787LR5&limit=1&target=production" \
-              -H "Authorization: Bearer $VERCEL_TOKEN" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['deployments'][0]['state'])" 2>/dev/null || echo "unknown")
-            echo "  Attempt $i: state=$STATE"
-            if [ "$STATE" = "READY" ]; then
-              echo "Deploy READY. Sleeping 10s for edge propagation..."
-              sleep 10
-              break
-            fi
-            sleep 15
-          done
+          npm install -g vercel --silent
+          vercel --prod --yes --token "$VERCEL_TOKEN" 2>&1 | tail -5
+          echo "Waiting 15s for edge propagation..."
+          sleep 15
 
       - name: Run RAG smoke test
         env:
