@@ -705,7 +705,7 @@ export async function POST(req: NextRequest) {
   const profileBlock = profile ? [buildProfileBlock(profile), buildJurisdictionalBlock(profile)].filter(Boolean).join("\n") : "";
   const behavioralRules = getBehavioralRules(currentTurn, !!profile, userTier);
   const contextSection = ragContext
-    ? ["────────────────────────────────────────", "DOCUMENTI NORMATIVI (corpus NormaAI, solo norme vigenti):\n", ragContext, "────────────────────────────────────────", "Basa la risposta su questi documenti. Cita come [Fonte N] con l'articolo e la norma esatta.", graphContext, precedentsContext].filter(Boolean).join("\n\n")
+    ? ["────────────────────────────────────────", "DOCUMENTI NORMATIVI VERIFICATI (corpus NormaAI):\n", ragContext, "────────────────────────────────────────", "CITAZIONE OBBLIGATORIA: Ogni volta che usi informazioni da questi documenti, cita ESATTAMENTE nel formato [Fonte N] (es: [Fonte 1], [Fonte 2]). NON usare [art. X L. Y] per fonti corpus — usa [Fonte N]. Senza questa citazione la risposta è incompleta.", graphContext, precedentsContext].filter(Boolean).join("\n\n")
     : "";
   const fullSystem = [basePrompt, profileBlock, behavioralRules, contextSection].filter(Boolean).join("\n\n");
 
@@ -777,7 +777,7 @@ export async function POST(req: NextRequest) {
             const citedSources = citedIndices.size > 0
               ? sources.filter((_, i) => citedIndices.has(i))
               : [];
-            send({ type: "sources", sources: citedSources, hasRag: citedSources.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0 });
+            send({ type: "sources", sources: citedSources.length > 0 ? citedSources : sources.slice(0, 3), hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0 });
             send({ type: "done", popup_suggestion: popupSuggestion ?? null });
           }
           // Capture token usage from message_delta (Anthropic streams usage in the final event)
