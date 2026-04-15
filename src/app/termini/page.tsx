@@ -144,7 +144,7 @@ export default function TerminiPage() {
         </Section>
 
         <div className="mt-12 pt-8 border-t border-[#E5E1D8] text-[11px] text-[#444]">
-          Servizi Digitali 24 S.R.L. · <a href="mailto:legal@normaai.it" className="hover:text-[#1a1a1a] transition-colors">legal@normaai.it</a>
+          Servizi Digitali 24 S.R.L. · P.IVA / C.F. 18422681009 · Sede: Roma, Italia · <a href="mailto:legal@normaai.it" className="hover:text-[#1a1a1a] transition-colors">legal@normaai.it</a>
           {" · "}<Link href="/privacy" className="hover:text-[#1a1a1a] transition-colors">Privacy Policy</Link>
         </div>
       </div>

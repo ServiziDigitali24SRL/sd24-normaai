@@ -165,7 +165,7 @@ export default function PrivacyPage() {
         </Section>
 
         <div className="mt-12 pt-8 border-t border-[#E5E1D8] text-[11px] text-[#444]">
-          Servizi Digitali 24 S.R.L. · <a href="mailto:privacy@normaai.it" className="hover:text-[#1a1a1a] transition-colors">privacy@normaai.it</a>
+          Servizi Digitali 24 S.R.L. · P.IVA / C.F. 18422681009 · Sede: Roma, Italia · <a href="mailto:privacy@normaai.it" className="hover:text-[#1a1a1a] transition-colors">privacy@normaai.it</a>
           {" · "}<Link href="/termini" className="hover:text-[#1a1a1a] transition-colors">Termini di Servizio</Link>
         </div>
       </div>
