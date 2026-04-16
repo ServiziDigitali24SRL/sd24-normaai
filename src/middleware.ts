@@ -26,7 +26,12 @@ export async function middleware(req: NextRequest) {
   const isProtectedApiRoute =
     pathname.startsWith("/api/") && !isPublicApiRoute(pathname);
 
-  if (!isProtectedPageRoute && !isProtectedApiRoute) {
+  // /onboarding è sempre accessibile agli utenti autenticati
+  const isOnboardingRoute = pathname.startsWith("/onboarding");
+  // /api/onboarding è pubblica per utenti autenticati
+  const isOnboardingApi = pathname.startsWith("/api/onboarding/");
+
+  if (!isProtectedPageRoute && !isProtectedApiRoute && !isOnboardingApi) {
     return NextResponse.next();
   }
 
@@ -52,12 +57,24 @@ export async function middleware(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    if (isProtectedApiRoute) {
-      // API route → JSON 401
+    if (isProtectedApiRoute || isOnboardingApi) {
       return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
     }
-    // Page route → redirect alla home
     return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  // Redirect a /onboarding se utente autenticato ma onboarding non completato
+  // (solo su route protette di pagina, non su /onboarding stessa o API)
+  if (isProtectedPageRoute && !isOnboardingRoute) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single();
+
+    if (profile && profile.onboarding_completed === false) {
+      return NextResponse.redirect(new URL("/onboarding", req.url));
+    }
   }
 
   return response;

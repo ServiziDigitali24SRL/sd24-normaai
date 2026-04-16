@@ -91,3 +91,34 @@ export async function sendOtpWhatsApp(phone: string, otp: string): Promise<boole
     `🔐 *NormaAI* — Il tuo codice di verifica è:\n\n*${otp}*\n\nValido 10 minuti. Non condividerlo con nessuno.`;
   return sendMessage(`whatsapp:${phone}`, WA_FROM, body);
 }
+
+// ─── ONBOARDING ───────────────────────────────────────────────────────────────
+
+export interface WelcomeSMSData {
+  phone: string;
+  name: string;
+  role: 'cittadino' | 'professionista' | 'impresa';
+}
+
+/**
+ * SMS di benvenuto post-onboarding.
+ * Mittente: TWILIO_PHONE_FROM (impostare "NormaAI" come Alphanumeric Sender ID)
+ */
+export async function sendWelcomeSMS(data: WelcomeSMSData): Promise<boolean> {
+  if (!SMS_FROM) {
+    console.error("[twilio] TWILIO_PHONE_FROM non configurato");
+    return false;
+  }
+  const messages: Record<string, string> = {
+    cittadino:     `Ciao ${data.name}! Benvenuto in NormaAI. Cerca la tua normativa: normaai.it`,
+    professionista:`Benvenuto ${data.name}! NormaAI è pronto per le tue ricerche professionali: normaai.it`,
+    impresa:       `Benvenuto ${data.name}! NormaAI ti supporta nella compliance aziendale: normaai.it`,
+  };
+  return sendMessage(data.phone, SMS_FROM, messages[data.role] ?? messages.cittadino);
+}
+
+export function validatePhoneNumber(phone: string): boolean {
+  const italianPhone = /^(\+39|0039)?[\s]?([0-9]{2,3}[\s]?[0-9]{6,7}|[0-9]{3}[\s]?[0-9]{7,8})$/;
+  const international = /^\+[1-9]\d{1,14}$/;
+  return italianPhone.test(phone) || international.test(phone);
+}

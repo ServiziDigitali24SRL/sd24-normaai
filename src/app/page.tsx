@@ -62,22 +62,24 @@ function LeadCounterBanner({ onCTA }: { onCTA: () => void }) {
   if (count === null || count === 0) return null;
 
   return (
-    <div className="w-full bg-[#FFFBF0] border-b border-[#FFE08A] px-4 py-2 flex items-center justify-center gap-3 text-[12.5px]">
-      <span className="text-[#9B6B00]">
+    <div className="w-full bg-[#FFFBF0] border-b border-[#FFE08A] px-3 sm:px-4 py-2 flex flex-col sm:flex-row sm:items-center justify-center gap-2 sm:gap-3 text-[12px] sm:text-[12.5px]">
+      <span className="text-[#9B6B00] text-center sm:text-left">
         ⚡ <strong>{count}</strong> {count === 1 ? "persona sta cercando" : "persone stanno cercando"} consulenza legale questa settimana
       </span>
-      <a
-        href="/leads/preview"
-        className="text-[#9B6B00] underline underline-offset-2 hover:text-[#6B4A00] transition-colors font-medium"
-      >
-        Vedi i lead disponibili →
-      </a>
-      <button
-        onClick={onCTA}
-        className="ml-1 text-white bg-[#E8340A] px-3 py-1 rounded-md text-[11.5px] font-semibold hover:bg-[#c82d08] transition-colors"
-      >
-        Accedi come professionista
-      </button>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 w-full sm:w-auto">
+        <a
+          href="/leads/preview"
+          className="text-[#9B6B00] underline underline-offset-2 hover:text-[#6B4A00] transition-colors font-medium text-[11.5px]"
+        >
+          Vedi i lead disponibili →
+        </a>
+        <button
+          onClick={onCTA}
+          className="text-white bg-[#E8340A] px-3 py-2 rounded-md text-[11.5px] font-semibold hover:bg-[#c82d08] transition-colors whitespace-nowrap"
+        >
+          Accedi come professionista
+        </button>
+      </div>
     </div>
   );
 }
@@ -250,25 +252,25 @@ export default function Home() {
       <div className={`flex flex-col h-screen overflow-hidden transition-[margin] duration-[250ms] ease-in-out ${sidebarOpen ? "lg:ml-[240px] ml-0" : "ml-0"}`}>
 
         {/* Topbar — BrevoTopBar style */}
-        <div className="flex items-center justify-between h-14 px-4 border-b border-[#E5E1D8] bg-white sticky top-0 z-[100] shrink-0 shadow-[0_1px_0_#E5E1D8]">
+        <div className="flex items-center justify-between h-12 sm:h-14 px-3 sm:px-4 border-b border-[#E5E1D8] bg-white sticky top-0 z-[100] shrink-0 shadow-[0_1px_0_#E5E1D8]">
           {/* Left: hamburger + logo + new chat */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <button
               onClick={toggleSidebar}
               aria-label="Mostra/nascondi sidebar"
-              className="w-8 h-8 flex flex-col items-center justify-center gap-[5px] rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all duration-150 shrink-0"
+              className="w-7 h-7 sm:w-8 sm:h-8 flex flex-col items-center justify-center gap-[4px] sm:gap-[5px] rounded-md text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] transition-all duration-150 shrink-0"
             >
-              <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
-              <span className="block w-5 h-[1.5px] bg-current" />
-              <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-4" : "w-5"}`} />
+              <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-3" : "w-4"}`} />
+              <span className="block w-4 h-[1.5px] bg-current" />
+              <span className={`block h-[1.5px] bg-current transition-all duration-200 ${sidebarOpen ? "w-3" : "w-4"}`} />
             </button>
-            <div className={`font-serif text-[17px] tracking-[-0.5px] text-[#1a1a1a] transition-all duration-[250ms] overflow-hidden ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
+            <div className={`font-serif text-[15px] sm:text-[17px] tracking-[-0.5px] text-[#1a1a1a] transition-all duration-[250ms] overflow-hidden whitespace-nowrap ${sidebarOpen ? "lg:w-0 lg:opacity-0 w-auto opacity-100" : "w-auto opacity-100"}`}>
               Norma<span className="text-accent">AI</span>
             </div>
-            {/* New chat button — always visible */}
+            {/* New chat button — hidden on mobile */}
             <button
               onClick={() => window.dispatchEvent(new CustomEvent("norma-new-chat"))}
-              className="hidden sm:flex items-center gap-1.5 ml-1 h-7 px-3 rounded-full text-[11.5px] text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] border border-[#E5E1D8] transition-all duration-150"
+              className="hidden sm:flex items-center gap-1.5 ml-auto sm:ml-1 h-6 sm:h-7 px-2 sm:px-3 rounded-full text-[10px] sm:text-[11.5px] text-[#6B6763] hover:text-[#1a1a1a] hover:bg-[#F0EDE8] border border-[#E5E1D8] transition-all duration-150 shrink-0"
               title="Nuova chat"
             >
               <svg viewBox="0 0 24 24" className="w-3 h-3 stroke-current fill-none stroke-[2.5]">
@@ -292,14 +294,14 @@ export default function Home() {
 
           {/* Right: actions */}
           {user ? (
-            <div className="flex items-center gap-3">
-              <Bell className="w-[17px] h-[17px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" />
-              <Settings className="w-[17px] h-[17px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" onClick={() => openModal("profilo-ai")} />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Bell className="w-4 sm:w-[17px] h-4 sm:h-[17px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" />
+              <Settings className="w-4 sm:w-[17px] h-4 sm:h-[17px] text-[#6B6763] cursor-pointer hover:text-[#1a1a1a] transition-colors hidden md:block" onClick={() => openModal("profilo-ai")} />
               <div
-                className="flex items-center gap-2 cursor-pointer group"
+                className="flex items-center gap-1.5 sm:gap-2 cursor-pointer group"
                 onClick={() => openModal("profilo-ai")}
               >
-                <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-[11px] font-bold text-white uppercase shrink-0 ring-2 ring-accent/20">
+                <div className="w-6 sm:w-7 h-6 sm:h-7 rounded-full bg-accent flex items-center justify-center text-[10px] sm:text-[11px] font-bold text-white uppercase shrink-0 ring-2 ring-accent/20">
                   {userName.charAt(0) || "U"}
                 </div>
                 <div className="hidden lg:flex flex-col">
@@ -310,23 +312,23 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <a
                 href="/leads/preview"
-                className="hidden md:flex items-center gap-1 text-[12px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border border-[#E5E1D8] rounded-lg py-[6px] px-3 hover:bg-[#F0EDE8]"
+                className="hidden md:flex items-center gap-1 text-[11px] sm:text-[12px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border border-[#E5E1D8] rounded-lg py-1.5 sm:py-[6px] px-2 sm:px-3 hover:bg-[#F0EDE8] whitespace-nowrap"
               >
                 <span>👥</span>
                 <span>Lead questa settimana</span>
               </a>
               <button
                 onClick={() => openModal("cittadino")}
-                className="text-[12.5px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border-none cursor-pointer py-[6px] px-3"
+                className="text-[11px] sm:text-[12.5px] text-[#6B6763] hover:text-[#1a1a1a] transition-colors bg-transparent border-none cursor-pointer py-1.5 sm:py-[6px] px-2 sm:px-3"
               >
                 Accedi
               </button>
               <button
                 onClick={() => openModal("professionista")}
-                className="bg-accent border-none text-white py-[7px] px-[14px] rounded-lg text-[13px] font-semibold transition-all duration-150 hover:bg-accent-hover shadow-[0_2px_10px_rgba(232,52,10,0.25)] active:scale-95"
+                className="bg-accent border-none text-white py-1.5 sm:py-[7px] px-2.5 sm:px-[14px] rounded-lg text-[11px] sm:text-[13px] font-semibold transition-all duration-150 hover:bg-accent-hover shadow-[0_2px_10px_rgba(232,52,10,0.25)] active:scale-95 whitespace-nowrap"
               >
                 Inizia gratis
               </button>
