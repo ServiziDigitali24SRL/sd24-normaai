@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         foro_competenza: profileData.foro_competenza || null,
         piva: profileData.piva || null,
         // Impresa
-        ragione_sociale: profileData.ragione_sociale || null,
+        company_name: profileData.ragione_sociale || null,
         dimensione_azienda: profileData.dimensione_azienda || null,
         settore_azienda: profileData.settore_azienda || null,
         pec: profileData.pec || null,
