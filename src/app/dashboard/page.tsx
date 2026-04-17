@@ -55,19 +55,39 @@ export default function DashboardPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // B-10 fix: role + piano + wallet letti da profiles (non user_metadata) per consistenza
+  const [profileRole, setProfileRole] = useState<string | undefined>();
+  const [profilePiano, setProfilePiano] = useState<string>("free");
+  const [walletCrediti, setWalletCrediti] = useState<number>(0);
+
   // derivati
-  const userRole   = user?.user_metadata?.role as string | undefined;
+  const userRole   = (user?.user_metadata?.role as string | undefined) ?? profileRole;
   const userName   = user?.user_metadata?.full_name || user?.user_metadata?.ragione_sociale || user?.email?.split("@")[0] || "";
   const userEmail  = user?.email || "";
   const categoria  = user?.user_metadata?.categoria as string | undefined;
-  const piano      = (user?.user_metadata?.piano as string | undefined) ?? "Base";
+  const piano      = profilePiano;
   const roleLabel  = userRole === "privato" ? "Cittadino" : userRole === "impresa" ? "Impresa" : userRole === "professionista" ? "Professionista" : null;
 
   // Auth check ─ redirect se non loggato
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.replace("/"); return; }
       setUser(data.user);
+
+      // B-01/B-10 fix: carica role + piano + wallet da profiles
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, plan, wallet_crediti")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (profile?.role) setProfileRole(profile.role);
+      if (profile?.plan) setProfilePiano(profile.plan);
+      if (typeof profile?.wallet_crediti === "number") setWalletCrediti(profile.wallet_crediti);
+
+      // Redirect impresa alla dashboard dedicata
+      const effectiveRole = data.user.user_metadata?.role ?? profile?.role;
+      if (effectiveRole === "impresa") { router.replace("/dashboard-impresa"); return; }
+
       setAuthLoading(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
@@ -190,22 +210,25 @@ function ProfessionistaDashboard({ user, supabase, piano, categoria }: { user: U
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const walletCrediti: number = (user.user_metadata?.wallet_crediti as number) ?? 0;
+  // B-10 fix: wallet letto da profiles (non user_metadata)
+  const [walletCrediti, setWalletCrediti] = useState<number>(0);
 
   useEffect(() => {
-    async function fetchLeads() {
+    async function fetchAll() {
       setLoading(true);
       try {
-        const [{ data: disp }, { data: miei }] = await Promise.all([
+        const [{ data: disp }, { data: miei }, { data: profile }] = await Promise.all([
           supabase.from("marketplace_leads").select("*").eq("status", "disponibile").order("created_at", { ascending: false }).limit(25),
           supabase.from("marketplace_leads").select("*").eq("assigned_to", user.id).order("created_at", { ascending: false }).limit(25),
+          supabase.from("profiles").select("wallet_crediti").eq("id", user.id).maybeSingle(),
         ]);
         setLeads(disp ?? []);
         setAcquistati(miei ?? []);
+        if (typeof profile?.wallet_crediti === "number") setWalletCrediti(profile.wallet_crediti);
       } catch { /* tabella non ancora creata */ }
       finally { setLoading(false); }
     }
-    fetchLeads();
+    fetchAll();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.id]);
 

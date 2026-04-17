@@ -59,7 +59,7 @@ async function sendNotificationEmail(
       method: "POST",
       headers: { "api-key": BREVO_API_KEY, "Content-Type": "application/json" },
       body: JSON.stringify({
-        sender: { name: "NormaAI", email: "noreply@normaai.eu" },
+        sender: { name: "NormaAI", email: "noreply@normaai.it" },
         to: [{ email, name: nome || email }],
         subject: `⏰ ${scadenze.length} scadenz${scadenze.length === 1 ? "a" : "e"} in arrivo — NormaAI`,
         htmlContent: `
@@ -71,12 +71,12 @@ async function sendNotificationEmail(
             </div>
             ${scadenzeHtml}
             <div style="margin-top:24px;text-align:center;">
-              <a href="https://normaai.eu" style="background:#E8340A;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
+              <a href="https://normaai.it" style="background:#E8340A;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600;">
                 Gestisci le scadenze →
               </a>
             </div>
             <div style="margin-top:24px;font-size:11px;color:#9A9690;text-align:center;">
-              NormaAI · <a href="https://normaai.eu" style="color:#9A9690;">normaai.eu</a>
+              NormaAI · <a href="https://normaai.it" style="color:#9A9690;">normaai.it</a>
             </div>
           </div>
         `,
@@ -90,9 +90,16 @@ async function sendNotificationEmail(
 }
 
 export async function GET(req: NextRequest) {
-  // Autenticazione cron
-  const secret = req.headers.get("x-cron-secret");
-  if (CRON_SECRET && secret !== CRON_SECRET) {
+  // B-17 fix: cron secret OBBLIGATORIO (500 se mancante in env, 401 se errato)
+  if (!CRON_SECRET) {
+    console.error("[scadenze/notify] CRON_SECRET non configurato in env");
+    return NextResponse.json({ error: "Cron secret non configurato" }, { status: 500 });
+  }
+  const headerSecret = req.headers.get("x-cron-secret");
+  // Vercel Cron aggiunge Authorization: Bearer <CRON_SECRET>
+  const authHeader = req.headers.get("authorization") || "";
+  const bearerSecret = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  if (headerSecret !== CRON_SECRET && bearerSecret !== CRON_SECRET) {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
   }
 

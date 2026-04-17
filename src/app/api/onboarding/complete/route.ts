@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase-server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { sendWelcomeSMS } from '@/lib/twilio';
 import { sendWelcomeEmail } from '@/lib/email';
+import * as Sentry from '@sentry/nextjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,6 +47,57 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('[onboarding/complete] DB error:', updateError);
       return NextResponse.json({ error: 'Errore salvataggio profilo' }, { status: 500 });
+    }
+
+    // B-01 fix: sync user_metadata via admin API
+    // Dashboard + chat + middleware leggono role da user_metadata — deve combaciare con profiles
+    try {
+      const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (serviceUrl && serviceKey) {
+        const admin = createServiceClient(serviceUrl, serviceKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        await admin.auth.admin.updateUserById(userId, {
+          user_metadata: {
+            ...user.user_metadata,
+            role,
+            full_name: name,
+            ragione_sociale: profileData.ragione_sociale || null,
+            onboarding_completed: true,
+          },
+        });
+      } else {
+        console.warn('[onboarding/complete] SERVICE_ROLE_KEY missing — user_metadata non sync');
+      }
+    } catch (metaErr) {
+      console.error('[onboarding/complete] user_metadata sync error:', metaErr);
+      Sentry.captureException?.(metaErr);
+    }
+
+    // B-05/H-05 fix: inizializza company_profiles per impresa (trigger onboarding dedicato)
+    if (role === 'impresa') {
+      try {
+        const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (serviceUrl && serviceKey) {
+          const admin = createServiceClient(serviceUrl, serviceKey, {
+            auth: { persistSession: false, autoRefreshToken: false },
+          });
+          const trialEnds = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          await admin.from('company_profiles').upsert({
+            user_id: userId,
+            piano: 'impresa_micro',
+            stato: 'trial',
+            query_incluse: 543,
+            query_usate_mese: 0,
+            mese_corrente: new Date().toISOString().slice(0, 7),
+            trial_ends_at: trialEnds,
+          }, { onConflict: 'user_id' });
+        }
+      } catch (cpErr) {
+        console.error('[onboarding/complete] company_profiles init error:', cpErr);
+      }
     }
 
     // Crea Stripe Customer (best-effort, non blocca il flusso)

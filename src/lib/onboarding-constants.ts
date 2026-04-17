@@ -1,8 +1,10 @@
 // /lib/onboarding-constants.ts
 // Costanti per onboarding NormaAI - opzioni predefinite per ruolo
 
+// NOTE: CITTADINO ha valore 'privato' perché DB/chat/dashboard usano già 'privato'.
+// La label UI "Cittadino" resta nei componenti; qui è solo il valore interno/enum.
 export const USER_ROLES = {
-  CITTADINO: 'cittadino',
+  CITTADINO: 'privato',
   PROFESSIONISTA: 'professionista',
   IMPRESA: 'impresa'
 } as const;

@@ -22,9 +22,9 @@ export default function PrivacyPage() {
 
         <Section title="1. Titolare del trattamento">
           <p>
-            <strong>Servizi Digitali 24 S.R.L.</strong>, con sede legale in Italia, email:{" "}
+            <strong>Servizi Digitali 24 S.R.L.</strong> (P.IVA / C.F. 18422681009), con sede legale in Roma, Italia. Email:{" "}
             <a href="mailto:privacy@normaai.it" className="text-accent hover:underline">privacy@normaai.it</a>.
-            Il titolare è Francesco Tudini Kei in qualità di Amministratore Unico.
+            Rappresentante legale: Francesco Tudini Kei, Amministratore Unico.
           </p>
         </Section>
 
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
           </table>
         </Section>
 
-        <Section title="6. Diritti degli interessati">
+        <Section title="7. Diritti degli interessati">
           <p>Ai sensi degli artt. 15-22 GDPR, ogni interessato ha diritto di:</p>
           <ul className="list-disc list-inside mt-2 space-y-1 text-[13px] text-[#999]">
             <li>Accedere ai propri dati personali (art. 15)</li>
@@ -143,21 +143,21 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="7. Cookie">
+        <Section title="8. Cookie">
           <p>
             Il sito utilizza cookie tecnici necessari al funzionamento (base giuridica: art. 6(1)(b) GDPR) e
             cookie analitici soggetti a consenso. Il banner cookie permette di accettare o rifiutare i cookie non essenziali.
           </p>
         </Section>
 
-        <Section title="8. Sicurezza">
+        <Section title="9. Sicurezza">
           <p>
             I dati sono protetti con cifratura TLS in transito e AES-256 a riposo. Accesso ai dati limitato
             al personale autorizzato. Autenticazione a due fattori sugli account amministrativi.
           </p>
         </Section>
 
-        <Section title="9. Modifiche alla presente informativa">
+        <Section title="10. Modifiche alla presente informativa">
           <p>
             Eventuali modifiche saranno comunicate via email agli utenti registrati con almeno 14 giorni di preavviso.
             La versione aggiornata sarà sempre disponibile su questa pagina.

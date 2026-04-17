@@ -34,10 +34,12 @@ async function getProfessionistiByCategoria(
   categoria: string,
   city?: string
 ): Promise<Professionista[]> {
+  // B-06 fix: filtrare professionisti con piano attivo (≠ free/cancelled),
+  // non filtrare su valori di "plan" che non esistono nello schema
   let url =
     `${SUPABASE_URL}/rest/v1/profiles` +
     `?role=eq.professionista` +
-    `&plan=in.(active,trial)` +
+    `&plan=neq.free` +
     `&select=id,full_name,email,phone,professione`;
 
   // Filtro categoria — professione contiene la categoria (es. "avvocato")

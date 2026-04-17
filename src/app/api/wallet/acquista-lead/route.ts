@@ -62,13 +62,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Errore aggiornamento wallet" }, { status: 500 });
     }
 
-    // Assegna lead al professionista
+    // Assegna lead al professionista (B-04 fix: schema usa `sold` + `professional_id`)
     const { error: leadUpdateErr } = await admin
       .from("marketplace_leads")
       .update({
-        status: "accepted",
-        professionista_id: user.id,
-        accepted_at: new Date().toISOString(),
+        status: "sold",
+        professional_id: user.id,
+        sold_at: new Date().toISOString(),
       })
       .eq("id", leadId)
       .eq("status", "pending"); // guard contro race condition

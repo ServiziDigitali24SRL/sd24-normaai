@@ -120,8 +120,18 @@ export default function DashboardImpresa() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
-      if (!u || u.user_metadata?.role !== "impresa") {
+      if (!u) {
         router.replace("/");
+        return;
+      }
+      // B-03 fix: fallback su profiles.role se user_metadata non ancora sync
+      let role = u.user_metadata?.role as string | undefined;
+      if (role !== "impresa") {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", u.id).single();
+        role = profile?.role ?? role;
+      }
+      if (role !== "impresa") {
+        router.replace(role === "professionista" || role === "privato" ? "/dashboard" : "/");
         return;
       }
       setUser(u);
