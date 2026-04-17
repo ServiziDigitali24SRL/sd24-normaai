@@ -13,8 +13,8 @@ import {
   flushLangfuse,
 } from "@/lib/langfuse";
 
-// Sentry stub — install @sentry/nextjs to enable real error tracking
-const Sentry = { captureException: (e: unknown, _ctx?: unknown) => console.error("[sentry]", e) };
+// B-09 fix: Sentry reale (pacchetto già installato)
+import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
 
@@ -859,11 +859,37 @@ export async function POST(req: NextRequest) {
             if (scoring.score >= 35 || !!attachment) {
               const summary = question.trim().slice(0, 150) + (question.length > 150 ? "…" : "");
               const verticaleNorm = vertical?.toLowerCase().replace(/[\s/]+/g, "-") ?? "generico";
-              await fetch(`${SUPABASE_URL}/rest/v1/marketplace_leads`, {
+              // B-05 fix: inserisce e recupera lead id per notificare professionisti
+              const leadInsertRes = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_leads`, {
                 method: "POST",
-                headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+                headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=representation" },
                 body: JSON.stringify({ consumer_id: userId || null, consumer_city: (profile as unknown as Record<string, string>)?.citta ?? null, vertical_id: verticaleNorm, question_summary: summary, price_cents: scoring.estimated_price_cents, lead_score: scoring.score, lead_tier: scoring.tier, lead_type: userId ? "privato" : "anonimo", status: "pending" }),
               });
+              if (leadInsertRes.ok) {
+                const leadRows = await leadInsertRes.json().catch(() => []);
+                const newLeadId: string | undefined = Array.isArray(leadRows) ? leadRows[0]?.id : undefined;
+                if (newLeadId) {
+                  // Fire-and-forget: notifica professionisti matching (non blocca la risposta chat)
+                  void fetch(`${SUPABASE_URL}/rest/v1/profiles?role=eq.professionista&plan=neq.free&select=id,full_name,email,phone,professione&professione=ilike.*${encodeURIComponent(verticaleNorm)}*&limit=20`, {
+                    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+                  })
+                    .then((r) => (r.ok ? r.json() : []))
+                    .then(async (pros: Array<{ id: string; full_name: string; email: string; phone: string | null }>) => {
+                      if (!Array.isArray(pros) || !pros.length) return;
+                      const { sendLeadNotificationEmail } = await import("@/lib/email");
+                      const { sendLeadSMS } = await import("@/lib/twilio");
+                      const price = scoring.estimated_price_cents / 100;
+                      await Promise.allSettled(
+                        pros.map(async (p) => {
+                          const tasks: Promise<unknown>[] = [sendLeadNotificationEmail(p.email, p.full_name, summary, newLeadId, price)];
+                          if (p.phone) tasks.push(sendLeadSMS(p.phone, p.full_name, summary, price) as Promise<unknown>);
+                          await Promise.allSettled(tasks);
+                        })
+                      );
+                    })
+                    .catch((e) => Sentry.captureException(e, { extra: { fn: "notifyProfessionistiFromChat", leadId: newLeadId } }));
+                }
+              }
             }
           } catch (e) { Sentry.captureException(e, { extra: { fn: "createMarketplaceLead" } }); }
         }

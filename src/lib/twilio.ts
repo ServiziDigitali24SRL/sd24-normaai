@@ -64,8 +64,33 @@ export async function sendOtpSms(phone: string, otp: string): Promise<boolean> {
 // ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 
 /**
- * Notifica un professionista via WhatsApp quando arriva un nuovo lead.
+ * Notifica un professionista via SMS quando arriva un nuovo lead.
  * @param phone Numero E.164 es. +393331234567
+ */
+export async function sendLeadSMS(
+  phone: string,
+  professionalName: string,
+  leadSummary: string,
+  price: number
+): Promise<boolean> {
+  if (!SMS_FROM) {
+    console.error("[twilio] TWILIO_PHONE_FROM non configurato");
+    return false;
+  }
+  const priceFormatted = typeof price === "number" && price > 100
+    ? (price / 100).toFixed(2)   // price_cents
+    : price.toFixed(2);           // gia in euro
+  const summary = leadSummary.slice(0, 130) + (leadSummary.length > 130 ? "…" : "");
+  const body =
+    `NormaAI - Ciao ${professionalName}, nuovo lead disponibile!\n` +
+    `"${summary}"\n` +
+    `Prezzo: EUR ${priceFormatted} - Acquista su normaai.it`;
+  return sendMessage(phone, SMS_FROM, body);
+}
+
+/**
+ * @deprecated Usare sendLeadSMS. Mantenuto per retrocompatibilità.
+ * Notifica un professionista via WhatsApp quando arriva un nuovo lead.
  */
 export async function sendLeadWhatsApp(
   phone: string,
@@ -73,14 +98,8 @@ export async function sendLeadWhatsApp(
   leadSummary: string,
   price: number
 ): Promise<boolean> {
-  const priceFormatted = (price / 100).toFixed(2);
-  const body =
-    `🔔 *NormaAI* — Nuovo lead disponibile!\n\n` +
-    `Ciao ${professionalName}, un cliente ha richiesto assistenza:\n\n` +
-    `_"${leadSummary.slice(0, 200)}${leadSummary.length > 200 ? "…" : ""}"_\n\n` +
-    `💶 Prezzo lead: €${priceFormatted}\n\n` +
-    `👉 Vai su https://normaai.it per acquistarlo.`;
-  return sendMessage(`whatsapp:${phone}`, WA_FROM, body);
+  // Fallback a SMS (WhatsApp Business non ancora configurato)
+  return sendLeadSMS(phone, professionalName, leadSummary, price);
 }
 
 /**
@@ -97,7 +116,7 @@ export async function sendOtpWhatsApp(phone: string, otp: string): Promise<boole
 export interface WelcomeSMSData {
   phone: string;
   name: string;
-  role: 'cittadino' | 'professionista' | 'impresa';
+  role: 'privato' | 'professionista' | 'impresa';
 }
 
 /**
@@ -110,11 +129,11 @@ export async function sendWelcomeSMS(data: WelcomeSMSData): Promise<boolean> {
     return false;
   }
   const messages: Record<string, string> = {
-    cittadino:     `Ciao ${data.name}! Benvenuto in NormaAI. Cerca la tua normativa: normaai.it`,
-    professionista:`Benvenuto ${data.name}! NormaAI è pronto per le tue ricerche professionali: normaai.it`,
+    privato:       `Ciao ${data.name}! Benvenuto in NormaAI. Cerca la tua normativa: normaai.it`,
+    professionista:`Benvenuto ${data.name}! NormaAI e' pronto per le tue ricerche professionali: normaai.it`,
     impresa:       `Benvenuto ${data.name}! NormaAI ti supporta nella compliance aziendale: normaai.it`,
   };
-  return sendMessage(data.phone, SMS_FROM, messages[data.role] ?? messages.cittadino);
+  return sendMessage(data.phone, SMS_FROM, messages[data.role] ?? messages.privato);
 }
 
 export function validatePhoneNumber(phone: string): boolean {

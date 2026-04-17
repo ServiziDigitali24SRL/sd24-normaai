@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendLeadNotificationEmail } from "@/lib/email";
-import { sendLeadWhatsApp } from "@/lib/twilio";
+import { sendLeadSMS } from "@/lib/twilio";
 
 export const dynamic = "force-dynamic";
 
@@ -34,10 +34,12 @@ async function getProfessionistiByCategoria(
   categoria: string,
   city?: string
 ): Promise<Professionista[]> {
+  // B-06 fix: filtrare professionisti con piano attivo (≠ free/cancelled),
+  // non filtrare su valori di "plan" che non esistono nello schema
   let url =
     `${SUPABASE_URL}/rest/v1/profiles` +
     `?role=eq.professionista` +
-    `&plan=in.(active,trial)` +
+    `&plan=neq.free` +
     `&select=id,full_name,email,phone,professione`;
 
   // Filtro categoria — professione contiene la categoria (es. "avvocato")
@@ -101,7 +103,7 @@ async function notifyProfessionisti(lead: LeadData): Promise<void> {
       ];
       if (p.phone) {
         notifiche.push(
-          sendLeadWhatsApp(p.phone, p.full_name, lead.summary, lead.price) as Promise<boolean>
+          sendLeadSMS(p.phone, p.full_name, lead.summary, lead.price) as Promise<boolean>
         );
       }
       await Promise.allSettled(notifiche);

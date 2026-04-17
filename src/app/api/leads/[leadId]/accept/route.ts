@@ -62,7 +62,7 @@ export async function POST(
 
     // Crea Stripe Checkout Session
     const stripe = getStripe();
-    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "https://normaai.eu";
+    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "https://normaai.it";
 
     let session: Stripe.Checkout.Session;
     try {

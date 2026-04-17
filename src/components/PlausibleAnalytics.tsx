@@ -6,7 +6,7 @@ import { useState } from "react";
 
 /**
  * Plausible Analytics — caricato solo con consenso analytics (art. 6(1)(a) GDPR)
- * Domain: normaai.eu | Provider: Plausible Analytics (EU-hosted, privacy-first)
+ * Domain: normaai.it | Provider: Plausible Analytics (EU-hosted, privacy-first)
  */
 export default function PlausibleAnalytics() {
   const [hasConsent, setHasConsent] = useState(false);
@@ -35,7 +35,7 @@ export default function PlausibleAnalytics() {
   return (
     <Script
       defer
-      data-domain="normaai.eu"
+      data-domain="normaai.it"
       src="https://plausible.io/js/script.js"
       strategy="afterInteractive"
     />

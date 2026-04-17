@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import { createClient } from "@/lib/supabase-server";
 
 // Lazy init — avoids build-time error when env var is missing
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("STRIPE_SECRET_KEY not set");
-  return new Stripe(key);
+  return new Stripe(key, { apiVersion: "2025-06-30.basil" as Stripe.LatestApiVersion });
 }
 
 // Mappa piano → Stripe Price ID reali (da env vars)
@@ -35,7 +36,16 @@ const ONE_TIME_PLANS = new Set(["lead_privato", "lead_impresa"]);
 
 export async function POST(req: NextRequest) {
   try {
-    const { plan, userId, email } = await req.json();
+    const { plan } = await req.json();
+
+    // B-11 fix: ignora userId/email dal body; prendi SEMPRE dall'utente autenticato
+    const supabase = await createClient();
+    const { data: { user }, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !user) {
+      return NextResponse.json({ error: "Autenticazione richiesta" }, { status: 401 });
+    }
+    const userId = user.id;
+    const email = user.email ?? "";
 
     const stripePriceId = PRICE_MAP[plan];
     if (!plan || !stripePriceId) {
@@ -46,18 +56,30 @@ export async function POST(req: NextRequest) {
     }
 
     const stripe = getStripe();
-    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "https://normaai.eu";
+    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "https://normaai.it";
     const isOneTime = ONE_TIME_PLANS.has(plan);
+
+    // Riusa stripe_customer_id esistente se presente (H-18 fix)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("stripe_customer_id")
+      .eq("id", userId)
+      .maybeSingle();
+    const existingCustomerId = profile?.stripe_customer_id as string | undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sessionParams: any = {
       payment_method_types: ["card"],
-      customer_email: email || undefined,
       line_items: [{ price: stripePriceId, quantity: 1 }],
-      metadata: { userId: userId || "", plan },
+      metadata: { userId, plan },
       success_url: `${origin}/?checkout=success`,
       cancel_url: `${origin}/?checkout=cancel`,
     };
+    if (existingCustomerId) {
+      sessionParams.customer = existingCustomerId;
+    } else {
+      sessionParams.customer_email = email || undefined;
+    }
 
     if (isOneTime) {
       sessionParams.mode = "payment";
