@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendLeadNotificationEmail } from "@/lib/email";
-import { sendLeadWhatsApp } from "@/lib/twilio";
+import { sendLeadSMS } from "@/lib/twilio";
 
 export const dynamic = "force-dynamic";
 
@@ -103,7 +103,7 @@ async function notifyProfessionisti(lead: LeadData): Promise<void> {
       ];
       if (p.phone) {
         notifiche.push(
-          sendLeadWhatsApp(p.phone, p.full_name, lead.summary, lead.price) as Promise<boolean>
+          sendLeadSMS(p.phone, p.full_name, lead.summary, lead.price) as Promise<boolean>
         );
       }
       await Promise.allSettled(notifiche);

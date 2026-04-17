@@ -877,12 +877,12 @@ export async function POST(req: NextRequest) {
                     .then(async (pros: Array<{ id: string; full_name: string; email: string; phone: string | null }>) => {
                       if (!Array.isArray(pros) || !pros.length) return;
                       const { sendLeadNotificationEmail } = await import("@/lib/email");
-                      const { sendLeadWhatsApp } = await import("@/lib/twilio");
+                      const { sendLeadSMS } = await import("@/lib/twilio");
                       const price = scoring.estimated_price_cents / 100;
                       await Promise.allSettled(
                         pros.map(async (p) => {
                           const tasks: Promise<unknown>[] = [sendLeadNotificationEmail(p.email, p.full_name, summary, newLeadId, price)];
-                          if (p.phone) tasks.push(sendLeadWhatsApp(p.phone, p.full_name, summary, price) as Promise<unknown>);
+                          if (p.phone) tasks.push(sendLeadSMS(p.phone, p.full_name, summary, price) as Promise<unknown>);
                           await Promise.allSettled(tasks);
                         })
                       );
