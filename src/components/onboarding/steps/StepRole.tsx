@@ -21,7 +21,7 @@ export function StepRole({ data, updateData, onNext }: StepRoleProps) {
         'Ricerche su diritti e doveri personali',
         'Guide pratiche per situazioni quotidiane',
         'Consulenza per problemi familiari',
-        '10 ricerche gratuite',
+        'Ricerche illimitate — sempre gratis',
       ],
     },
     {

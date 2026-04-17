@@ -48,7 +48,7 @@ export function StepCompletion({ data, onComplete, onPrev, isLoading }: StepComp
         {totalAree > 0 && (
           <div className="flex items-center justify-between text-[13px]">
             <span className="text-[#6B6763]">Aree interesse</span>
-            <span className="font-medium text-[#1a1a1a]">{totalAree} selezionate</span>
+            <span className="font-medium text-[#1a1a1a]">{totalAree} {totalAree === 1 ? 'selezionata' : 'selezionate'}</span>
           </div>
         )}
         {data.obiettivo_principale && (

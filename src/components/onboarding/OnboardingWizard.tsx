@@ -93,7 +93,7 @@ export default function OnboardingWizard() {
         body: JSON.stringify({ userId, email: userEmail, ...data }),
       });
       if (res.ok) {
-        router.replace('/dashboard');
+        router.replace(data.role === 'impresa' ? '/dashboard-impresa' : '/dashboard');
       } else {
         console.error('Onboarding complete error:', await res.text());
       }
