@@ -315,10 +315,11 @@ interface SupabaseChunk {
 // Dimensioni: commercialista 28MB, lavoro 15MB, finanziario 41MB — totale 84MB in RAM.
 
 async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
-  // Shard strategy (sequential with early exit):
-  // - Run shards one at a time to avoid saturating Supabase free-tier connection pool
-  // - Stop early once we have TARGET_CHUNKS results above threshold
-  // - Order: legislation first (most useful), then jurisprudence
+  // Shard strategy (PARALLEL, bounded timeout):
+  // - All shards run concurrently via Promise.allSettled
+  // - Each shard capped at 8s (Supabase RPC statement_timeout is 6s, this is the HTTP-level cap)
+  // - Global cap: max time = slowest single shard (was 6 * 30s = 180s sequentially).
+  // - If a shard fails or times out, we continue with whatever came back from the others.
   const shards = [
     { filter_verticale: "generale", filter_tipo: "decreto_legislativo" },
     { filter_verticale: "generale", filter_tipo: "legge" },
@@ -328,10 +329,9 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
     { filter_verticale: "finanziario" },
   ];
 
-  const all: SupabaseChunk[] = [];
   const t0 = Date.now();
 
-  for (const shard of shards) {
+  const runShard = async (shard: Record<string, string>): Promise<SupabaseChunk[]> => {
     const st = Date.now();
     try {
       const body = { query_embedding: embedding, match_count: 4, match_threshold: 0.10, only_vigente: false, ...shard };
@@ -339,22 +339,30 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
         method: "POST",
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(8000),
       });
       const ms = Date.now() - st;
       if (res.ok) {
         const rows = await res.json() as SupabaseChunk[];
-        console.log(`[RAG] shard=${(shard as Record<string,string>).filter_verticale}/${(shard as Record<string,string>).filter_tipo ?? "*"} rows=${rows.length} ms=${ms}`);
-        all.push(...rows);
+        console.log(`[RAG] shard=${shard.filter_verticale}/${shard.filter_tipo ?? "*"} rows=${rows.length} ms=${ms}`);
+        return rows;
       } else {
         const errBody = await res.text().catch(() => "");
         console.error(`[RAG] shard HTTP=${res.status} ms=${ms} body=${errBody.slice(0, 150)}`);
+        return [];
       }
     } catch (e) {
       console.error(`[RAG] shard CATCH ms=${Date.now()-st} err=${String(e).slice(0, 100)}`);
+      return [];
     }
+  };
+
+  const results = await Promise.allSettled(shards.map(runShard));
+  const all: SupabaseChunk[] = [];
+  for (const r of results) {
+    if (r.status === "fulfilled") all.push(...r.value);
   }
-  console.log(`[RAG] done in ${Date.now()-t0}ms total=${all.length} chunks`);
+  console.log(`[RAG] done in ${Date.now()-t0}ms total=${all.length} chunks (parallel)`);
 
   const seen = new Map<string, SupabaseChunk>();
   for (const chunk of all) {
