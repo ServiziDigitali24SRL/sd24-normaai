@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
+import { fetchChatStream, formatChatErrorMessage } from "@/lib/chat-stream";
 import {
   ArrowUpIcon,
   Copy,
@@ -234,16 +235,16 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
     setSending(true); setStreaming(true);
     setCurrent({ question: q, text: "" });
     setText("");
+    let receivedAnyChunk = false;
     try {
       const conversationHistory = history.slice(-4).flatMap((msg) => ([
         { role: "user" as const, content: msg.question },
         { role: "assistant" as const, content: msg.text.slice(0, 1000) },
       ]));
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, vertical: null, userId: user?.id ?? null, conversationHistory, turnNumber: history.length }),
-      });
+      const res = await fetchChatStream(
+        { question: q, vertical: null, userId: user?.id ?? null, conversationHistory, turnNumber: history.length },
+        { maxRetries: 2, initialTimeoutMs: 25_000 },
+      );
       if (res.status === 402) {
         const data = await res.json().catch(() => ({}));
         const code = data?.code;
@@ -258,6 +259,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        receivedAnyChunk = true;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n"); buffer = lines.pop() || "";
         for (const line of lines) {
@@ -276,8 +278,9 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
           } catch { }
         }
       }
-    } catch {
-      setCurrent((p) => p ? { ...p, text: "Impossibile connettersi. Riprova." } : null);
+    } catch (e) {
+      const friendly = formatChatErrorMessage(e, receivedAnyChunk);
+      setCurrent((p) => p ? { ...p, text: p.text ? `${p.text}\n\n_${friendly}_` : friendly } : null);
     } finally { setSending(false); setStreaming(false); }
   }
 
