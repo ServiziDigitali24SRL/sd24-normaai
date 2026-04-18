@@ -331,7 +331,8 @@ async function searchSupabase(embedding: number[]): Promise<SupabaseChunk[]> {
 
   const t0 = Date.now();
 
-  const runShard = async (shard: Record<string, string>): Promise<SupabaseChunk[]> => {
+  type Shard = { filter_verticale: string; filter_tipo?: string };
+  const runShard = async (shard: Shard): Promise<SupabaseChunk[]> => {
     const st = Date.now();
     try {
       const body = { query_embedding: embedding, match_count: 4, match_threshold: 0.10, only_vigente: false, ...shard };
