@@ -83,6 +83,14 @@ const PLACEHOLDER_EXAMPLES = [
 
 interface Source { id: string; titolo: string; fonte: string; url: string; tipo: string }
 interface Msg { id: string; question: string; text: string; sources: Source[]; hasRag: boolean; ts: number }
+
+/** Convert a URN NIR (Normattiva) or bare URL into a navigable HTTP URL. */
+function toNavigableUrl(url: string | null | undefined): string {
+  if (!url) return "#";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  if (url.startsWith("urn:nir:")) return `https://www.normattiva.it/uri-res/N2Ls?${encodeURIComponent(url)}`;
+  return "#";
+}
 interface Streaming { question: string; text: string }
 
 const STORAGE_KEY = "norma-ruixen-v1";
@@ -476,7 +484,7 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
                     {msg.sources.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {msg.sources.map((s) => (
-                          <a key={s.id} href={s.url || "#"} target="_blank" rel="noopener noreferrer"
+                          <a key={s.id} href={toNavigableUrl(s.url)} target="_blank" rel="noopener noreferrer"
                             className="text-[11px] text-[#6B6763] bg-[#F0EDE8] border border-[#D8D3CC] rounded-full px-3 py-1 hover:bg-white hover:border-[#B0A898] hover:text-[#1a1a1a] transition-colors">
                             {s.titolo || s.fonte}
                           </a>
