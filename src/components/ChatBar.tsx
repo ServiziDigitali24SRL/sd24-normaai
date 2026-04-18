@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import type { User } from "@supabase/supabase-js";
+import { fetchChatStream, formatChatErrorMessage } from "@/lib/chat-stream";
 
 const PILLS = [
   { label: "Avvocato", hint: "Diritto civile, penale, amministrativo…" },
@@ -292,20 +293,19 @@ export default function ChatBar({ user }: { user?: User | null }) {
     setSending(true); setStreaming(true);
     setCurrent({ question: q, vertical: v, text: "", sources: [], hasRag: false, attachmentName: att?.name });
     setText(""); setActivePill(null); setActiveBozza(null); setAttachment(null); setAttachErr(null);
+    // Track whether we've received ANY byte of the stream — determines if an
+    // error is "pre-stream" (retryable by fetchChatStream) or "mid-stream"
+    // (user already sees partial text; show interruption message).
+    let receivedAnyChunk = false;
     try {
       const conversationHistory = history.slice(-4).flatMap((msg) => ([
         { role: "user" as const, content: msg.question },
         { role: "assistant" as const, content: msg.text.slice(0, 1000) },
       ]));
-      const chatAbort = new AbortController();
-      const chatTimeout = setTimeout(() => chatAbort.abort(), 60_000); // 60s timeout
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, vertical: v, userId: user?.id ?? null, attachment: att, conversationHistory, turnNumber: history.length }),
-        signal: chatAbort.signal,
-      });
-      clearTimeout(chatTimeout);
+      const res = await fetchChatStream(
+        { question: q, vertical: v, userId: user?.id ?? null, attachment: att, conversationHistory, turnNumber: history.length },
+        { maxRetries: 2, initialTimeoutMs: 25_000 },
+      );
       if (!res.ok || !res.body) throw new Error("HTTP " + res.status);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -313,6 +313,7 @@ export default function ChatBar({ user }: { user?: User | null }) {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+        receivedAnyChunk = true;
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n"); buffer = lines.pop() || "";
         for (const line of lines) {
@@ -340,7 +341,8 @@ export default function ChatBar({ user }: { user?: User | null }) {
       }
     } catch (e) {
       console.error(e);
-      setCurrent((p) => p ? { ...p, text: "Impossibile connettersi. Riprova." } : null);
+      const friendly = formatChatErrorMessage(e, receivedAnyChunk);
+      setCurrent((p) => p ? { ...p, text: p.text ? `${p.text}\n\n_${friendly}_` : friendly } : null);
     } finally { setSending(false); setStreaming(false); }
   }
 
