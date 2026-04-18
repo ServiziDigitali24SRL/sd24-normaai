@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { createLLMStream } from "@/lib/llm-client";
 import { rateLimit } from "@/lib/rate-limit";
 import { scoreLeadQuality } from "@/lib/lead-scoring";
 import { resolveUserTier, assembleBasePrompt } from "./system-prompts";
@@ -412,11 +413,20 @@ function getVerticale(vertical: string | null): string | undefined {
   return map[vertical];
 }
 
+/**
+ * Legacy helper kept for backwards compatibility with any caller that still
+ * needs a direct Anthropic client (e.g. non-streaming utilities). The chat
+ * streaming flow uses `createLLMStream` from @/lib/llm-client which
+ * transparently prefers OpenRouter when OPENROUTER_API_KEY is set, with
+ * Anthropic direct as fallback.
+ */
 function getAnthropic(): Anthropic {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
   return new Anthropic({ apiKey: key });
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _getAnthropicUnused = getAnthropic; // silence unused-var lint if no direct usage remains
 
 // ── Impresa Model Routing ─────────────────────────────────────────────────────
 
@@ -779,14 +789,17 @@ export async function POST(req: NextRequest) {
       let fullResponse = "";
       const tGen0 = Date.now();
       try {
-        const anthropic = getAnthropic();
-        const anthropicStream = await anthropic.messages.create({
+        const { stream: anthropicStream, provider: llmProvider, resolvedModel } = await createLLMStream({
           model: selectedModel,
           max_tokens: (vertical && ["Parere Legale", "Memoria Difensiva", "Bozza Contratto", "Analisi Documento", "Analisi Contratto"].includes(vertical)) ? 4096 : 3000,
           system: fullSystem,
           messages,
-          stream: true,
         });
+        // Lightweight telemetry: which provider actually served this request.
+        // Useful when debugging "why did one query go through Claude and the
+        // next one fall back to GPT-4o?" Kept on console for now; Sentry
+        // already captures errors in the catch block below.
+        console.log(`[chat] llm.provider=${llmProvider} model=${resolvedModel}`);
 
         for await (const event of anthropicStream) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
