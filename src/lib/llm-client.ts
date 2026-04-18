@@ -191,6 +191,10 @@ async function* readOpenRouterStream(
 function shouldFallback(err: unknown): boolean {
   const s = (err as { status?: number } | undefined)?.status;
   if (s === undefined) return true; // network / fetch / timeout error
+  // 401/403 on OpenRouter: likely invalid/missing API key or account issue.
+  // Fall back to Anthropic so the chat continues to work while the key
+  // is investigated. Remove 401/403 from this list once OpenRouter is stable.
+  if (s === 401 || s === 403) return true;
   return s >= 500 || s === 429 || s === 408;
 }
 
