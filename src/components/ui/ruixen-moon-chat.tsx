@@ -167,8 +167,12 @@ export default function RuixenMoonChat({ user }: { user?: User | null }) {
   // Sync sidebar state for input left offset
   useEffect(() => {
     const saved = localStorage.getItem("sb-open");
-    setSidebarOpen(saved === "true" || (saved === null && window.innerWidth >= 1024));
-    const handler = (e: Event) => setSidebarOpen((e as CustomEvent<boolean>).detail);
+    const isMobile = window.innerWidth < 1024;
+    setSidebarOpen(!isMobile && (saved === "true" || saved === null));
+    const handler = (e: Event) => {
+      if (window.innerWidth < 1024) return; // mobile: sidebar never offsets input bar
+      setSidebarOpen((e as CustomEvent<boolean>).detail);
+    };
     window.addEventListener("sb-toggle", handler);
     return () => window.removeEventListener("sb-toggle", handler);
   }, []);
