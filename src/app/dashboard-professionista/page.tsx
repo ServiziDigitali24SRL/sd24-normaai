@@ -64,7 +64,12 @@ export default function DashboardProfessionista() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
-      if (!u) { router.replace("/"); return; }
+      if (!u) {
+        // Demo mode
+        setProfProfile({ id: 'demo', piano: 'professionista', query_incluse: 200, query_usate_mese: 45, trial_ends_at: null, nome_studio: 'Studio Demo', specializzazione: 'avvocato' });
+        setLoading(false);
+        return;
+      }
 
       let role = u.user_metadata?.role as string | undefined;
       if (role !== "professionista") {
@@ -109,7 +114,10 @@ export default function DashboardProfessionista() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (!session) router.replace("/");
+      if (!session) {
+        setProfProfile({ id: 'demo', piano: 'professionista', query_incluse: 200, query_usate_mese: 45, trial_ends_at: null, nome_studio: 'Studio Demo', specializzazione: 'avvocato' });
+        setLoading(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, [supabase, router]);
