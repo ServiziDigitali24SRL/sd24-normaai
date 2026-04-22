@@ -889,7 +889,7 @@ function EnterpriseScreen() {
                   <SectionLabel>Richiesta demo</SectionLabel>
                   <h3 style={{ fontFamily: T.serif, fontSize: 26, margin: '12px 0 24px', letterSpacing: '-0.01em' }}>Parliamone.</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                    {[['Nome e cognome', form.nome, (v: string) => setForm({ ...form, nome: v }), 'Marco Rossi'], ['Organizzazione', form.org, (v: string) => setForm({ ...form, org: v }), 'Studio Mancini · Acme SRL']].map(([l, v, s, p]) => (
+                    {([['Nome e cognome', form.nome, (v: string) => setForm({ ...form, nome: v }), 'Marco Rossi'], ['Organizzazione', form.org, (v: string) => setForm({ ...form, org: v }), 'Studio Mancini · Acme SRL']] as Array<[string, string, (v: string) => void, string]>).map(([l, v, s, p]) => (
                       <label key={l as string} style={{ display: 'block' }}>
                         <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.12em', color: T.ink4, textTransform: 'uppercase', marginBottom: 6 }}>{l}</div>
                         <input value={v as string} onChange={e => (s as (v: string) => void)(e.target.value)} placeholder={p as string}
