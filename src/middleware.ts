@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
   // ── Determina se la route richiede autenticazione ─────────────────────────
   const isProtectedPageRoute =
     pathname.startsWith("/app") ||
-    pathname.startsWith("/dashboard") ||
+    (pathname === "/dashboard" || (pathname.startsWith("/dashboard/") && !pathname.startsWith("/dashboard-"))) ||
     (pathname.startsWith("/profilo") && !pathname.startsWith("/profilo-pubblico"));
 
   const isProtectedApiRoute =
