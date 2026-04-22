@@ -2,10 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "normaai-dev",
+      "name": "sd24-normaai",
       "runtimeExecutable": "/usr/local/bin/node",
-      "runtimeArgs": ["/usr/local/lib/node_modules/npm/bin/npm-cli.js", "run", "dev"],
-      "port": 3000
+      "runtimeArgs": ["node_modules/.bin/next", "dev", "--port", "3099"],
+      "port": 3099,
+      "env": {
+        "NODE_COMPILE_CACHE": "/Users/user/Documents/PROGETTI/NORMAAI/sd24-normaai/.node-cache"
+      }
     }
   ]
 }

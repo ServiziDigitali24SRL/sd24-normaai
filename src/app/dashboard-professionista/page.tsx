@@ -8,22 +8,21 @@ import { createClient } from "@/lib/supabase-browser";
 import type { User } from "@supabase/supabase-js";
 import DualSidebar from "@/components/dashboard/DualSidebar";
 import MainDashboard from "@/components/dashboard/MainDashboard";
+import type { ProfVariant } from "@/lib/taxonomy";
 import lazyDynamic from "next/dynamic";
 
 const ModalBug = lazyDynamic(() => import("@/components/modals/ModalBug"), { ssr: false });
-const ModalBusinessPlan = lazyDynamic(() => import("@/components/modals/ModalBusinessPlan"), { ssr: false });
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
-interface CompanyProfile {
+interface ProfProfile {
   id: string;
   piano: string;
   query_incluse: number;
   query_usate_mese: number;
   trial_ends_at: string | null;
-  stato: string;
-  ragione_sociale: string | null;
-  p_iva: string | null;
+  nome_studio: string | null;
+  specializzazione: string | null; // 'avvocato' | 'commercialista' | altro
 }
 
 interface Selection {
@@ -32,71 +31,91 @@ interface Selection {
   item: string | null;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
-const PIANO_LABELS: Record<string, string> = {
-  impresa_micro:    'Micro',
-  impresa_piccola:  'Piccola',
-  impresa_media:    'Media',
+const VARIANT_LABELS: Record<string, string> = {
+  avvocato:       'Avvocato',
+  commercialista: 'Commercialista',
+  altro:          'Professionista',
 };
 
-const PIANO_PREZZI: Record<string, string> = {
-  impresa_micro:   '€29/mese',
-  impresa_piccola: '€79/mese',
-  impresa_media:   '€199/mese',
-};
+function resolveVariant(spec: string | null | undefined): ProfVariant {
+  if (spec === 'avvocato') return 'avvocato';
+  if (spec === 'commercialista') return 'commercialista';
+  return 'altro';
+}
 
 function daysUntil(dateStr: string) {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ─── Main ──────────────────────────────────────────────────────────────────────
 
-export default function DashboardImpresa() {
+export default function DashboardProfessionista() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
 
   const [user, setUser] = useState<User | null>(null);
-  const [company, setCompany] = useState<CompanyProfile | null>(null);
-  const [impresaProfile, setImpresaProfile] = useState<Record<string, unknown> | null>(null);
+  const [profProfile, setProfProfile] = useState<ProfProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [showBug, setShowBug] = useState(false);
-  const [showBusinessPlan, setShowBusinessPlan] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
       if (!u) {
-        // Demo mode: show dashboard without auth
-        setCompany({ id: 'demo', piano: 'impresa_media', query_incluse: 500, query_usate_mese: 124, trial_ends_at: null, stato: 'attivo', ragione_sociale: 'Demo S.R.L.', p_iva: '12345678901' });
+        // Demo mode
+        setProfProfile({ id: 'demo', piano: 'professionista', query_incluse: 200, query_usate_mese: 45, trial_ends_at: null, nome_studio: 'Studio Demo', specializzazione: 'avvocato' });
         setLoading(false);
         return;
       }
 
       let role = u.user_metadata?.role as string | undefined;
-      if (role !== "impresa") {
-        const { data: profile } = await supabase.from("profiles").select("role").eq("id", u.id).single();
-        role = profile?.role ?? role;
+      if (role !== "professionista") {
+        const { data: p } = await supabase.from("profiles").select("role").eq("id", u.id).single();
+        role = p?.role ?? role;
       }
-      if (role !== "impresa") {
-        router.replace(role === "professionista" || role === "privato" ? "/dashboard" : "/");
+      if (role !== "professionista") {
+        if (role === "impresa") { router.replace("/dashboard-impresa"); return; }
+        if (role === "privato" || role === "cittadino") { router.replace("/dashboard-cittadino"); return; }
+        router.replace("/");
         return;
       }
       setUser(u);
 
-      const { data: cp } = await supabase.from("company_profiles").select("*").eq("user_id", u.id).maybeSingle();
-      if (cp) {
-        setCompany(cp);
-        const { data: imp } = await supabase.from("imprese").select("*").eq("owner_id", u.id).maybeSingle();
-        if (imp) setImpresaProfile(imp as Record<string, unknown>);
+      // Load professional_profiles for variant + studio name
+      const { data: pp } = await supabase
+        .from("professional_profiles")
+        .select("id, specializzazione, nome_studio")
+        .eq("user_id", u.id)
+        .maybeSingle();
+
+      // Load subscription
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("id, piano, query_incluse, query_usate_mese, trial_ends_at")
+        .eq("user_id", u.id)
+        .maybeSingle();
+
+      if (sub || pp) {
+        setProfProfile({
+          id: sub?.id ?? pp?.id ?? u.id,
+          piano: sub?.piano ?? 'professionista',
+          query_incluse: sub?.query_incluse ?? 0,
+          query_usate_mese: sub?.query_usate_mese ?? 0,
+          trial_ends_at: sub?.trial_ends_at ?? null,
+          nome_studio: pp?.nome_studio ?? null,
+          specializzazione: pp?.specializzazione ?? u.user_metadata?.specializzazione ?? null,
+        });
       }
+
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       if (!session) {
-        setCompany({ id: 'demo', piano: 'impresa_media', query_incluse: 500, query_usate_mese: 124, trial_ends_at: null, stato: 'attivo', ragione_sociale: 'Demo S.R.L.', p_iva: '12345678901' });
+        setProfProfile({ id: 'demo', piano: 'professionista', query_incluse: 200, query_usate_mese: 45, trial_ends_at: null, nome_studio: 'Studio Demo', specializzazione: 'avvocato' });
         setLoading(false);
       }
     });
@@ -108,15 +127,8 @@ export default function DashboardImpresa() {
       if (payload === 'upgrade') router.push('/upgrade');
       return;
     }
-    if (payload.macro.key === '__dashboard__') {
-      setSelection({ macro: '__dashboard__', macroLabel: 'Dashboard', item: null });
-      return;
-    }
-    setSelection({
-      macro: payload.macro.key,
-      macroLabel: payload.macro.label,
-      item: payload.item,
-    });
+    if (payload.macro.key === '__dashboard__') { setSelection({ macro: '__dashboard__', macroLabel: 'Dashboard', item: null }); return; }
+    setSelection({ macro: payload.macro.key, macroLabel: payload.macro.label, item: payload.item });
   };
 
   if (loading) {
@@ -127,10 +139,15 @@ export default function DashboardImpresa() {
     );
   }
 
-  const userName = user?.user_metadata?.ragione_sociale || user?.email?.split('@')[0] || '';
-  const trialDays = company?.trial_ends_at ? daysUntil(company.trial_ends_at) : null;
+  const variant = resolveVariant(profProfile?.specializzazione);
+  const variantLabel = VARIANT_LABELS[variant] ?? 'Professionista';
+  const studioName = profProfile?.nome_studio || user?.user_metadata?.nome_studio || '';
+  const displayName = studioName || user?.user_metadata?.nome || user?.email?.split('@')[0] || '';
+  const trialDays = profProfile?.trial_ends_at ? daysUntil(profProfile.trial_ends_at) : null;
   const isTrial = trialDays !== null && trialDays > 0;
-  const queryPct = company ? Math.min(100, Math.round((company.query_usate_mese / company.query_incluse) * 100)) : 0;
+  const queryPct = profProfile?.query_incluse
+    ? Math.min(100, Math.round((profProfile.query_usate_mese / profProfile.query_incluse) * 100))
+    : 0;
 
   return (
     <>
@@ -142,23 +159,23 @@ export default function DashboardImpresa() {
           height: 52, borderBottom: '1px solid var(--paper-line)',
           background: 'white', flexShrink: 0, gap: 16, zIndex: 10,
         }}>
-          {/* Company identity */}
+          {/* Identity */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            {company?.ragione_sociale && (
+            {displayName && (
               <span style={{ fontSize: 14, fontWeight: 500, fontFamily: 'var(--sans)', color: 'var(--ink-1)' }}>
-                {company.ragione_sociale}
+                {displayName}
               </span>
             )}
             <span style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginLeft: 10 }}>
-              {PIANO_LABELS[company?.piano ?? ''] ?? ''} · {PIANO_PREZZI[company?.piano ?? ''] ?? ''}
+              {variantLabel} · €29/mese
             </span>
           </div>
 
           {/* Query pool */}
-          {company && (
+          {profProfile && profProfile.query_incluse > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
-                {company.query_usate_mese.toLocaleString('it-IT')} / {company.query_incluse.toLocaleString('it-IT')} query
+                {profProfile.query_usate_mese.toLocaleString('it-IT')} / {profProfile.query_incluse.toLocaleString('it-IT')} query
               </span>
               <div style={{ width: 72, height: 4, background: 'var(--paper-2)', borderRadius: 2, overflow: 'hidden' }}>
                 <div style={{ width: `${queryPct}%`, height: '100%', background: queryPct > 90 ? 'var(--vermiglio)' : queryPct > 70 ? 'var(--ambra)' : 'var(--alloro)', transition: 'width 0.3s' }} />
@@ -175,14 +192,11 @@ export default function DashboardImpresa() {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <button onClick={() => setShowBusinessPlan(true)} style={{ background: 'transparent', border: '1px solid var(--paper-line)', borderRadius: 6, padding: '6px 12px', fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
-              Business Plan AI
-            </button>
             <button onClick={() => setShowBug(true)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-4)', padding: 6 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 016 0v1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4"/></svg>
             </button>
             <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--vermiglio)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white', textTransform: 'uppercase' }}>
-              {userName.charAt(0) || 'I'}
+              {displayName.charAt(0) || 'P'}
             </div>
           </div>
         </header>
@@ -190,11 +204,12 @@ export default function DashboardImpresa() {
         {/* ── Dashboard body: DualSidebar + MainDashboard ── */}
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           <DualSidebar
-            role="impresa"
+            role="prof"
+            variant={variant}
             user={{
-              name: company?.ragione_sociale ?? userName,
-              initials: (company?.ragione_sociale ?? userName).charAt(0).toUpperCase() + (company?.ragione_sociale ?? userName).charAt(1)?.toUpperCase(),
-              subtitle: `IMPRESA · ${(PIANO_LABELS[company?.piano ?? ''] || '').toUpperCase()}`,
+              name: displayName,
+              initials: displayName.slice(0, 2).toUpperCase() || 'AG',
+              subtitle: `${variantLabel.toUpperCase()} · PROFESSIONISTA`,
             }}
             locked={false}
             active={selection ? { macro: selection.macro, item: selection.item } : null}
@@ -202,7 +217,7 @@ export default function DashboardImpresa() {
           />
           <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <MainDashboard
-              role="impresa"
+              role="prof"
               selection={selection}
               onBack={() => {
                 if (selection?.item) {
@@ -215,22 +230,13 @@ export default function DashboardImpresa() {
                 if (dest === 'upgrade') router.push('/upgrade');
               }}
               onPickMacro={(key, label) => setSelection({ macro: key, macroLabel: label, item: null })}
-              piano={company?.piano}
-              impresa={impresaProfile}
+              piano={profProfile?.piano ?? 'professionista'}
             />
           </div>
         </div>
       </div>
 
       {showBug && <ModalBug open={showBug} onClose={() => setShowBug(false)} />}
-      {showBusinessPlan && (
-        <ModalBusinessPlan
-          open={showBusinessPlan}
-          onClose={() => setShowBusinessPlan(false)}
-          userId={user?.id ?? ''}
-          companyName={company?.ragione_sociale ?? ''}
-        />
-      )}
     </>
   );
 }

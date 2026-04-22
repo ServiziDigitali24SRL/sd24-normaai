@@ -211,7 +211,7 @@ export default function InvestorDashboardPage() {
   const fetchKpis = useCallback(async () => {
     setKpiLoading(true);
     try {
-      const res = await fetch("/api/admin/kpis");
+      const res = await fetch("/api/dashboard/kpis");
       if (res.ok) setKpiData(await res.json());
     } catch { /* silent */ }
     finally { setKpiLoading(false); }
@@ -220,7 +220,7 @@ export default function InvestorDashboardPage() {
   const fetchHealth = useCallback(async () => {
     setHealthLoading(true);
     try {
-      const res = await fetch("/api/admin/system-health");
+      const res = await fetch("/api/dashboard/system-health");
       if (res.ok) setHealthData(await res.json());
     } catch { /* silent */ }
     finally { setHealthLoading(false); }
