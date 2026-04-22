@@ -53,11 +53,29 @@ export const PROF_AVVOCATO_TAXONOMY: TaxonomyMacro[] = [
   { key: 'amministrazione', icon: 'wallet', label: 'Amministrazione Studio', items: ['Abbonamento NormaAI', 'Fatture NormaAI', 'Dati studio', 'P.IVA / Dati fiscali', 'Cambia piano'] },
 ];
 
+export const PROF_COMMERCIALISTA_TAXONOMY: TaxonomyMacro[] = [
+  { key: 'ricerca', icon: 'book', label: 'Ricerca Normativa (AI)', items: ['Chat legale AI', 'Normativa fiscale', 'Normativa societaria', 'Circolari AdE', 'Interpelli AdE', 'Risoluzioni', 'Prassi amministrativa', 'Prompt salvati'] },
+  { key: 'scadenze', icon: 'clock', label: 'Scadenze Normative', items: ['Scadenze fiscali (IVA/IRES ecc.)', 'Scadenze bilanci', 'Scadenze lavoro', 'Nuove circolari', 'Alert per categoria cliente', 'Calendar personale'] },
+  { key: 'connettori', icon: 'plug', label: 'Connettori (read-only)', items: ['Google Drive', 'OneDrive', 'Dropbox', '— NormaAI legge, NON memorizza'] },
+  { key: 'profilo', icon: 'star', label: 'Profilo Pubblico', items: ['Profilo directory', 'Specializzazioni', 'Foto e bio', 'Verifica albo', 'Recensioni'] },
+  { key: 'parcelle', icon: 'euro', label: 'Parcelle', items: ['Elenco parcelle', 'Stato pagamento', 'Emissione parcella', 'Export PDF', 'Storico'] },
+  { key: 'amministrazione', icon: 'wallet', label: 'Amministrazione Studio', items: ['Abbonamento NormaAI', 'Fatture NormaAI', 'Dati studio', 'P.IVA / Dati fiscali', 'Cambia piano'] },
+];
+
+export const PROF_ALTRO_TAXONOMY: TaxonomyMacro[] = [
+  { key: 'ricerca', icon: 'book', label: 'Ricerca Normativa (AI)', items: ['Chat legale AI', 'Normativa di settore', 'Giurisprudenza', 'Dottrina', 'Circolari', 'Prompt salvati'] },
+  { key: 'scadenze', icon: 'clock', label: 'Scadenze Normative', items: ['Nuove leggi', 'Aggiornamenti di settore', 'Alert per categoria', 'Calendar personale'] },
+  { key: 'connettori', icon: 'plug', label: 'Connettori (read-only)', items: ['Google Drive', 'OneDrive', 'Dropbox', '— NormaAI legge, NON memorizza'] },
+  { key: 'amministrazione', icon: 'wallet', label: 'Amministrazione Studio', items: ['Abbonamento NormaAI', 'Fatture NormaAI', 'Dati professionista', 'P.IVA / Dati fiscali', 'Cambia piano'] },
+];
+
 export type TaxonomyRole = 'cittadino' | 'impresa' | 'prof';
 export type ProfVariant = 'avvocato' | 'commercialista' | 'altro';
 
-export function getTaxonomy(role: TaxonomyRole, _variant?: ProfVariant): TaxonomyMacro[] {
+export function getTaxonomy(role: TaxonomyRole, variant?: ProfVariant): TaxonomyMacro[] {
   if (role === 'cittadino') return CITTADINO_TAXONOMY;
   if (role === 'impresa') return IMPRESA_TAXONOMY;
+  if (variant === 'commercialista') return PROF_COMMERCIALISTA_TAXONOMY;
+  if (variant === 'altro') return PROF_ALTRO_TAXONOMY;
   return PROF_AVVOCATO_TAXONOMY;
 }
