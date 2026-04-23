@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import Icon from "./Icon";
 import { Badge, WidgetCard, ComplianceScoreCircle, CountUp } from "./DashShared";
+import FixedChatBar from "./FixedChatBar";
 
 const DashboardCustom = dynamic(() => import("./DashboardCustom"), { ssr: false });
 
@@ -447,133 +448,528 @@ function MacroOverview({ role, macroKey, macroLabel, onBack, onOpenChat, tasks, 
   );
 }
 
-// ─── Subcategory Detail ───────────────────────────────────────────────────────
+// ─── Subcategory Detail — 6 widget, layout 2 colonne ─────────────────────────
 
-function SubcategoryDetail({ macroLabel, itemLabel, checklist, onToggleCheck, onBack, onOpenChat, onUpload, pushToast, documents }: {
-  macroLabel: string; itemLabel: string;
+// Mock data per i nuovi widget
+const NBA_BY_MACRO: Record<string, { icon: string; text: string; action: string }[]> = {
+  casa: [
+    { icon: '📋', text: 'Rinnovo contratto in scadenza il 31 Dic', action: 'Genera bozza di rinnovo' },
+    { icon: '⚠️', text: 'Clausola rescissione potenzialmente nulla', action: 'Analizza clausola' },
+    { icon: '📅', text: 'Registrazione contratto non completata', action: 'Guida alla registrazione' },
+  ],
+  fisco: [
+    { icon: '📋', text: '730 da presentare entro il 30 Settembre', action: 'Prepara documentazione' },
+    { icon: '💰', text: 'Possibile detrazione non sfruttata — bonus ristrutturazione', action: 'Verifica detrazioni' },
+    { icon: '⚠️', text: 'Scadenza F24 il 16 Maggio', action: 'Calcola importo' },
+  ],
+  lavoro: [
+    { icon: '📋', text: 'Lettera di contestazione ricevuta — risposta entro 5gg', action: 'Prepara risposta' },
+    { icon: '⚠️', text: 'Ore straordinari non retribuiti negli ultimi 3 mesi', action: 'Calcola credito' },
+    { icon: '📅', text: 'Scadenza periodo di prova il 15 Maggio', action: 'Verifica posizione' },
+  ],
+  privacy: [
+    { icon: '🔒', text: 'Registro trattamenti non aggiornato da 6 mesi', action: 'Aggiorna registro' },
+    { icon: '⚠️', text: 'Cookie banner non conforme EDPB 05/2020', action: 'Verifica conformità' },
+    { icon: '📋', text: 'DPA con Google Analytics non firmato', action: 'Genera DPA' },
+  ],
+  default: [
+    { icon: '📋', text: 'Documenti caricati analizzati — 2 criticità trovate', action: 'Vedi analisi' },
+    { icon: '⚠️', text: 'Scadenza normativa entro 30 giorni', action: 'Verifica scadenza' },
+    { icon: '💡', text: 'Aggiornamento normativo rilevante per questa area', action: 'Leggi aggiornamento' },
+  ],
+};
+
+const CRONOLOGIA_BY_MACRO: Record<string, { text: string; date: string; isVoice: boolean }[]> = {
+  casa: [
+    { text: 'Quando scade il mio contratto di locazione 4+4?', date: '21 Apr', isVoice: false },
+    { text: 'Come contestare un aumento di canone non concordato?', date: '18 Apr', isVoice: true },
+    { text: 'Quali documenti servono per registrare il contratto?', date: '12 Apr', isVoice: false },
+  ],
+  fisco: [
+    { text: 'Quali spese posso detrarre nel 730?', date: '20 Apr', isVoice: false },
+    { text: 'Cos\'è il bonus 110% e come funziona per il condominio?', date: '15 Apr', isVoice: true },
+  ],
+  lavoro: [
+    { text: 'Cosa fare in caso di licenziamento senza giusta causa?', date: '19 Apr', isVoice: false },
+    { text: 'Come si calcola il TFR?', date: '16 Apr', isVoice: false },
+    { text: 'Posso rifiutare il trasferimento in altra sede?', date: '10 Apr', isVoice: true },
+  ],
+  privacy: [
+    { text: 'Come fare una DPIA per il nuovo CRM?', date: '22 Apr', isVoice: false },
+    { text: 'Quando è obbligatorio nominare il DPO?', date: '19 Apr', isVoice: false },
+  ],
+  default: [
+    { text: 'Quali sono le norme di riferimento per questa area?', date: '21 Apr', isVoice: false },
+    { text: 'Come posso migliorare il mio score di compliance?', date: '18 Apr', isVoice: true },
+  ],
+};
+
+// Sottocategorie con marketplace professionisti (avvocato/commercialista)
+const SUBCATEGORY_HAS_MARKETPLACE: Record<string, boolean> = {
+  casa: true, famiglia: true, lavoro: true, consumatore: true,
+  fisco: true, salute: true, veicoli: true, pa: true,
+  // impresa
+  societario: true, d231: true, contratti: true, appalti: true,
+  fiscale: true, aml: true, antitrust: true, crisi: true,
+};
+
+const PROF_BY_MACRO: Record<string, { initial: string; name: string; spec: string; city: string; rating: number; reviews: number }> = {
+  casa:       { initial: 'M', name: 'M. R***', spec: 'Avvocato — Diritto immobiliare', city: 'Roma', rating: 4.8, reviews: 34 },
+  famiglia:   { initial: 'L', name: 'L. B***', spec: 'Avvocato — Diritto di famiglia', city: 'Milano', rating: 4.6, reviews: 22 },
+  lavoro:     { initial: 'G', name: 'G. F***', spec: 'Avvocato — Diritto del lavoro', city: 'Torino', rating: 4.9, reviews: 57 },
+  fisco:      { initial: 'A', name: 'A. M***', spec: 'Commercialista', city: 'Roma', rating: 4.7, reviews: 41 },
+  consumatore:{ initial: 'S', name: 'S. V***', spec: 'Avvocato — Diritto del consumatore', city: 'Milano', rating: 4.5, reviews: 18 },
+  veicoli:    { initial: 'P', name: 'P. C***', spec: 'Avvocato — Ricorsi e sanzioni', city: 'Napoli', rating: 4.3, reviews: 29 },
+  salute:     { initial: 'R', name: 'R. T***', spec: 'Avvocato — Malasanità e previdenza', city: 'Bologna', rating: 4.7, reviews: 16 },
+  pa:         { initial: 'E', name: 'E. D***', spec: 'Avvocato — Diritto amministrativo', city: 'Roma', rating: 4.8, reviews: 38 },
+  fiscale:    { initial: 'C', name: 'C. B***', spec: 'Commercialista — Fiscalità d\'impresa', city: 'Milano', rating: 4.9, reviews: 62 },
+  contratti:  { initial: 'N', name: 'N. R***', spec: 'Avvocato — Contrattualistica', city: 'Roma', rating: 4.6, reviews: 25 },
+  d231:       { initial: 'F', name: 'F. M***', spec: 'Avvocato — D.Lgs 231/2001', city: 'Milano', rating: 4.8, reviews: 19 },
+  appalti:    { initial: 'V', name: 'V. S***', spec: 'Avvocato — Appalti pubblici', city: 'Roma', rating: 4.5, reviews: 14 },
+};
+
+type ProfiloState = 'empty' | 'pending' | 'active';
+
+function StarRating({ rating, count }: { rating: number; count: number }) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span key={i} style={{ fontSize: 12, color: i < full ? '#D4A017' : (i === full && half ? '#D4A017' : 'var(--paper-line)') }}>
+          {i < full ? '★' : (i === full && half ? '⯨' : '☆')}
+        </span>
+      ))}
+      <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', marginLeft: 2 }}>
+        {rating.toFixed(1)} · {count} rec.
+      </span>
+    </div>
+  );
+}
+
+function SubcategoryDetail({ macroKey, macroLabel, itemLabel, checklist, onToggleCheck, onBack, onOpenChat, onUpload, pushToast, documents, isPro }: {
+  macroKey: string; macroLabel: string; itemLabel: string;
   checklist: CheckItem[]; onToggleCheck: (i: number) => void;
   onBack: () => void; onOpenChat: (ctx?: string) => void;
   onUpload: () => void; pushToast: (m: string) => void;
-  documents: DocItem[];
+  documents: DocItem[]; isPro?: boolean;
 }) {
   const doneCount = checklist.filter(c => c.done).length;
+  const subScore = Math.round(55 + (doneCount / Math.max(checklist.length, 1)) * 45);
+  const hasMarketplace = SUBCATEGORY_HAS_MARKETPLACE[macroKey] ?? false;
+  const profData = PROF_BY_MACRO[macroKey];
+  const nbaActions = NBA_BY_MACRO[macroKey] || NBA_BY_MACRO.default;
+  const cronologia = CRONOLOGIA_BY_MACRO[macroKey] || CRONOLOGIA_BY_MACRO.default;
+  const [profiloState, setProfiloState] = useState<ProfiloState>('empty');
+
+  // Analisi AI — appare dopo il primo documento
+  const hasAnalysis = documents.length > 0;
+  const lastDoc = documents[0];
 
   return (
-    <div style={{ padding: '24px 28px 80px', maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: '20px 24px 16px', maxWidth: 1280, margin: '0 auto' }}>
+
+      {/* Breadcrumb */}
       <button onClick={onBack} style={{
         background: 'transparent', border: 'none', cursor: 'pointer',
-        fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '0.14em',
-        color: 'var(--ink-4)', textTransform: 'uppercase', padding: 0, marginBottom: 14,
+        fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.14em',
+        color: 'var(--ink-4)', textTransform: 'uppercase', padding: 0, marginBottom: 12,
         display: 'inline-flex', alignItems: 'center', gap: 6,
       }}>
-        <span>{macroLabel}</span> <span style={{ color: 'var(--ink-5)' }}>›</span> <span style={{ color: 'var(--ink-2)' }}>{itemLabel}</span>
+        <span>{macroLabel}</span>
+        <span style={{ color: 'var(--ink-5)' }}>›</span>
+        <span style={{ color: 'var(--ink-2)' }}>{itemLabel}</span>
       </button>
 
-      <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 20, marginBottom: 28, flexWrap: 'wrap' }}>
-        <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(26px, 4vw, 40px)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1, minWidth: 0 }}>{itemLabel}</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '0.12em' }}>{doneCount}/{checklist.length} COMPLETATE</span>
+      {/* Title + progress */}
+      <header style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
+        <h1 style={{ fontFamily: 'var(--serif)', fontSize: 'clamp(24px, 3.5vw, 36px)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.1, minWidth: 0 }}>
+          {itemLabel}
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-3)', letterSpacing: '0.1em' }}>
+            {doneCount}/{checklist.length} COMPLETATE
+          </span>
           <div style={{ width: 80, height: 4, background: 'var(--paper-2)', borderRadius: 2, overflow: 'hidden' }}>
             <div style={{ width: checklist.length ? (doneCount / checklist.length) * 100 + '%' : '0%', height: '100%', background: 'var(--alloro)', transition: 'width 0.6s ease' }} />
           </div>
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 18 }}>
-        <WidgetCard title={`Documenti caricati (${documents.length})`} icon="doc"
-          action={<button onClick={onUpload} style={{ background: 'transparent', border: 'none', color: 'var(--vermiglio-ink)', fontFamily: 'var(--sans)', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>+ Carica</button>}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {documents.map((d, i) => (
-              <div key={i} style={{ padding: '10px 0', borderBottom: i < documents.length - 1 ? '1px solid var(--paper-line)' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 32, height: 40, borderRadius: 3, border: '1px solid var(--paper-line)', background: 'var(--paper-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 8.5, color: 'var(--ink-4)' }}>PDF</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 12.5, color: 'var(--ink-1)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.08em', marginTop: 2 }}>{d.date} · {d.size}</div>
-                  {d.tags && <div style={{ display: 'flex', gap: 5, marginTop: 5 }}>
-                    {d.tags.map(t => <span key={t} style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', background: 'var(--paper-2)', padding: '1px 5px', borderRadius: 2 }}>{t}</span>)}
-                  </div>}
-                </div>
-                <button style={{ background: 'transparent', border: '1px solid var(--paper-line)', borderRadius: 4, padding: '4px 10px', fontSize: 10.5, fontFamily: 'var(--sans)', color: 'var(--ink-3)', cursor: 'pointer' }}>Apri</button>
-              </div>
-            ))}
-          </div>
-          <button onClick={onUpload} style={{ width: '100%', marginTop: 12, padding: 10, border: '1px dashed var(--paper-line)', borderRadius: 6, background: 'transparent', color: 'var(--ink-3)', fontSize: 12, fontFamily: 'var(--sans)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <Icon name="paperclip" size={12} /> Carica nuovo documento
-          </button>
-        </WidgetCard>
+      {/* ── GRID 2 COLONNE ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, alignItems: 'start' }}>
 
-        <WidgetCard title="Scadenze estratte automaticamente (2)" icon="clock" accent="var(--vermiglio)">
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {[
-              { date: '31 Dic 2026', text: 'Rinnovo DPA AWS', src: 'contratto_aws_dpa.pdf' },
-              { date: '15 Giu 2026', text: 'Verifica SCC Google', src: 'scc_google_analytics.pdf' },
-            ].map((d, i) => (
-              <div key={i} style={{ padding: '10px 0', borderBottom: i < 1 ? '1px solid var(--paper-line)' : 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-                  <span style={{ fontSize: 13, color: 'var(--ink-1)' }}>{d.text}</span>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--vermiglio-ink)', letterSpacing: '0.08em' }}>{d.date}</span>
+        {/* ═══ COLONNA SINISTRA ═══ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* W1 — Documenti + Analisi AI */}
+          <WidgetCard
+            title={`Documenti caricati (${documents.length})`}
+            icon="doc"
+            action={
+              <button onClick={onUpload} style={{ background: 'transparent', border: 'none', color: 'var(--vermiglio-ink)', fontFamily: 'var(--sans)', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>
+                + Carica
+              </button>
+            }
+          >
+            {/* Lista documenti */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {documents.map((d, i) => (
+                <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid var(--paper-line)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 30, height: 38, borderRadius: 3, border: '1px solid var(--paper-line)', background: 'var(--paper-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 8, color: 'var(--ink-4)' }}>PDF</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-1)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.name}</div>
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', letterSpacing: '0.08em', marginTop: 2 }}>{d.date} · {d.size}</div>
+                    {d.tags && (
+                      <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                        {d.tags.map(t => (
+                          <span key={t} style={{ fontFamily: 'var(--mono)', fontSize: 8.5, color: 'var(--ink-4)', background: 'var(--paper-2)', padding: '1px 5px', borderRadius: 2 }}>{t}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <button style={{ background: 'transparent', border: '1px solid var(--paper-line)', borderRadius: 4, padding: '4px 9px', fontSize: 10.5, fontFamily: 'var(--sans)', color: 'var(--ink-3)', cursor: 'pointer', flexShrink: 0 }}>Apri</button>
                 </div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', marginTop: 4, fontStyle: 'italic' }}>estratto da {d.src}</div>
-              </div>
-            ))}
-          </div>
-        </WidgetCard>
-      </div>
+              ))}
+            </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 18 }}>
-        <WidgetCard title="Normativa di riferimento" icon="book">
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {MD_NORMATIVA.map((n, i) => (
-              <a key={i} href="#" onClick={(e) => { e.preventDefault(); pushToast('Apertura rif. normativo'); }} style={{
-                padding: '9px 0', borderBottom: i < MD_NORMATIVA.length - 1 ? '1px solid var(--paper-line)' : 'none',
-                display: 'flex', alignItems: 'center', gap: 8,
-                fontSize: 12.5, color: 'var(--ink-2)', textDecoration: 'none',
-              }}>
-                <span style={{ color: 'var(--vermiglio)' }}>→</span> {n.label}
-              </a>
-            ))}
-          </div>
-        </WidgetCard>
-
-        <WidgetCard title="Template e modelli" icon="download">
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {MD_TEMPLATES.map((t, i) => (
-              <div key={i} style={{ padding: '10px 0', borderBottom: i < MD_TEMPLATES.length - 1 ? '1px solid var(--paper-line)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: 'var(--ink-1)' }}>{t.name}</span>
-                <button onClick={() => pushToast(`Scaricato ${t.name}.${t.ext}`)} style={{ background: 'var(--paper-2)', border: 'none', padding: '4px 10px', borderRadius: 4, fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.08em', cursor: 'pointer', color: 'var(--ink-2)' }}>
-                  {t.ext} ↓
+            {/* Analisi AI — appare automaticamente dopo il primo documento */}
+            {hasAnalysis && (
+              <div style={{ marginTop: 14, padding: 14, background: 'var(--paper-tint)', borderRadius: 8, border: '1px solid var(--paper-line)', borderLeft: '3px solid var(--vermiglio)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ fontFamily: 'var(--serif)', fontSize: 14, color: 'var(--vermiglio)', fontStyle: 'italic' }}>§</span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.14em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
+                    Analisi AI · {lastDoc.name}
+                  </span>
+                </div>
+                {[
+                  { label: 'Clausole critiche', color: 'var(--vermiglio)', items: ['Art. 4 — Rescissione: termine 30gg non conforme L. 431/98', 'Art. 7 — Aggiornamento ISTAT: clausola vessatoria ex art. 1341 c.c.'] },
+                  { label: 'Rischi rilevati', color: '#D4A017', items: ['Mancata registrazione entro 30gg → sanzione €200-2.000', 'Deposito cauzionale superiore al limite legale (3 mensilità)'] },
+                  { label: 'Conformità normativa', color: 'var(--alloro)', items: ['Durata 4+4 anni: conforme L. 431/1998 art. 2', 'Canone concordato: verifica Accordo Territoriale applicabile'] },
+                ].map((section, si) => (
+                  <div key={si} style={{ marginBottom: si < 2 ? 10 : 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: section.color, display: 'inline-block', flexShrink: 0 }} />
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-3)', textTransform: 'uppercase', fontWeight: 600 }}>{section.label}</span>
+                    </div>
+                    {section.items.map((item, ii) => (
+                      <div key={ii} style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.4, paddingLeft: 12, marginBottom: 3, borderLeft: `1.5px solid ${section.color}33` }}>
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                <button
+                  onClick={() => onOpenChat(`Analisi approfondita di ${lastDoc.name}`)}
+                  style={{ marginTop: 12, width: '100%', padding: '8px 12px', border: '1px solid var(--paper-line)', borderRadius: 6, background: 'white', fontFamily: 'var(--sans)', fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
+                >
+                  <Icon name="chat" size={11} /> Approfondisci con Sofia AI
                 </button>
               </div>
-            ))}
-          </div>
-        </WidgetCard>
-      </div>
+            )}
 
-      <WidgetCard title={`Checklist operativa (${doneCount}/${checklist.length} completate)`} icon="check" accent="var(--alloro)">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-          {checklist.map((c, i) => (
-            <div key={i} onClick={() => onToggleCheck(i)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 4px', cursor: 'pointer', opacity: c.done ? 0.6 : 1, transition: 'opacity 0.2s' }}>
-              <span style={{
-                width: 18, height: 18, borderRadius: 4, flexShrink: 0,
-                border: `1.5px solid ${c.done ? 'var(--alloro)' : 'var(--ink-4)'}`,
-                background: c.done ? 'var(--alloro)' : 'transparent',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.15s ease',
-              }}>
-                {c.done && <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 8l3 3 7-7"/></svg>}
-              </span>
-              <span style={{ fontSize: 13, color: c.done ? 'var(--ink-4)' : 'var(--ink-1)', textDecoration: c.done ? 'line-through' : 'none' }}>{c.text}</span>
+            {/* Bottone carica */}
+            <button onClick={onUpload} style={{ width: '100%', marginTop: 10, padding: 9, border: '1px dashed var(--paper-line)', borderRadius: 6, background: 'transparent', color: 'var(--ink-3)', fontSize: 12, fontFamily: 'var(--sans)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Icon name="paperclip" size={11} /> Carica nuovo documento
+            </button>
+          </WidgetCard>
+
+          {/* W3 — Cronologia contestuale */}
+          <WidgetCard title={`Cronologia su ${itemLabel} (${cronologia.length})`} icon="clock">
+            {cronologia.length === 0 ? (
+              <p style={{ fontSize: 12, color: 'var(--ink-4)', fontStyle: 'italic', margin: 0 }}>
+                Nessuna conversazione ancora su questa sottocategoria.
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {cronologia.map((c, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onOpenChat(c.text)}
+                    style={{
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      padding: '9px 0', borderBottom: i < cronologia.length - 1 ? '1px solid var(--paper-line)' : 'none',
+                      display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
+                      transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.7'}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+                  >
+                    <span style={{ fontSize: 13, flexShrink: 0 }}>{c.isVoice ? '🎤' : '💬'}</span>
+                    <span style={{ flex: 1, fontSize: 12.5, color: 'var(--ink-1)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.text}
+                    </span>
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', flexShrink: 0 }}>{c.date}</span>
+                    <span style={{ color: 'var(--ink-4)', fontSize: 12, flexShrink: 0 }}>→</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </WidgetCard>
+
+          {/* W4 — Next Best Action */}
+          <WidgetCard title="Azioni suggerite" icon="bolt" accent="var(--ambra)">
+            <p style={{ fontSize: 11.5, color: 'var(--ink-3)', margin: '0 0 12px', lineHeight: 1.5, fontFamily: 'var(--sans)' }}>
+              Sofia AI ha analizzato i tuoi documenti e suggerisce:
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {nbaActions.map((a, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: '11px 14px', background: 'white',
+                    border: '1px solid var(--paper-line)', borderRadius: 8,
+                    display: 'flex', alignItems: 'center', gap: 12,
+                  }}
+                >
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>{a.icon}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-1)', lineHeight: 1.4, marginBottom: 4 }}>{a.text}</div>
+                    <button
+                      onClick={() => { onOpenChat(a.action); pushToast('Sofia AI: prompt pre-compilato'); }}
+                      style={{ background: 'transparent', border: 'none', fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--vermiglio-ink)', letterSpacing: '0.1em', cursor: 'pointer', padding: 0, textTransform: 'uppercase' }}
+                    >
+                      → {a.action}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </WidgetCard>
         </div>
-      </WidgetCard>
 
-      <button onClick={() => onOpenChat()} className="btn btn-primary" style={{ width: '100%', padding: 16, fontSize: 14, marginTop: 18 }}>
-        <Icon name="chat" size={14} /> Chiedi all&apos;AI su {itemLabel}
-        <span style={{ marginLeft: 'auto', opacity: 0.7 }}>→</span>
-      </button>
+        {/* ═══ COLONNA DESTRA ═══ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* W2 — Score sottocategoria + Checklist integrata */}
+          <WidgetCard title={`Score ${itemLabel}`} icon="graph" accent={subScore >= 80 ? 'var(--alloro)' : subScore >= 60 ? 'var(--ambra)' : 'var(--vermiglio)'}>
+            {/* Score circle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14 }}>
+              <ComplianceScoreCircle score={subScore} size={72} stroke={7} />
+              <div>
+                <div style={{ fontFamily: 'var(--serif)', fontSize: 40, letterSpacing: '-0.03em', lineHeight: 1 }}>
+                  {subScore}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--ink-4)', fontFamily: 'var(--sans)' }}>/100</div>
+                <Badge tone={subScore >= 80 ? 'ok' : subScore >= 60 ? 'warn' : 'accent'} style={{ marginTop: 4 }}>
+                  {subScore >= 80 ? 'Conforme' : subScore >= 60 ? 'In miglioramento' : 'Attenzione'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Voci che abbassano score */}
+            {doneCount < checklist.length && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Cosa abbassa il punteggio
+                </div>
+                {checklist.filter(c => !c.done).slice(0, 3).map((c, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--paper-line)' }}>
+                    <span style={{ color: 'var(--vermiglio)', fontSize: 10, flexShrink: 0 }}>−{Math.round(100 / checklist.length)}pt</span>
+                    <span style={{ fontSize: 11.5, color: 'var(--ink-2)' }}>{c.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Checklist integrata */}
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Checklist ({doneCount}/{checklist.length})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {checklist.map((c, i) => (
+                <div
+                  key={i}
+                  onClick={() => onToggleCheck(i)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer', opacity: c.done ? 0.55 : 1, transition: 'opacity 0.2s', borderBottom: i < checklist.length - 1 ? '1px solid var(--paper-line)' : 'none' }}
+                >
+                  <span style={{
+                    width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+                    border: `1.5px solid ${c.done ? 'var(--alloro)' : 'var(--ink-4)'}`,
+                    background: c.done ? 'var(--alloro)' : 'transparent',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}>
+                    {c.done && <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 8l3 3 7-7"/></svg>}
+                  </span>
+                  <span style={{ fontSize: 12, color: c.done ? 'var(--ink-4)' : 'var(--ink-1)', textDecoration: c.done ? 'line-through' : 'none', lineHeight: 1.3 }}>
+                    {c.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </WidgetCard>
+
+          {/* W5 — Professionista (4 stati) */}
+          {hasMarketplace && (
+            <WidgetCard title="Professionista" icon="users" accent="var(--alloro)">
+              {profiloState === 'active' ? (
+                /* Stato 3: Professionista collegato */
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--alloro)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 16, color: 'white', flexShrink: 0 }}>
+                      {profData?.initial || 'M'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-1)', fontFamily: 'var(--sans)' }}>Marco Rossi</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>{profData?.spec}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 10, padding: '8px 10px', background: 'var(--paper-tint)', borderRadius: 6, fontFamily: 'var(--sans)' }}>
+                    Ultimo aggiornamento fascicolo: <strong>oggi</strong>
+                  </div>
+                  <button
+                    onClick={() => pushToast('Workspace condiviso aperto')}
+                    className="btn btn-primary"
+                    style={{ width: '100%', fontSize: 12 }}
+                  >
+                    <Icon name="chat" size={11} /> Apri workspace condiviso
+                  </button>
+                  <button
+                    onClick={() => setProfiloState('empty')}
+                    style={{ width: '100%', marginTop: 6, padding: '7px 12px', border: '1px solid var(--paper-line)', borderRadius: 6, background: 'transparent', fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--ink-3)', cursor: 'pointer' }}
+                  >
+                    Consulta professionista esterno →
+                  </button>
+                </div>
+              ) : profiloState === 'pending' ? (
+                /* Stato 2: Richiesta inviata */
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--ink-3)', flexShrink: 0 }}>
+                      {profData?.initial || 'M'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12.5, color: 'var(--ink-1)', fontFamily: 'var(--sans)' }}>{profData?.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>{profData?.spec} · {profData?.city}</div>
+                    </div>
+                  </div>
+                  <div style={{ padding: '9px 12px', background: 'oklch(0.97 0.03 95)', border: '1px solid oklch(0.90 0.06 95)', borderRadius: 6, fontSize: 12, color: '#8B6800', fontFamily: 'var(--sans)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>⏳</span> Richiesta inviata · Risposta entro 72 ore
+                  </div>
+                  <p style={{ fontSize: 11, color: 'var(--ink-4)', margin: '0 0 8px', fontFamily: 'var(--sans)' }}>
+                    Se non risponde entro 72h riceverai rimborso automatico.
+                  </p>
+                  <button
+                    onClick={() => { setProfiloState('active'); pushToast('Professionista collegato al fascicolo!'); }}
+                    style={{ width: '100%', padding: '7px', border: '1px solid var(--paper-line)', borderRadius: 6, background: 'transparent', fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--ink-3)', cursor: 'pointer' }}
+                  >
+                    Simula risposta accettata (demo) →
+                  </button>
+                </div>
+              ) : (
+                /* Stato 1: Vuoto — mostra marketplace */
+                profData ? (
+                  <div>
+                    <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 12px', lineHeight: 1.5, fontFamily: 'var(--sans)' }}>
+                      Professionista suggerito per <em>{itemLabel}</em>:
+                    </p>
+                    <div style={{ padding: '12px 14px', background: 'white', border: '1px solid var(--paper-line)', borderRadius: 8, marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 16, color: 'var(--ink-3)', flexShrink: 0, filter: 'blur(2px)' }}>
+                          {profData.initial}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-1)', fontFamily: 'var(--sans)' }}>{profData.name}</div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>{profData.spec}</div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>{profData.city}</div>
+                        </div>
+                      </div>
+                      {profData.reviews > 0 && <StarRating rating={profData.rating} count={profData.reviews} />}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setProfiloState('pending');
+                        pushToast('Richiesta inviata a ' + profData.name + ' · €9 addebitati');
+                      }}
+                      className="btn btn-primary"
+                      style={{ width: '100%', fontSize: 12 }}
+                    >
+                      Invia richiesta — €9
+                    </button>
+                    <p style={{ fontSize: 10.5, color: 'var(--ink-4)', margin: '6px 0 0', textAlign: 'center', fontFamily: 'var(--sans)', fontStyle: 'italic' }}>
+                      Nome e contatti sbloccati dopo la risposta del professionista
+                    </p>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 12, color: 'var(--ink-4)', margin: 0, fontStyle: 'italic', fontFamily: 'var(--sans)' }}>
+                    Nessun professionista disponibile in questa area al momento.
+                  </p>
+                )
+              )}
+            </WidgetCard>
+          )}
+
+          {/* W6 — Normativa PDF + Template PRO */}
+          <WidgetCard title="Normativa & Template" icon="book">
+            {/* Normativa come PDF */}
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Normativa di riferimento
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 14 }}>
+              {MD_NORMATIVA.map((n, i) => (
+                <button
+                  key={i}
+                  onClick={() => pushToast('Download PDF: ' + n.label)}
+                  style={{
+                    padding: '8px 0', borderBottom: i < MD_NORMATIVA.length - 1 ? '1px solid var(--paper-line)' : 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                    background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    transition: 'opacity 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.7'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-2)' }}>
+                    <span style={{ color: 'var(--vermiglio)' }}>§</span> {n.label}
+                  </span>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', background: 'var(--paper-2)', padding: '2px 5px', borderRadius: 2, flexShrink: 0 }}>PDF ↓</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Template — solo PRO */}
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Template e modelli
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {MD_TEMPLATES.map((t, i) => (
+                <div
+                  key={i}
+                  style={{
+                    padding: '8px 4px', borderBottom: i < MD_TEMPLATES.length - 1 ? '1px solid var(--paper-line)' : 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    opacity: isPro ? 1 : 0.6,
+                  }}
+                >
+                  <span style={{ fontSize: 12.5, color: 'var(--ink-1)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {!isPro && <span title="Solo PRO" style={{ fontSize: 11 }}>🔒</span>}
+                    {t.name}
+                  </span>
+                  {isPro ? (
+                    <button
+                      onClick={() => pushToast(`Scaricato ${t.name}.${t.ext}`)}
+                      style={{ background: 'var(--paper-2)', border: 'none', padding: '3px 9px', borderRadius: 3, fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.06em', cursor: 'pointer', color: 'var(--ink-2)' }}
+                    >
+                      {t.ext} ↓
+                    </button>
+                  ) : (
+                    <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', background: 'var(--paper-2)', padding: '2px 6px', borderRadius: 3 }}>PRO</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {!isPro && (
+              <div style={{ marginTop: 10, padding: '8px 10px', background: 'oklch(0.97 0.03 95)', borderRadius: 6, fontSize: 11, color: '#8B6800', fontFamily: 'var(--sans)', textAlign: 'center' }}>
+                Passa a PRO per scaricare i template →
+              </div>
+            )}
+          </WidgetCard>
+
+        </div>{/* fine colonna destra */}
+      </div>{/* fine grid */}
     </div>
   );
 }
@@ -966,6 +1362,7 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
   } else {
     content = (
       <SubcategoryDetail
+        macroKey={selection.macro}
         macroLabel={selection.macroLabel}
         itemLabel={selection.item}
         checklist={checklist}
@@ -975,14 +1372,28 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
         onUpload={() => setUploadOpen(true)}
         pushToast={pushToast}
         documents={documents}
+        isPro={false}
       />
     );
   }
 
+  // Contesto per la chat bar: sottocategoria > macro > null (home)
+  const chatBarContext = selection?.item || selection?.macro
+    ? `${selection?.macroLabel}${selection?.item ? ' / ' + selection.item : ''}`
+    : null;
+
   return (
     <>
       <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-        <main style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>{content}</main>
+        {/* Colonna centrale — scrollabile + chat bar fissa in fondo */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <main style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>{content}</main>
+          <FixedChatBar
+            context={chatBarContext}
+            onSend={(text) => openChat(text)}
+            onOpenChat={openChat}
+          />
+        </div>
         <RightPanel role={role} user={user} onNav={onNav} collapsed={rightCollapsed} onToggle={() => setRightCollapsed(c => !c)} />
       </div>
       {uploadOpen && <UploadDocModal onClose={() => setUploadOpen(false)} onConfirm={confirmUpload} pushToast={pushToast} />}
