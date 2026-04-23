@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Icon from "./Icon";
 import { Badge, WidgetCard, ComplianceScoreCircle, CountUp } from "./DashShared";
 import FixedChatBar from "./FixedChatBar";
+import ChatSlidePanel from "./ChatSlidePanel";
 
 const DashboardCustom = dynamic(() => import("./DashboardCustom"), { ssr: false });
 
@@ -775,630 +776,368 @@ function SubcategoryDetail({ macroKey, macroLabel, itemLabel, checklist, onToggl
             )}
 
             {/* Checklist integrata */}
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
-              Checklist ({doneCount}/{checklist.length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {checklist.map((c, i) => (
-                <div
-                  key={i}
-                  onClick={() => onToggleCheck(i)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer', opacity: c.done ? 0.55 : 1, transition: 'opacity 0.2s', borderBottom: i < checklist.length - 1 ? '1px solid var(--paper-line)' : 'none' }}
-                >
-                  <span style={{
-                    width: 16, height: 16, borderRadius: 3, flexShrink: 0,
-                    border: `1.5px solid ${c.done ? 'var(--alloro)' : 'var(--ink-4)'}`,
-                    background: c.done ? 'var(--alloro)' : 'transparent',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.15s ease',
-                  }}>
-                    {c.done && <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 8l3 3 7-7"/></svg>}
-                  </span>
-                  <span style={{ fontSize: 12, color: c.done ? 'var(--ink-4)' : 'var(--ink-1)', textDecoration: c.done ? 'line-through' : 'none', lineHeight: 1.3 }}>
-                    {c.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </WidgetCard>
+           ]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K]\��X�[�Έ	��L�[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�X\��[����N�
+�_O���X��\�
+�ۙP��[�K���X��\��[��JB��]���]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�H_O����X��\��X\
 
-          {/* W5 — Professionista (4 stati) */}
-          {hasMarketplace && (
-            <WidgetCard title="Professionista" icon="users" accent="var(--alloro)">
-              {profiloState === 'active' ? (
-                /* Stato 3: Professionista collegato */
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--alloro)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 16, color: 'white', flexShrink: 0 }}>
-                      {profData?.initial || 'M'}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-1)', fontFamily: 'var(--sans)' }}>Marco Rossi</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>{profData?.spec}</div>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: 'var(--ink-2)', lineHeight: 1.5, marginBottom: 10, padding: '8px 10px', background: 'var(--paper-tint)', borderRadius: 6, fontFamily: 'var(--sans)' }}>
-                    Ultimo aggiornamento fascicolo: <strong>oggi</strong>
-                  </div>
-                  <button
-                    onClick={() => pushToast('Workspace condiviso aperto')}
-                    className="btn btn-primary"
-                    style={{ width: '100%', fontSize: 12 }}
-                  >
-                    <Icon name="chat" size={11} /> Apri workspace condiviso
-                  </button>
-                  <button
-                    onClick={() => setProfiloState('empty')}
-                    style={{ width: '100%', marginTop: 6, padding: '7px 12px', border: '1px solid var(--paper-line)', borderRadius: 6, background: 'transparent', fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--ink-3)', cursor: 'pointer' }}
-                  >
-                    Consulta professionista esterno →
-                  </button>
-                </div>
-              ) : profiloState === 'pending' ? (
-                /* Stato 2: Richiesta inviata */
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 15, color: 'var(--ink-3)', flexShrink: 0 }}>
-                      {profData?.initial || 'M'}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 12.5, color: 'var(--ink-1)', fontFamily: 'var(--sans)' }}>{profData?.name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>{profData?.spec} · {profData?.city}</div>
-                    </div>
-                  </div>
-                  <div style={{ padding: '9px 12px', background: 'oklch(0.97 0.03 95)', border: '1px solid oklch(0.90 0.06 95)', borderRadius: 6, fontSize: 12, color: '#8B6800', fontFamily: 'var(--sans)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>⏳</span> Richiesta inviata · Risposta entro 72 ore
-                  </div>
-                  <p style={{ fontSize: 11, color: 'var(--ink-4)', margin: '0 0 8px', fontFamily: 'var(--sans)' }}>
-                    Se non risponde entro 72h riceverai rimborso automatico.
-                  </p>
-                  <button
-                    onClick={() => { setProfiloState('active'); pushToast('Professionista collegato al fascicolo!'); }}
-                    style={{ width: '100%', padding: '7px', border: '1px solid var(--paper-line)', borderRadius: 6, background: 'transparent', fontFamily: 'var(--sans)', fontSize: 11, color: 'var(--ink-3)', cursor: 'pointer' }}
-                  >
-                    Simula risposta accettata (demo) →
-                  </button>
-                </div>
-              ) : (
-                /* Stato 1: Vuoto — mostra marketplace */
-                profData ? (
-                  <div>
-                    <p style={{ fontSize: 12, color: 'var(--ink-3)', margin: '0 0 12px', lineHeight: 1.5, fontFamily: 'var(--sans)' }}>
-                      Professionista suggerito per <em>{itemLabel}</em>:
-                    </p>
-                    <div style={{ padding: '12px 14px', background: 'white', border: '1px solid var(--paper-line)', borderRadius: 8, marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 16, color: 'var(--ink-3)', flexShrink: 0, filter: 'blur(2px)' }}>
-                          {profData.initial}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-1)', fontFamily: 'var(--sans)' }}>{profData.name}</div>
-                          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>{profData.spec}</div>
-                          <div style={{ fontSize: 11, color: 'var(--ink-4)', fontFamily: 'var(--mono)' }}>{profData.city}</div>
-                        </div>
-                      </div>
-                      {profData.reviews > 0 && <StarRating rating={profData.rating} count={profData.reviews} />}
-                    </div>
-                    <button
-                      onClick={() => {
-                        setProfiloState('pending');
-                        pushToast('Richiesta inviata a ' + profData.name + ' · €9 addebitati');
-                      }}
-                      className="btn btn-primary"
-                      style={{ width: '100%', fontSize: 12 }}
-                    >
-                      Invia richiesta — €9
-                    </button>
-                    <p style={{ fontSize: 10.5, color: 'var(--ink-4)', margin: '6px 0 0', textAlign: 'center', fontFamily: 'var(--sans)', fontStyle: 'italic' }}>
-                      Nome e contatti sbloccati dopo la risposta del professionista
-                    </p>
-                  </div>
-                ) : (
-                  <p style={{ fontSize: 12, color: 'var(--ink-4)', margin: 0, fontStyle: 'italic', fontFamily: 'var(--sans)' }}>
-                    Nessun professionista disponibile in questa area al momento.
-                  </p>
-                )
-              )}
-            </WidgetCard>
-          )}
+�JHO�
+�]���^O^�_B�ې�X��^�
+HO�ە���P�X��J_B��[O^��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�LY[�Έ	�
+	��\��܎�	��[�\���X�]N�˙ۙH��MH�K�[��][ێ�	��X�]H�����ܙ\����N�H�X��\��[��HH�	�\��Y�\�K\\\�[[�JI��	ۛۙI�_B����[��[O^��Y�M�ZY��M��ܙ\��Y]\Έ��^��[�Έ��ܙ\��K�\��Y	�˙ۙH�	ݘ\�KX[ܛ�I��	ݘ\�KZ[��M
+I�X��X��ܛ�[��˙ۙH�	ݘ\�KX[ܛ�I��	��[��\�[�	��\�^N�	�[�[�KY�^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��[�\����[��][ێ�	�[�M\�X\�I��_O���˙ۙH	��ݙ��YH�L�ZY�H�L��Y]Л�H�M�M���[H��ۙH�����OH��]H�����U�YH���H�����S[�X�\H���[���]H�L���
+�MȋϏ�ݙϟB���[����[��[O^���۝�^�N�L���܎�˙ۙH�	ݘ\�KZ[��M
+I��	ݘ\�KZ[��LJI�^X�ܘ][ێ�˙ۙH�	�[�K]��Y�	��	ۛۙI�[�RZY��K��_O���˝^B���[����]���
+J_B��]�����Y�]�\�����ʈ�H8�%�ٙ\��[ۚ\�H
 
-          {/* W6 — Normativa PDF + Template PRO */}
-          <WidgetCard title="Normativa & Template" icon="book">
-            {/* Normativa come PDF */}
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
-              Normativa di riferimento
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 14 }}>
-              {MD_NORMATIVA.map((n, i) => (
-                <button
-                  key={i}
-                  onClick={() => pushToast('Download PDF: ' + n.label)}
-                  style={{
-                    padding: '8px 0', borderBottom: i < MD_NORMATIVA.length - 1 ? '1px solid var(--paper-line)' : 'none',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                    background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left',
-                    transition: 'opacity 0.15s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '0.7'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--ink-2)' }}>
-                    <span style={{ color: 'var(--vermiglio)' }}>§</span> {n.label}
-                  </span>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', background: 'var(--paper-2)', padding: '2px 5px', borderRadius: 2, flexShrink: 0 }}>PDF ↓</span>
-                </button>
-              ))}
-            </div>
+�]JH
+��B��\�X\��]X�H	��
+��Y�]�\�]OH��ٙ\��[ۚ\�H�X�ۏH�\�\�ȈX��[�H��\�KX[ܛ�H�����ٚ[��]HOOH	�X�]�I��
+�ʈ�]�Έ�ٙ\��[ۚ\�H��Y�]�
+�]���]��[O^��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�LX\��[����N�L_O��]��[O^���Y�
+ZY��
+�ܙ\��Y]\Έ	�L	I��X��ܛ�[��	ݘ\�KX[ܛ�I�\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��[�\���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N�M���܎�	��]I��^��[�Έ_O����ّ]O˚[�]X[	�I�B��]���]���]��[O^���۝�^�N�L��۝�ZY��
+���܎�	ݘ\�KZ[��LJI��۝�[Z[N�	ݘ\�K\�[��I�_O�X\�������O�]���]��[O^���۝�^�N�LK��܎�	ݘ\�KZ[��L�I��۝�[Z[N�	ݘ\�K\�[��I�_O���ّ]O˜�X�O�]����]����]���]��[O^���۝�^�N�LK�K��܎�	ݘ\�KZ[��L�I�[�RZY��K�KX\��[����N�LY[�Έ	�L	��X��ܛ�[��	ݘ\�K\\\�][�
+I��ܙ\��Y]\Έ
+��۝�[Z[N�	ݘ\�K\�[��I�_O��[[[�Y��[ܛ�[Y[���\��X��Έ��ۙϛ���O���ۙς��]����]ۂ�ې�X��^�
+HO�\��\�
+	��ܚ��X�H�ۙ]�\��\\���_B��\�Ә[YOH�����\�[X\�H���[O^���Y�	�L	I��۝�^�N�L�_B���X�ۈ�[YOH��]��^�O^�L_Hψ\�H�ܚ��X�H�ۙ]�\�؝]ۏ���]ۂ�ې�X��^�
+HO��]�ٚ[��]J	�[\I�_B��[O^���Y�	�L	I�X\��[���
+�Y[�Έ	��L�	��ܙ\��	�\��Y�\�K\\\�[[�JI��ܙ\��Y]\Έ
+��X��ܛ�[��	��[��\�[�	��۝�[Z[N�	ݘ\�K\�[��I��۝�^�N�LK��܎�	ݘ\�KZ[��L�I��\��܎�	��[�\��_B����ۜ�[H�ٙ\��[ۚ\�H\�\���8����؝]ۏ���]���
+H��ٚ[��]HOOH	�[�[����
+�ʈ�]����X�Y\�H[��X]H
+�]���]��[O^��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�LX\��[����N�L_O��]��[O^���Y�͋ZY��͋�ܙ\��Y]\Έ	�L	I��X��ܛ�[��	ݘ\�K\\\�L�I�\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��[�\���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N�MK��܎�	ݘ\�KZ[��L�I��^��[�Έ_O����ّ]O˚[�]X[	�I�B��]���]���]��[O^���۝�^�N�L��K��܎�	ݘ\�KZ[��LJI��۝�[Z[N�	ݘ\�K\�[��I�_O���ّ]O˛�[Y_O�]���]��[O^���۝�^�N�LK��܎�	ݘ\�KZ[��L�I��۝�[Z[N�	ݘ\�K\�[��I�_O���ّ]O˜�X�H0����ّ]O˘�]_O�]����]����]���]��[O^��Y[�Έ	�\L�	��X��ܛ�[��	����
+�M���MJI��ܙ\��	�\��Y���
+�L�
+�MJI��ܙ\��Y]\Έ
+��۝�^�N�L���܎�	����	��۝�[Z[N�	ݘ\�K\�[��I�X\��[����N�L\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�
+�_O���[�������[���X�Y\�H[��X]H0���\���H[���
+̈ܙB��]����[O^���۝�^�N�LK��܎�	ݘ\�KZ[��M
+I�X\��[��	�	��۝�[Z[N�	ݘ\�K\�[��I�_O���H�ۈ�\�ۙH[���
+̚�X�]�\�ZH�[X�ܜ��]]�X]X�˂�����]ۂ�ې�X��^�
+HO���]�ٚ[��]J	�X�]�I�N�\��\�
+	��ٙ\��[ۚ\�H��Y�]�[�\��X���I�N�_B��[O^���Y�	�L	I�Y[�Έ	��	��ܙ\��	�\��Y�\�K\\\�[[�JI��ܙ\��Y]\Έ
+��X��ܛ�[��	��[��\�[�	��۝�[Z[N�	ݘ\�K\�[��I��۝�^�N�LK��܎�	ݘ\�KZ[��L�I��\��܎�	��[�\��_B����[][H�\���HX��]]H
+[[�H8����؝]ۏ���]���
+H�
+�ʈ�]�N��[��8�%[���HX\��]X�H
+��ّ]H�
+�]����[O^���۝�^�N�L���܎�	ݘ\�KZ[��L�I�X\��[��	�L�	�[�RZY��K�K�۝�[Z[N�	ݘ\�K\�[��I�_O���ٙ\��[ۚ\�H�Y��\�]�\�[O��][SX�[O�[O������]��[O^��Y[�Έ	�L�M	��X��ܛ�[��	��]I��ܙ\��	�\��Y�\�K\\\�[[�JI��ܙ\��Y]\ΈX\��[����N�L_O��]��[O^��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�LX\��[����N�
+�_O��]��[O^���Y�͋ZY��͋�ܙ\��Y]\Έ	�L	I��X��ܛ�[��	ݘ\�K\\\�L�I�\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��[�\���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N�M���܎�	ݘ\�KZ[��L�I��^��[�Έ�[\��	؛\��
+I�_O����ّ]K�[�]X[B��]���]���]��[O^���۝�^�N�L��۝�ZY��
+���܎�	ݘ\�KZ[��LJI��۝�[Z[N�	ݘ\�K\�[��I�_O���ّ]K��[Y_O�]���]��[O^���۝�^�N�LK��܎�	ݘ\�KZ[��L�I��۝�[Z[N�	ݘ\�K\�[��I�_O���ّ]K��X�O�]���]��[O^���۝�^�N�LK��܎�	ݘ\�KZ[��M
+I��۝�[Z[N�	ݘ\�K[[ۛ�I�_O���ّ]K��]_O�]����]����]�����ّ]K��]�Y]���	���\��][���][��^��ّ]K��][��H��[�^��ّ]K��]�Y]��HϟB��]����]ۂ�ې�X��^�
+HO��]�ٚ[��]J	�[�[���N\��\�
+	ԚX�Y\�H[��X]HH	�
+��ّ]K��[YH
+�	�0��8��HYX�]]I�N_B��\�Ә[YOH�����\�[X\�H���[O^���Y�	�L	I��۝�^�N�L�_B���[��XH�X�Y\�H8�%8��B�؝]ۏ���[O^���۝�^�N�L�K��܎�	ݘ\�KZ[��M
+I�X\��[��	͜	�^[Yێ�	��[�\���۝�[Z[N�	ݘ\�K\�[��I��۝�[N�	�][X��_O����YHH�۝]H؛���]H��H�\���H[�ٙ\��[ۚ\�B�����]���
+H�
+��[O^���۝�^�N�L���܎�	ݘ\�KZ[��M
+I�X\��[���۝�[N�	�][X���۝�[Z[N�	ݘ\�K\�[��I�_O���\��[��ٙ\��[ۚ\�H\�ۚX�[H[�]Y\�H\�XH[[�Y[�˂����
+B�
+_B���Y�]�\���
+_B���ʈ͈8�%�ܛX]]�H�
+�[\]H��
+��B��Y�]�\�]OH��ܛX]]�H	�[\]H�X�ۏH����ȏ���ʈ�ܛX]]�H��YH�
+��B�]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K]\��X�[�Έ	��L�[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�X\��[����N�
+�_O���ܛX]]�HH�Y�\�[Y[��]���]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[��X\��[����N�M_O���QӓԓPUU�K�X\
 
-            {/* Template — solo PRO */}
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
-              Template e modelli
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {MD_TEMPLATES.map((t, i) => (
-                <div
-                  key={i}
-                  style={{
-                    padding: '8px 4px', borderBottom: i < MD_TEMPLATES.length - 1 ? '1px solid var(--paper-line)' : 'none',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    opacity: isPro ? 1 : 0.6,
-                  }}
-                >
-                  <span style={{ fontSize: 12.5, color: 'var(--ink-1)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {!isPro && <span title="Solo PRO" style={{ fontSize: 11 }}>🔒</span>}
-                    {t.name}
-                  </span>
-                  {isPro ? (
-                    <button
-                      onClick={() => pushToast(`Scaricato ${t.name}.${t.ext}`)}
-                      style={{ background: 'var(--paper-2)', border: 'none', padding: '3px 9px', borderRadius: 3, fontFamily: 'var(--mono)', fontSize: 9.5, letterSpacing: '0.06em', cursor: 'pointer', color: 'var(--ink-2)' }}
-                    >
-                      {t.ext} ↓
-                    </button>
-                  ) : (
-                    <span style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', background: 'var(--paper-2)', padding: '2px 6px', borderRadius: 3 }}>PRO</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            {!isPro && (
-              <div style={{ marginTop: 10, padding: '8px 10px', background: 'oklch(0.97 0.03 95)', borderRadius: 6, fontSize: 11, color: '#8B6800', fontFamily: 'var(--sans)', textAlign: 'center' }}>
-                Passa a PRO per scaricare i template →
-              </div>
-            )}
-          </WidgetCard>
+�JHO�
+��]ۂ��^O^�_B�ې�X��^�
+HO�\��\�
+	��ۛ�Y��	�
+���X�[
+_B��[O^�Y[�Έ	�	��ܙ\����N�HQӓԓPUU�K�[��HH�	�\��Y�\�K\\\�[[�JI��	ۛۙI��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��X�KX�]�Y[���\���X��ܛ�[��	��[��\�[�	��ܙ\��	ۛۙI��\��܎�	��[�\��^[Yێ�	�Y�	���[��][ێ�	��X�]H�M\���_B�ۓ[�\�Q[�\�^�HO�
+K��\��[�\��]\�S[[Y[�
+K��[K��X�]HH	����B�ۓ[�\�SX]�O^�HO�
+K��\��[�\��]\�S[[Y[�
+K��[K��X�]HH	�I�B����[��[O^��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�
+��۝�^�N�L���܎�	ݘ\�KZ[��L�I�_O���[��[O^����܎�	ݘ\�K]�\�ZY�[�I�_O�����[��ۋ�X�[B���[����[��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K��܎�	ݘ\�KZ[��M
+I��X��ܛ�[��	ݘ\�K\\\�L�I�Y[�Έ	̜
+\	��ܙ\��Y]\Έ��^��[�Έ_O��8�����[���؝]ۏ��
+J_B��]�����ʈ[\]H8�%�����
+��B�]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K]\��X�[�Έ	��L�[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�X\��[����N�
+�_O��[\]HH[�[B��]���]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�H_O���Q�STUT˛X\
 
-        </div>{/* fine colonna destra */}
-      </div>{/* fine grid */}
-    </div>
-  );
-}
+JHO�
+�]���^O^�_B��[O^�Y[�Έ	�
+	��ܙ\����N�HQ�STUT˛[��HH�	�\��Y�\�K\\\�[[�JI��	ۛۙI��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��X�KX�]�Y[����X�]N�\����H����_B����[��[O^���۝�^�N�L��K��܎�	ݘ\�KZ[��LJI�\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�
+�_O���Z\���	���[�]OH�����Ȉ�[O^���۝�^�N�LH_O�'�$���[��B����[Y_B���[����\����
+��]ۂ�ې�X��^�
+HO�\��\�
+��\�X�]�	���[Y_K���^X
+_B��[O^���X��ܛ�[��	ݘ\�K\\\�L�I��ܙ\��	ۛۙI�Y[�Έ	��\	��ܙ\��Y]\Έ��۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K�K]\��X�[�Έ	��
+�[I��\��܎�	��[�\����܎�	ݘ\�KZ[��L�I�_B�����^H8��؝]ۏ��
+H�
+��[��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K��܎�	ݘ\�KZ[��M
+I��X��ܛ�[��	ݘ\�K\\\�L�I�Y[�Έ	̜
+�	��ܙ\��Y]\Έ�_O�����[���
+_B��]���
+J_B��]����Z\���	��
+�]��[O^��X\��[���LY[�Έ	�L	��X��ܛ�[��	����
+�M���MJI��ܙ\��Y]\Έ
+��۝�^�N�LK��܎�	����	��۝�[Z[N�	ݘ\�K\�[��I�^[Yێ�	��[�\��_O��\��HH��\���\�X�\�HH[\]H8�����]���
+_B���Y�]�\�����]���ʈ�[�H��ۛ�H\��H
+��B��]���ʈ�[�HܚY
+��B��]���
+NB����8� 8� 8� �]��\X[��H^[�Y8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� ���[��[ۈ�]��\X[��Q^[�Y
+���N�ܛ�K�۝^ې���K��ܙK\��\�N���N���[����۝^���[��ې���N�
 
-// ─── Chat Compliance Expanded ─────────────────────────────────────────────────
+HO���Y���ܙN��[X�\��\��\��
+N���[��HO���YJH�ۜ��Y\��Y�\��]Y\��Y�\�HH\�T�]J���N�	�ZI�^��۝^��ۛ��۝HY\��\�\�H�H���۝^H����YH����\��\�H][O��	Н[ۙ�[ܛ�ˈ[����H����\��\�H][H���O��K�JN�ۜ��[�]�][�]HH\�T�]J	��N�ۜ���Y�]�[��]�Y�]�[�HH\�T�]J�YJN�ۜ��]�U\����]]�U\���HH\�T�]O]�U\���O��JN�ۜ��ܛ�\��Y�H\�T�Y�S]�[[Y[���[
+N�\�QY��X�
 
-function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToast }: {
-  role: string; context: string;
-  onClose: () => void; score: number; pushToast: (m: string) => void;
-}) {
-  const [messages, setMessages] = useState([
-    { role: 'ai', text: context ? `Sono pronta ad assisterla su "${context}". Come posso essere utile?` : 'Buongiorno. In cosa posso esserle utile oggi?' },
-  ]);
-  const [input, setInput] = useState('');
-  const [widgetOpen, setWidgetOpen] = useState(true);
-  const [liveTasks, setLiveTasks] = useState<LiveTask[]>([]);
-  const scrollerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
-  }, [messages]);
+HO�Y�
+�ܛ�\��Y���\��[�
+H�ܛ�\��Y���\��[���ܛ��H�ܛ�\��Y���\��[���ܛ�ZY�K�Y\��Y�\�JN��ۜ��[�H
 
-  const send = () => {
-    if (!input.trim()) return;
-    const q = input.trim();
-    setInput('');
-    setMessages(m => [...m, { role: 'user', text: q }]);
-    setTimeout(() => {
-      setMessages(m => [...m, { role: 'ai', text: `Ho analizzato "${q}". In base al Suo profilo e al contesto, Le suggerisco di procedere per punti. Genero un task operativo.` }]);
-      const newTask: LiveTask = { id: 'nt-' + Date.now(), text: q.slice(0, 40), when: 'adesso', isNew: true };
-      setLiveTasks(t => [newTask, ...t]);
-      pushToast(`✓ Task aggiunto: ${newTask.text}`);
-      setTimeout(() => setLiveTasks(t => t.map(x => x.id === newTask.id ? { ...x, isNew: false } : x)), 5000);
-    }, 900);
-  };
+HO�Y�
+Z[�]��[J
+JH�]\���ۜ�HH[�]��[J
+N�][�]
+	��N�]Y\��Y�\�HO�ˋ��K���N�	�\�\��^�HWJN�][Y[�]
 
-  return (
-    <div style={{ display: 'flex', height: '100%', background: 'var(--paper)' }}>
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, borderRight: widgetOpen ? '1px solid var(--paper-line)' : 'none' }}>
-        <header style={{ padding: '16px 32px', borderBottom: '1px solid var(--paper-line)', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 13, padding: '4px 8px', borderRadius: 4, fontFamily: 'var(--sans)' }}>← Torna alla dashboard</button>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.14em', textTransform: 'uppercase' }}>Chat Compliance</div>
-            {context && <div style={{ fontSize: 13, fontWeight: 500, marginTop: 2, fontFamily: 'var(--sans)' }}>Contesto: {context}</div>}
-          </div>
-          <button onClick={() => setWidgetOpen(w => !w)} style={{ background: 'transparent', border: '1px solid var(--paper-line)', borderRadius: 4, padding: '6px 10px', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--sans)' }}>
-            {widgetOpen ? '☰ Nascondi' : '☰ Mostra'} pannello
-          </button>
-        </header>
 
-        <div ref={scrollerRef} style={{ flex: 1, overflow: 'auto', padding: '32px 40px' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto' }}>
-            {messages.map((m, i) => (
-              <div key={i} style={{ display: 'flex', gap: 14, marginBottom: 24, flexDirection: m.role === 'user' ? 'row-reverse' : 'row' }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                  background: m.role === 'user' ? 'var(--ink)' : 'var(--paper-tint)',
-                  color: m.role === 'user' ? 'var(--paper)' : 'var(--ink-2)',
-                  border: m.role === 'ai' ? '1px solid var(--paper-line)' : 'none',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--serif)', fontSize: 14, fontStyle: 'italic',
-                }}>{m.role === 'user' ? 'M' : '§'}</div>
-                <div style={{
-                  maxWidth: 540,
-                  background: m.role === 'user' ? 'var(--ink)' : 'white',
-                  color: m.role === 'user' ? 'var(--paper)' : 'var(--ink-1)',
-                  border: m.role === 'ai' ? '1px solid var(--paper-line)' : 'none',
-                  padding: '12px 16px', borderRadius: 10, fontSize: 13.5, lineHeight: 1.55, fontFamily: 'var(--sans)',
-                }}>{m.text}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+HO��]Y\��Y�\�HO�ˋ��K���N�	�ZI�^��[�[^��]���_H��[��\�H[�[��ٚ[�H[�۝\��H�Y��\�\���H���Y\�H\�[�K��[�\��[�\���\�]]�˘WJN�ۜ��]�\�Έ]�U\��H�Y�	۝I�
+�]K����
+K^�K��X�J
+
+K�[��	�Y\����\ә]Έ�YHN�]]�U\���O�ۙ]�\�����JN\��\�
+8�$�\��Y��][�Έ	ۙ]�\�˝^X
+N�][Y[�]
 
-        <div style={{ borderTop: '1px solid var(--paper-line)', padding: 20, background: 'white' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-            <button onClick={() => pushToast('Apri selezione file')} style={{ background: 'transparent', border: '1px solid var(--paper-line)', borderRadius: 8, padding: 10, cursor: 'pointer', color: 'var(--ink-3)' }}>
-              <Icon name="paperclip" size={14} />
-            </button>
-            <textarea value={input} onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Chieda qualcosa…" rows={1}
-              style={{ flex: 1, resize: 'none', padding: '12px 16px', border: '1px solid var(--paper-line)', borderRadius: 8, fontSize: 13.5, fontFamily: 'var(--sans)', background: 'var(--paper-tint)', outline: 'none' }}
-            />
-            <button onClick={send} className="btn btn-primary" disabled={!input.trim()}>
-              <Icon name="send" size={12} /> Invia
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {widgetOpen && (
-        <aside style={{ width: 320, flexShrink: 0, overflow: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16, background: 'var(--paper-tint)' }}>
-          <WidgetCard title="Score real-time" icon="graph">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <ComplianceScoreCircle score={score} size={68} stroke={6} />
-              <div>
-                <CountUp value={score} style={{ fontFamily: 'var(--serif)', fontSize: 36, letterSpacing: '-0.02em' }} />
-                <span style={{ color: 'var(--ink-4)', fontSize: 14 }}> /100</span>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', letterSpacing: '0.1em', textTransform: 'uppercase', marginTop: 2 }}>Aggiornato live</div>
-              </div>
-            </div>
-          </WidgetCard>
+HO��]]�U\���O��X\
+O��YOOH�]�\�˚Y�����\ә]Έ�[�HH�
+JK
+L
+NKL
+NN��]\��
+�]��[O^��\�^N�	ٛ^	�ZY��	�L	I��X��ܛ�[��	ݘ\�K\\\�I�_O��]��[O^���^�K\�^N�	ٛ^	��^\�X�[ێ�	���[[��Z[��Y��ܙ\��Y���Y�]�[��	�\��Y�\�K\\\�[[�JI��	ۛۙI�_O��XY\��[O^��Y[�Έ	�M�̜	��ܙ\����N�	�\��Y�\�K\\\�[[�JI�\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�M_O���]ۈې�X��^�ې���_H�[O^���X��ܛ�[��	��[��\�[�	��ܙ\��	ۛۙI��\��܎�	��[�\����܎�	ݘ\�KZ[��L�I��۝�^�N�L�Y[�Έ	�	��ܙ\��Y]\Έ
+�۝�[Z[N�	ݘ\�K\�[��I�_O���ܛ�H[H\���\�؝]ۏ��]��[O^���^�K^[Yێ�	��[�\��_O��]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L��܎�	ݘ\�KZ[��M
+I�]\��X�[�Έ	��M[I�^�[�ٛܛN�	�\\��\�I�_O��]��\X[��O�]�����۝^	��]��[O^���۝�^�N�L��۝�ZY��
+LX\��[�����۝�[Z[N�	ݘ\�K\�[��I�_O��۝\�Έ��۝^O�]��B��]����]ۈې�X��^�
+HO��]�Y�]�[��O�]�_H�[O^���X��ܛ�[��	��[��\�[�	��ܙ\��	�\��Y�\�K\\\�[[�JI��ܙ\��Y]\Έ
+Y[�Έ	͜L	��\��܎�	��[�\���۝�^�N�LK�۝�[Z[N�	ݘ\�K\�[��I�_O����Y�]�[��	��,�\��ۙI��	��,[���I�H[��[؝]ۏ���XY\����]��Y�^��ܛ�\��Y�H�[O^���^�Kݙ\���Έ	�]]��Y[�Έ	�̜
+	�_O��]��[O^��X^�Y�
+͌X\��[��	�]]��_O���Y\��Y�\˛X\
 
-          <WidgetCard title={`Task generati (${liveTasks.length})`} icon="plus">
-            {liveTasks.length === 0 ? (
-              <p style={{ color: 'var(--ink-4)', fontSize: 12, fontStyle: 'italic', margin: 0 }}>Nessun task generato ancora. Scriva una richiesta all&apos;AI.</p>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {liveTasks.map(t => (
-                  <div key={t.id} style={{ padding: '10px 12px', background: 'white', border: '1px solid var(--paper-line)', borderRadius: 6, animation: 'mdSlideIn 0.3s ease-out' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 500 }}>{t.text}</span>
-                      {t.isNew && <span style={{ fontFamily: 'var(--mono)', fontSize: 9, padding: '2px 6px', background: 'var(--vermiglio)', color: 'white', borderRadius: 3, animation: 'mdPulse 1s ease-in-out 2' }}>NUOVO</span>}
-                    </div>
-                    <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', marginTop: 4, letterSpacing: '0.08em' }}>Generato {t.when}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </WidgetCard>
+KJHO�
+�]��^O^�_H�[O^��\�^N�	ٛ^	��\�MX\��[����N���^\�X�[ێ�K���HOOH	�\�\���	ܛ��\�]�\��I��	ܛ���_O��]��[O^��Y��ZY����ܙ\��Y]\Έ	�L	I��^��[�Έ��X��ܛ�[��K���HOOH	�\�\���	ݘ\�KZ[��I��	ݘ\�K\\\�][�
+I����܎�K���HOOH	�\�\���	ݘ\�K\\\�I��	ݘ\�KZ[��L�I���ܙ\��K���HOOH	�ZI��	�\��Y�\�K\\\�[[�JI��	ۛۙI��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��[�\����۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N�M�۝�[N�	�][X���_O��K���HOOH	�\�\���	�I��	���O�]���]��[O^�X^�Y�
+M��X��ܛ�[��K���HOOH	�\�\���	ݘ\�KZ[��I��	��]I����܎�K���HOOH	�\�\���	ݘ\�K\\\�I��	ݘ\�KZ[��LJI���ܙ\��K���HOOH	�ZI��	�\��Y�\�K\\\�[[�JI��	ۛۙI��Y[�Έ	�L�M�	��ܙ\��Y]\ΈL�۝�^�N�LˍK[�RZY��K�MK�۝�[Z[N�	ݘ\�K\�[��I��_O��K�^O�]����]���
+J_B��]����]����]��[O^���ܙ\���	�\��Y�\�K\\\�[[�JI�Y[�Έ��X��ܛ�[��	��]I�_O��]��[O^��X^�Y�
+͌X\��[��	�]]��\�^N�	ٛ^	��\�L[Yے][\Έ	ٛ^Y[�	�_O���]ۈې�X��^�
+HO�\��\�
+	�\�H�[^�[ۙH�[I�_H�[O^���X��ܛ�[��	��[��\�[�	��ܙ\��	�\��Y�\�K\\\�[[�JI��ܙ\��Y]\ΈY[�ΈL�\��܎�	��[�\����܎�	ݘ\�KZ[��L�I�_O��X�ۈ�[YOH�\\��\��^�O^�MHς�؝]ۏ��^\�XH�[YO^�[�]Hې�[��O^�HO��][�]
+K�\��]��[YJ_B�ے�^Q�ۏ^�HO��Y�
+K��^HOOH	�[�\��	��YK��Y��^JH�K��]�[�Y�][
 
-          <WidgetCard title="Scadenze suggerite" icon="clock">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {MD_DEADLINES_BY_MACRO.privacy.map((d, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i === 0 ? '1px solid var(--paper-line)' : 'none' }}>
-                  <span style={{ fontSize: 12 }}>{d.text}</span>
-                  <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: d.urgent ? 'var(--vermiglio-ink)' : 'var(--ink-4)' }}>{d.date}</span>
-                </div>
-              ))}
-            </div>
-          </WidgetCard>
+N��[�
 
-          <WidgetCard title="Documenti referenziati" icon="doc">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {MD_DOCS.slice(0, 2).map((d, i) => (
-                <div key={i} style={{ fontSize: 11.5, color: 'var(--ink-2)', padding: '6px 0', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Icon name="doc" size={11} /> {d.name}
-                </div>
-              ))}
-            </div>
-          </WidgetCard>
-        </aside>
-      )}
-    </div>
-  );
-}
+N�H_B�X�Z�\�H��YYH]X[���x�)������^�_B��[O^���^�K�\�^�N�	ۛۙI�Y[�Έ	�L�M�	��ܙ\��	�\��Y�\�K\\\�[[�JI��ܙ\��Y]\Έ�۝�^�N�LˍK�۝�[Z[N�	ݘ\�K\�[��I��X��ܛ�[��	ݘ\�K\\\�][�
+I��][�N�	ۛۙI�_B�ς��]ۈې�X��^��[�H�\�Ә[YOH�����\�[X\�H�\�X�Y^�Z[�]��[J
+_O��X�ۈ�[YOH��[���^�O^�L�Hψ[��XB�؝]ۏ���]����]����]������Y�]�[�	��
+�\�YH�[O^���Y�̌�^��[�Έݙ\���Έ	�]]��Y[�Έ�\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�M��X��ܛ�[��	ݘ\�K\\\�][�
+I�_O���Y�]�\�]OH���ܙH�X[][YH�X�ۏH�ܘ\���]��[O^��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�M_O����\X[��T��ܙP�\��H��ܙO^���ܙ_H�^�O^͎H����O^͟Hς�]�����[�\�[YO^���ܙ_H�[O^���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N�͋]\��X�[�Έ	�L��[I�_Hς��[��[O^����܎�	ݘ\�KZ[��M
+I��۝�^�N�M_O��L��[���]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K��܎�	ݘ\�KZ[��M
+I�]\��X�[�Έ	��Y[I�^�[�ٛܛN�	�\\��\�I�X\��[����_O�Y��[ܛ�]�]�O�]����]����]�����Y�]�\�����Y�]�\�]O^�\���[�\�]H
+	�]�U\��˛[��JXHX�ۏH�\ȏ���]�U\��˛[��OOH�
+��[O^����܎�	ݘ\�KZ[��M
+I��۝�^�N�L��۝�[N�	�][X��X\��[��_O��\��[�\���[�\�]�[��ܘK��ܚ]�H[�H�X�Y\�H[	�\���RK����
+H�
+�]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�_O���]�U\��˛X\
+O�
+�]��^O^��YH�[O^��Y[�Έ	�LL�	��X��ܛ�[��	��]I��ܙ\��	�\��Y�\�K\\\�[[�JI��ܙ\��Y]\Έ
+�[�[X][ێ�	�Y�YR[����X\�K[�]	�_O��]��[O^��\�^N�	ٛ^	��\�Y�P�۝[��	��X�KX�]�Y[��[Yے][\Έ	ؘ\�[[�I��\�_O���[��[O^���۝�^�N�L��K�۝�ZY��
+L_O���^O��[�����\ә]�	���[��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�KY[�Έ	̜
+�	��X��ܛ�[��	ݘ\�K]�\�ZY�[�I���܎�	��]I��ܙ\��Y]\Έ�[�[X][ێ�	�Y[�H\�X\�KZ[�[�]��_O��SՓ���[��B��]���]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K�K��܎�	ݘ\�KZ[��M
+I�X\��[���
+]\��X�[�Έ	��[I�_O��[�\�]����[�O�]����]���
+J_B��]���
+_B���Y�]�\�����Y�]�\�]OH���Y[��H�Y��\�]H�X�ۏH����ȏ��]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�
+�_O���Q�PQS�T�ЖW�PPԓ˜�]�X�K�X\
 
-// ─── Upload Doc Modal ─────────────────────────────────────────────────────────
+JHO�
+�]��^O^�_H�[O^��\�^N�	ٛ^	��\�Y�P�۝[��	��X�KX�]�Y[��Y[�Έ	͜	��ܙ\����N�HOOH�	�\��Y�\�K\\\�[[�JI��	ۛۙI�_O���[��[O^���۝�^�N�L�_O���^O��[����[��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L��܎��\��[��	ݘ\�K]�\�ZY�[�Z[��I��	ݘ\�KZ[��M
+I�_O���]_O��[����]���
+J_B��]�����Y�]�\�����Y�]�\�]OH���[Y[�H�Y�\�[��X]H�X�ۏH��ȏ��]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�
+_O���Q���˜�X�J�K�X\
 
-function UploadDocModal({ onClose, onConfirm, pushToast }: { onClose: () => void; onConfirm: (name: string) => void; pushToast: (m: string) => void }) {
-  const [phase, setPhase] = useState<'select' | 'analyzing' | 'result'>('select');
-  const [fileName] = useState('contratto_aws_dpa.pdf');
+JHO�
+�]��^O^�_H�[O^���۝�^�N�LK�K��܎�	ݘ\�KZ[��L�I�Y[�Έ	͜	�\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�
+�_O��X�ۈ�[YOH��Ȉ�^�O^�L_Hψ���[Y_B��]���
+J_B��]�����Y�]�\����\�YO��
+_B��]���
+NB����8� 8� 8� \�Y��[�[8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� ���[��[ۈ\�Y��[�[
+�ې���Kې�ۙ�\�K\��\�N��ې���N�
 
-  const start = () => {
-    setPhase('analyzing');
-    setTimeout(() => setPhase('result'), 1400);
-  };
+HO���Y�ې�ۙ�\�N�
+�[YN���[��HO���Y�\��\��
+N���[��HO���YJH�ۜ��\�K�]\�WHH\�T�]O	��[X�	�	�[�[^�[���	ܙ\�[	ϊ	��[X�	�N�ۜ�ٚ[S�[YWHH\�T�]J	��۝�]��]���K���N��ۜ��\�H
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(19,17,15,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 40 }}>
-      <div style={{ background: 'var(--paper)', borderRadius: 14, width: 'min(560px, 100%)', padding: 36, boxShadow: 'var(--shadow-3)', position: 'relative' }}>
-        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
-          <Icon name="close" size={16} />
-        </button>
-        {phase === 'select' && (
-          <>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '0.14em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 8 }}>Carica documento</div>
-            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 28, margin: '0 0 14px', letterSpacing: '-0.02em' }}>L&apos;AI analizza e classifica automaticamente.</h2>
-            <div style={{ padding: 32, border: '2px dashed var(--paper-line)', borderRadius: 10, textAlign: 'center', background: 'white', marginTop: 16 }}>
-              <Icon name="paperclip" size={24} />
-              <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8 }}>Trascini un file qui o</div>
-              <button onClick={start} className="btn btn-primary" style={{ marginTop: 12 }}>Selezioni un file</button>
-            </div>
-          </>
-        )}
-        {phase === 'analyzing' && (
-          <div style={{ textAlign: 'center', padding: 30 }}>
-            <div style={{ width: 48, height: 48, margin: '0 auto 20px', border: '3px solid var(--paper-line)', borderTopColor: 'var(--vermiglio)', borderRadius: '50%', animation: 'mdSpin 0.8s linear infinite' }} />
-            <h3 style={{ fontFamily: 'var(--serif)', fontSize: 24, margin: '0 0 8px' }}>Analizzo documento…</h3>
-            <p style={{ color: 'var(--ink-3)', fontSize: 13, fontFamily: 'var(--sans)' }}>{fileName}</p>
-            <div style={{ height: 3, background: 'var(--paper-line)', borderRadius: 2, marginTop: 18, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: '60%', background: 'var(--vermiglio)', animation: 'mdProgress 1.4s ease-in-out' }} />
-            </div>
-          </div>
-        )}
-        {phase === 'result' && (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, color: 'var(--alloro)' }}>
-              <Icon name="check" size={16} />
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600 }}>Documento analizzato</div>
-            </div>
-            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 24, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>{fileName}</h2>
-            <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 8, fontSize: 12.5, fontFamily: 'var(--sans)' }}>
-              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Tipo</dt>
-              <dd style={{ margin: 0 }}>Data Processing Agreement</dd>
-              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Parti</dt>
-              <dd style={{ margin: 0 }}>Acme SRL ↔ AWS</dd>
-              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Scadenza</dt>
-              <dd style={{ margin: 0 }}><strong>31 Dic 2026</strong></dd>
-              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Categoria</dt>
-              <dd style={{ margin: 0 }}>Privacy & GDPR › Trasferimenti extra-UE</dd>
-            </dl>
-            <div style={{ marginTop: 18, padding: 14, background: 'var(--paper-tint)', borderRadius: 8, border: '1px solid var(--paper-line)' }}>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>Task generato</div>
-              <div style={{ fontSize: 13, fontFamily: 'var(--sans)' }}>☐ Rinnovo DPA AWS — 30 Nov 2026</div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-              <button onClick={onClose} className="btn btn-ghost" style={{ flex: 1 }}>Modifica</button>
-              <button onClick={() => { onConfirm(fileName); pushToast('📄 Documento classificato in Privacy & GDPR'); }} className="btn btn-primary" style={{ flex: 1 }}>Conferma</button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
+HO��]\�J	�[�[^�[���N�][Y[�]
 
-// ─── Right Panel ──────────────────────────────────────────────────────────────
 
-function RightPanel({ role, user, onNav, collapsed, onToggle }: {
-  role: string;
-  user?: Record<string, unknown> | null;
-  onNav?: (dest: string) => void;
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
-  const imp = user?.imp as Record<string, unknown> | undefined;
-  const planLabel =
-    role === 'impresa' ? ((imp?.dimensione as string) || 'media').toUpperCase()
-    : role === 'prof'  ? 'Piano Avvocato'
-    : 'Piano Gratuito';
+HO��]\�J	ܙ\�[	�KM
+NN��]\��
+�]��[O^����][ێ�	ٚ^Y	�[��]��X��ܛ�[��	ܙؘJNKM�MK�MJI��X�����[\��	؛\�
+�
+I�\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�Y�P�۝[��	��[�\���[�^�MLY[�Έ
+_O��]��[O^���X��ܛ�[��	ݘ\�K\\\�I��ܙ\��Y]\ΈM�Y�	�Z[�
+M�L	JI�Y[�Έ͋���Y�Έ	ݘ\�K\�Y��L�I���][ێ�	ܙ[]]�I�_O���]ۈې�X��^�ې���_H�[O^����][ێ�	�X���]I���M�Y��M�X��ܛ�[��	��[��\�[�	��ܙ\��	ۛۙI��\��܎�	��[�\����܎�	ݘ\�KZ[��L�I�_O��X�ۈ�[YOH����H��^�O^�M�Hς�؝]ۏ���\�HOOH	��[X�	�	��
+���]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L�K]\��X�[�Έ	��M[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�X\��[����N�_O��\�X�H��[Y[���]�����[O^���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N��X\��[��	�M	�]\��X�[�Έ	�L��[I�_O�	�\���RH[�[^��HH�\��Y�X�H]]�X]X�[Y[�K�����]��[O^��Y[�Έ̋�ܙ\��	̜\�Y�\�K\\\�[[�JI��ܙ\��Y]\ΈL^[Yێ�	��[�\���X��ܛ�[��	��]I�X\��[���M�_O��X�ۈ�[YOH�\\��\��^�O^̍Hς�]��[O^���۝�^�N�L���܎�	ݘ\�KZ[��L�I�X\��[���_O��\��[�H[��[H]ZH��]����]ۈې�X��^��\�H�\�Ә[YOH�����\�[X\�H��[O^��X\��[���L�_O��[^�[ۚH[��[O؝]ۏ���]���ς�
+_B��\�HOOH	�[�[^�[���	��
+�]��[O^��^[Yێ�	��[�\��Y[�Έ�_O��]��[O^���Y�
+ZY��
+X\��[��	�]]��	��ܙ\��	����Y�\�K\\\�[[�JI��ܙ\����܎�	ݘ\�K]�\�ZY�[�I��ܙ\��Y]\Έ	�L	I�[�[X][ێ�	�Y�[���[�X\�[��[�]I�_Hς���[O^���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N��X\��[��	�	�_O�[�[^�����[Y[���)��ς��[O^����܎�	ݘ\�KZ[��L�I��۝�^�N�L��۝�[Z[N�	ݘ\�K\�[��I�_O�ٚ[S�[Y_O���]��[O^��ZY����X��ܛ�[��	ݘ\�K\\\�[[�JI��ܙ\��Y]\Έ�X\��[���Nݙ\���Έ	�Y[��_O��]��[O^��ZY��	�L	I��Y�	͌	I��X��ܛ�[��	ݘ\�K]�\�ZY�[�I�[�[X][ێ�	�Y��ܙ\��K��X\�KZ[�[�]	�_Hς��]����]���
+_B��\�HOOH	ܙ\�[	�	��
+���]��[O^��\�^N�	ٛ^	�[Yے][\Έ	��[�\���\�LX\��[����N�
+���܎�	ݘ\�KX[ܛ�I�_O��X�ۈ�[YOH��X�Ȉ�^�O^�M�Hς�]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L�K]\��X�[�Έ	��M[I�^�[�ٛܛN�	�\\��\�I��۝�ZY��
+�_O���[Y[��[�[^��]��]����]�����[O^���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N��X\��[��	�M�	�]\��X�[�Έ	�L��[I�_O�ٚ[S�[Y_O�����[O^��X\��[��\�^N�	�ܚY	�ܚY[\]P��[[�Έ	�MY�������\��۝�^�N�L��K�۝�[Z[N�	ݘ\�K\�[��I�_O���[O^���۝�[Z[N�	ݘ\�K[[ۛ�I���܎�	ݘ\�KZ[��M
+I��۝�^�N�L�K]\��X�[�Έ	��Y[I�^�[�ٛܛN�	�\\��\�I�[Y۔�[��	��[�\��_O�\�����[O^��X\��[��_O�]H���\��[��YܙY[Y[�����[O^���۝�[Z[N�	ݘ\�K[[ۛ�I���܎�	ݘ\�KZ[��M
+I��۝�^�N�L�K]\��X�[�Έ	��Y[I�^�[�ٛܛN�	�\\��\�I�[Y۔�[��	��[�\��_O�\�O����[O^��X\��[��_O�X�YHԓ8��U������[O^���۝�[Z[N�	ݘ\�K[[ۛ�I���܎�	ݘ\�KZ[��M
+I��۝�^�N�L�K]\��X�[�Έ	��Y[I�^�[�ٛܛN�	�\\��\�I�[Y۔�[��	��[�\��_O���Y[��O����[O^��X\��[��_O���ۙό�HX�������ۙϏ����[O^���۝�[Z[N�	ݘ\�K[[ۛ�I���܎�	ݘ\�KZ[��M
+I��۝�^�N�L�K]\��X�[�Έ	��Y[I�^�[�ٛܛN�	�\\��\�I�[Y۔�[��	��[�\��_O��]Y�ܚXO����[O^��X\��[��_O��]�X�H	���8�.��\ٙ\�[Y[�H^�KUQO������]��[O^��X\��[���NY[�ΈM�X��ܛ�[��	ݘ\�K\\\�][�
+I��ܙ\��Y]\Έ�ܙ\��	�\��Y�\�K\\\�[[�JI�_O��]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L]\��X�[�Έ	��L�[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�X\��[����N�
+�_O�\���[�\�]��]���]��[O^���۝�^�N�L��۝�[Z[N�	ݘ\�K\�[��I�_O��$�[��ݛ�HU��8�%��݈����]����]���]��[O^��\�^N�	ٛ^	��\�LX\��[�����_O���]ۈې�X��^�ې���_H�\�Ә[YOH�����Y�����[O^���^�H_O�[�Y�X�O؝]ۏ���]ۈې�X��^�
+HO��ې�ۙ�\�J�[S�[YJN�\��\�
+	�'����[Y[���\��Y�X�]�[��]�X�H	����N�_H�\�Ә[YOH�����\�[X\�H��[O^���^�H_O��ۙ�\�XO؝]ۏ���]���ς�
+_B��]����]���
+NB����8� 8� 8� �Y�[�[8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� ���[��[ۈ�Y�[�[
+���K\�\�ۓ�]���\�Yە���HN���N���[��\�\�Έ�X�ܙ��[��[�ۛ�ۏ��[ۓ�]�Έ
+\����[��HO���Y��\�Y����X[�ە���N�
 
-  if (collapsed) {
-    return (
-      <aside style={{ width: 44, flexShrink: 0, borderLeft: '1px solid var(--paper-line)', background: 'var(--paper-tint)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 16, gap: 14 }}>
-        <button onClick={onToggle} title="Espandi pannello" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', padding: 6 }}>
-          <Icon name="arrow" size={14} />
-        </button>
-        <div style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>
-          {planLabel}
-        </div>
-      </aside>
-    );
-  }
+HO���YJH�ۜ�[\H\�\�˚[\\��X�ܙ��[��[�ۛ�ۏ�[�Y�[�Y�ۜ�[�X�[B���HOOH	�[\�\�I��
 
-  return (
-    <aside style={{ width: 260, flexShrink: 0, borderLeft: '1px solid var(--paper-line)', background: 'var(--paper-tint)', padding: 18, overflow: 'auto', position: 'relative' }}>
-      <button onClick={onToggle} title="Comprimi pannello" style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-4)', padding: 4, zIndex: 2 }}>
-        <Icon name="close" size={12} />
-      </button>
-      <WidgetCard title="Abbonamento">
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>Piano attuale</div>
-        <div style={{ fontFamily: 'var(--serif)', fontSize: 24, letterSpacing: '-0.02em', marginBottom: 10 }}>{planLabel}</div>
-        {role === 'impresa' && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>10–49 dipendenti · €79/mese</div>}
-        <button onClick={() => onNav?.('upgrade')} className="btn btn-accent" style={{ width: '100%', marginTop: 14 }}>
-          <Icon name="bolt" size={12} /> Upgrade piano
-        </button>
-      </WidgetCard>
+[\˙[Y[��[ۙH\���[��H	�YYXI�K��\\��\�J
+B����HOOH	��ى��	�X[��]����]��	�X[��ܘ]Z]���Y�
+��\�Y
+H�]\��
+�\�YH�[O^���Y�
 
-      {role === 'prof' && (
-        <div style={{ marginTop: 14 }}>
-          <WidgetCard title="Lead marketplace" icon="flame" accent="var(--vermiglio)">
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Nuovi oggi</div>
-            <div style={{ fontFamily: 'var(--serif)', fontSize: 32, margin: '4px 0 10px' }}>7</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {MD_LEADS.slice(0, 2).map(l => (
-                <div key={l.id} style={{ padding: 10, background: 'white', borderRadius: 6, border: '1px solid var(--paper-line)' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, fontFamily: 'var(--sans)' }}>{l.title}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.08em' }}>{l.city.toUpperCase()} · {l.budget} · {l.tier}</div>
-                  <button className="btn btn-primary" style={{ width: '100%', marginTop: 8, padding: '5px 8px', fontSize: 11 }}>Acquista</button>
-                </div>
-              ))}
-            </div>
-          </WidgetCard>
-        </div>
-      )}
+�^��[�Έ�ܙ\�Y��	�\��Y�\�K\\\�[[�JI��X��ܛ�[��	ݘ\�K\\\�][�
+I�\�^N�	ٛ^	��^\�X�[ێ�	���[[��[Yے][\Έ	��[�\��Y[����M��\�M_O���]ۈې�X��^�ە���_H]OH�\�[�H[��[Ȉ�[O^���X��ܛ�[��	��[��\�[�	��ܙ\��	ۛۙI��\��܎�	��[�\����܎�	ݘ\�KZ[��L�I�Y[�Έ
+�_O��X�ۈ�[YOH�\���Ȉ�^�O^�MHς�؝]ۏ��]��[O^��ܚ][��[�N�	ݙ\�X�[\�	��[�ٛܛN�	ܛ�]JNY�I��۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L]\��X�[�Έ	��M[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�_O���[�X�[B��]����\�YO��
+NB���]\��
+�\�YH�[O^���Y����^��[�Έ�ܙ\�Y��	�\��Y�\�K\\\�[[�JI��X��ܛ�[��	ݘ\�K\\\�][�
+I�Y[�ΈNݙ\���Έ	�]]����][ێ�	ܙ[]]�I�_O���]ۈې�X��^�ە���_H]OH���\�[ZH[��[Ȉ�[O^����][ێ�	�X���]I���L�Y��L�X��ܛ�[��	��[��\�[�	��ܙ\��	ۛۙI��\��܎�	��[�\����܎�	ݘ\�KZ[��M
+I�Y[�Έ
+�[�^��_O��X�ۈ�[YOH����H��^�O^�L�Hς�؝]ۏ���Y�]�\�]OH�X��ۘ[Y[�ȏ��]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L]\��X�[�Έ	��M[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�X\��[����N�
+�_O�X[��]X[O�]���]��[O^���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N��]\��X�[�Έ	�L��[I�X\��[����N�L_O��[�X�[O�]���ܛ�HOOH	�[\�\�I�	��]��[O^���۝�^�N�LK�K��܎�	ݘ\�KZ[��L�I��۝�[Z[N�	ݘ\�K\�[��I�_O�L8�$�H\[�[�H0��8��
+�K�Y\�O�]��B��]ۈې�X��^�
+HO�ۓ�]�ˊ	�\ܘYI�_H�\�Ә[YOH�����XX��[���[O^���Y�	�L	I�X\��[���M_O��X�ۈ�[YOH�����^�O^�L�Hψ\ܘYHX[�؝]ۏ����Y�]�\����ܛ�HOOH	��ى�	��
+�]��[O^��X\��[���M_O���Y�]�\�]OH�XYX\��]X�H�X�ۏH��[YH�X��[�H��\�K]�\�ZY�[�H���]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L]\��X�[�Έ	��L�[I���܎�	ݘ\�KZ[��M
+I�^�[�ٛܛN�	�\\��\�I�_O��[ݚH���O�]���]��[O^���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N�̋X\��[��	�L	�_O���]���]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�L_O���Q�PQ˜�X�J�K�X\
+O�
+�]��^O^��YH�[O^��Y[�ΈL�X��ܛ�[��	��]I��ܙ\��Y]\Έ
+��ܙ\��	�\��Y�\�K\\\�[[�JI�_O��]��[O^���۝�^�N�L��۝�ZY��
+LX\��[����N�
+�۝�[Z[N�	ݘ\�K\�[��I�_O���]_O�]���]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K�K��܎�	ݘ\�KZ[��M
+I�]\��X�[�Έ	��[I�_O����]K��\\��\�J
+_H0�����Y�]H0����Y\�O�]����]ۈ�\�Ә[YOH�����\�[X\�H��[O^���Y�	�L	I�X\��[���Y[�Έ	�\	��۝�^�N�LH_O�X�]Z\�O؝]ۏ���]���
+J_B��]�����Y�]�\����]���
+_B��ܛ�HOOH	��]Y[���	��
+�]��[O^��X\��[���M_O���Y�]�\�]OH�ZH�\��ۛ�HZ]]�ȈX�ۏH�\�\�ȈX��[�H��\�KX[ܛ�H����[O^���۝�^�N�L���܎�	ݘ\�KZ[��L�I�X\��[��	�L	�[�RZY��K�K�۝�[Z[N�	ݘ\�K\�[��I�_O�\��\�H��\\��K[��ٙ\��[ۚ\�H�\�Y�X�]�p�\��\�\�K�����]ۈې�X��^�
+HO�ۓ�]�ˊ	��ى�_H�\�Ә[YOH�����Y�����[O^���Y�	�L	I��۝�^�N�LK�H_O��ݘH�ٙ\��[ۚ\�O؝]ۏ����Y�]�\����]���
+_B��\�YO��
+NB����8� 8� 8� XZ[�\���\�
+�۝Z[�\�H8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� ��^ܝY�][�[��[ۈXZ[�\���\�
+���K\�\��[X�[ۋې�X��ۓ�]�۔X��XXܛ�X[�Έ�X[��[\�\�N��[\�\�HN�XZ[�\���\����H�ۜ����ܙK�]��ܙWHH\�T�]J
+͊N�ۜ���\��]�\�HH\�T�]O��[���[��[
+N�ۜ���ۙ�]K�]�ۙ�]WHH\�T�]J�[�JN�ۜ���]��]�]�HH\�T�]O��[���[��[
+N�ۜ���]�[��]�]�[�HH\�T�]J�[�JN�ۜ���][�]\���]�][�]\��HH\�T�]J	��N�ۜ�ܚY���\�Y�]�Y���\�YHH\�T�]J
 
-      {role === 'cittadino' && (
-        <div style={{ marginTop: 14 }}>
-          <WidgetCard title="Hai bisogno di aiuto?" icon="users" accent="var(--alloro)">
-            <p style={{ fontSize: 12, color: 'var(--ink-2)', margin: '0 0 10px', lineHeight: 1.5, fontFamily: 'var(--sans)' }}>Per casi complessi, un professionista verificato può assisterLa.</p>
-            <button onClick={() => onNav?.('prof')} className="btn btn-ghost" style={{ width: '100%', fontSize: 11.5 }}>Trova professionista</button>
-          </WidgetCard>
-        </div>
-      )}
-    </aside>
-  );
-}
+HO�\[و�[���OOH	�[�Y�[�Y	�	���[��˚[��\��YL�
+N�ۜ��\�Y�[��]\�Y�[�HH\�T�]J�[�JN�ۜ��\����]\���HH\�T�]JQ�T���ЖW�PPԓ�N�ۜ���X��\��]�X��\�HH\�T�]JQ��P��T��Q�US
+N�ۜ����[Y[���]��[Y[��HH\�T�]JQ����N�ۜ��\�[Y\�H\�T�Y��]\��\O\[و�][Y[�]��[��[
+N�\�QY��X�
 
-// ─── Main Dashboard (container) ───────────────────────────────────────────────
 
-export default function MainDashboard({ role, user, selection, onBack, onNav, onPickMacro, piano: _piano, impresa: _impresa }: MainDashboardProps) {
-  const [score, setScore] = useState(76);
-  const [toast, setToast] = useState<string | null>(null);
-  const [confetti, setConfetti] = useState(false);
-  const [chatCtx, setChatCtx] = useState<string | null>(null);
-  const [rightCollapsed, setRightCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1200);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [tasks, setTasks] = useState(MD_TASKS_BY_MACRO);
-  const [checklist, setChecklist] = useState(MD_CHECKLIST_DEFAULT);
-  const [documents, setDocuments] = useState(MD_DOCS);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+HO��ۜ�۔�\�^�HH
 
-  useEffect(() => {
-    const onResize = () => { if (window.innerWidth < 1100) setRightCollapsed(true); };
-    window.addEventListener('resize', onResize);
-    onResize();
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
+HO��Y�
+�[��˚[��\��YLL
+H�]�Y���\�Y
+�YJN�N�[��˘Y]�[�\�[�\�	ܙ\�^�I�۔�\�^�JN۔�\�^�J
+N�]\��
 
-  const pushToast = (msg: string) => {
-    setToast(msg);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 3000);
-  };
+HO��[��˜�[[ݙQ]�[�\�[�\�	ܙ\�^�I�۔�\�^�JNK�JN��ۜ�\��\�H
+\�Έ��[��HO��]�\�
+\��NY�
+�\�[Y\���\��[�
+H�X\�[Y[�]
+�\�[Y\���\��[�
+N�\�[Y\���\��[�H�][Y[�]
 
-  const openChat = (ctx?: string) => setChatCtx(ctx || selection?.item || selection?.macro || 'generale');
-  const closeChat = () => setChatCtx(null);
 
-  const toggleTask = (id: string) => {
-    setTasks(prev => {
-      const next = { ...prev };
-      for (const k of Object.keys(next)) {
-        next[k] = next[k].map(t => t.id === id ? { ...t, done: !t.done } : t);
-      }
-      return next;
-    });
-    setScore(s => Math.min(100, s + 2));
-  };
+HO��]�\�
+�[
+K�
+NN��ۜ��[��]H
+\��ܐ�Έ��[��HO��ۜ��۝^�[YHH�[X�[ۏ˛XXܛ�X�[	���[X�[ۏ˚][B��	��[X�[ۋ�XXܛ�X�[H�	��[X�[ۋ�][_X���[X�[ۏ˛XXܛ�X�[�[�]�]�
+�۝^�[YJN�]�][�]\��\��ܐ�	��N�]�]�[��YJNN�ۜ����P�]H
 
-  const toggleCheck = (i: number) => {
-    setChecklist(prev => {
-      const next = prev.map((c, idx) => idx === i ? { ...c, done: !c.done } : c);
-      const all = next.every(c => c.done);
-      if (all) {
-        setConfetti(true);
-        pushToast('🎉 Checklist completata al 100%!');
-        setTimeout(() => setConfetti(false), 3000);
-      } else {
-        pushToast('✓ Task completato · Score +2%');
-      }
-      return next;
-    });
-    setScore(s => Math.min(100, s + 2));
-  };
+HO���]�]�[��[�JN��]�][�]\��	��N�N��ۜ����U\��H
+Y���[��HO��]\����]�O��ۜ��^H�����]�N�܈
+�ۜ��وؚ�X���^\��^
+JH�^��HH�^��K�X\
+O��YOOHY�����ۙN�]�ۙHH�
+NB��]\���^JN�]��ܙJ�O�X]�Z[�L�
+��JNN��ۜ����P�X��H
+N��[X�\�HO��]�X��\�
+�]�O��ۜ��^H�]��X\
 
-  const confirmUpload = (name: string) => {
-    setDocuments(d => [{ name, date: '21 Apr 2026', size: '156 KB', tags: ['#nuovo'] }, ...d]);
-    setUploadOpen(false);
-    setScore(s => Math.min(100, s + 3));
-  };
+�Y
+HO�YOOHH������ۙN�X˙ۙHH��N�ۜ�[H�^�]�\�J�O�˙ۙJNY�
+[
+H�]�ۙ�]J�YJN\��\�
+	�'�H�X��\���\]]H[L	HI�N�][Y[�]
 
-  const branches = MD_BRANCHES[role] || MD_BRANCHES.impresa;
 
-  if (chatCtx) {
-    return (
-      <>
-        <ChatComplianceExpanded role={role} context={chatCtx} onClose={closeChat} score={score} pushToast={pushToast} />
-        <MDToast toast={toast} />
-      </>
-    );
-  }
+HO��]�ۙ�]J�[�JK�
+NH[�H\��\�
+	��$�\����\]]�0����ܙH
+̉I�NB��]\���^JN�]��ܙJ�O�X]�Z[�L�
+��JNN��ۜ��ۙ�\�U\�YH
+�[YN���[��HO��]��[Y[��O����[YK]N�	̌H\������^�N�	�MM�Љ�Y�Έ��۝[ݛ��HK���JN�]\�Y�[��[�JN�]��ܙJ�O�X]�Z[�L�
+��JNN��ۜ���[��\�HQД�S��T�ܛ�WHQД�S��T˚[\�\�N�]�۝[���XX���XX���NY�
+�[X�[ۈ	���[X�[ۋ�XXܛ�OOH	���\���\����H�۝[�H\���\��\��H��O^ܛ�_H\�\�^�\�\�Hۓ�[��]^��[��]H\��\�^�\��\�HώH[�HY�
+\�[X�[ۈ\�[X�[ۋ�XXܛ�H�۝[�H
+�\���\��YB���O^ܛ�_H\�\�^�\�\�H��ܙO^���ܙ_H��[��\�^؜�[��\�B�۔X��XXܛ�^��^KX�[
+HO�۔X��XXܛ�ˊ�^KX�[
+_B�ۓ�[��]^��[��]H\��\�^�\��\�B�ς�
+NH[�HY�
+\�[X�[ۋ�][JH�۝[�H
+�XXܛ�ݙ\��Y]��O^ܛ�_B�XXܛ��^O^��[X�[ۋ�XXܛ�B�XXܛ�X�[^��[X�[ۋ�XXܛ�X�[B�ې�X��^�ې�X��
 
-  let content: React.ReactNode;
-  if (selection && selection.macro === '__dashboard__') {
-    content = <DashboardCustom role={role} user={user} onOpenChat={openChat} pushToast={pushToast} />;
-  } else if (!selection || !selection.macro) {
-    content = (
-      <DashboardHome
-        role={role} user={user} score={score} branches={branches}
-        onPickMacro={(key, label) => onPickMacro?.(key, label)}
-        onOpenChat={openChat} pushToast={pushToast}
-      />
-    );
-  } else if (!selection.item) {
-    content = (
-      <MacroOverview
-        role={role}
-        macroKey={selection.macro}
-        macroLabel={selection.macroLabel}
-        onBack={onBack || (() => {})}
-        onOpenChat={openChat}
-        tasks={tasks[selection.macro] || tasks.privacy || []}
-        onToggleTask={toggleTask}
-        deadlines={MD_DEADLINES_BY_MACRO[selection.macro] || MD_DEADLINES_BY_MACRO.privacy || []}
-        pushToast={pushToast}
-      />
-    );
-  } else {
-    content = (
-      <SubcategoryDetail
-        macroKey={selection.macro}
-        macroLabel={selection.macroLabel}
-        itemLabel={selection.item}
-        checklist={checklist}
-        onToggleCheck={toggleCheck}
-        onBack={onBack || (() => {})}
-        onOpenChat={openChat}
-        onUpload={() => setUploadOpen(true)}
-        pushToast={pushToast}
-        documents={documents}
-        isPro={false}
-      />
-    );
-  }
 
-  // Contesto per la chat bar: sottocategoria > macro > null (home)
-  const chatBarContext = selection?.item || selection?.macro
-    ? `${selection?.macroLabel}${selection?.item ? ' / ' + selection.item : ''}`
-    : null;
+HO��J_B�ۓ�[��]^��[��]B�\���^�\�����[X�[ۋ�XXܛ�H\��˜�]�X�H�_B�ە���U\��^����U\��B�XY[�\�^�Q�PQS�T�ЖW�PPԓ���[X�[ۋ�XXܛ�HQ�PQS�T�ЖW�PPԓ˜�]�X�H�_B�\��\�^�\��\�B�ς�
+NH[�H�۝[�H
+��X��]Y�ܞQ]Z[�XXܛ��^O^��[X�[ۋ�XXܛ�B�XXܛ�X�[^��[X�[ۋ�XXܛ�X�[B�][SX�[^��[X�[ۋ�][_B��X��\�^��X��\�B�ە���P�X��^����P�X��B�ې�X��^�ې�X��
 
-  return (
-    <>
-      <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-        {/* Colonna centrale — scrollabile + chat bar fissa in fondo */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
-          <main style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>{content}</main>
-          <FixedChatBar
-            context={chatBarContext}
-            onSend={(text) => openChat(text)}
-            onOpenChat={openChat}
-          />
-        </div>
-        <RightPanel role={role} user={user} onNav={onNav} collapsed={rightCollapsed} onToggle={() => setRightCollapsed(c => !c)} />
-      </div>
-      {uploadOpen && <UploadDocModal onClose={() => setUploadOpen(false)} onConfirm={confirmUpload} pushToast={pushToast} />}
-      <MDToast toast={toast} />
-      <MDConfetti active={confetti} />
-    </>
-  );
-}
+
+HO��J_B�ۓ�[��]^��[��]B�ە\�Y^�
+HO��]\�Y�[��YJ_B�\��\�^�\��\�B���[Y[��^���[Y[��B�\���^٘[�_B�ς�
+NB�����۝\��\�H�]�\������]Y�ܚXH�XXܛ���[
+�YJB��ۜ��]�\��۝^H�[X�[ۏ˚][H�[X�[ۏ˛XXܛ�	��[X�[ۏ˛XXܛ�X�[I��[X�[ۏ˚][H�	��	�
+��[X�[ۋ�][H�	��X���[��]\��
+���]��[O^��\�^N�	ٛ^	�ZY��	�L	I�ݙ\���Έ	�Y[��_O���ʈ��ۛ�H�[��[H8�%�ܛ�X�[H
+��]�\��\��H[��ۙ�
+��B�]��[O^���^�K\�^N�	ٛ^	��^\�X�[ێ�	���[[��Z[��Y�ݙ\���Έ	�Y[��_O��XZ[��[O^���^�Kݙ\���Έ	�]]��Z[��Y�_O���۝[�O�XZ[����^Y�]�\���۝^^��]�\��۝^B�۔�[�^�^
+HO��[��]
+^
+_B�ۓ�[��]^��[��]B�ς��]����Y�[�[��O^ܛ�_H\�\�^�\�\�Hۓ�]�^���]�H��\�Y^ܚY���\�YHە���O^�
+HO��]�Y���\�Y
+�O�X�_Hς��]����\�Y�[�	��\�Y��[�[ې���O^�
+HO��]\�Y�[��[�J_Hې�ۙ�\�O^��ۙ�\�U\�YH\��\�^�\��\�HϟB�Q�\��\�^��\�Hς�Q�ۙ�]HX�]�O^��ۙ�]_Hς��]�YT[�[��[�^��]�[�B��۝^^��]�B�[�]X[Y\��Y�O^��][�]\��B�\�\�Y^�\[و\�\�˚YOOH	���[����\�\��Y�[�Y�[�YB�ې���O^����P�]B�ς�ς�
+NB
