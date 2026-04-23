@@ -19,6 +19,7 @@ export function StepPersonalData({ data, updateData, onNext, onPrev }: StepPerso
   const [form, setForm] = useState({
     name: data.name || '',
     phone: data.phone || '',
+    cap: data.cap || '',
     piva: data.piva || '',
     ordine_professionale: data.ordine_professionale || '',
     numero_iscrizione: data.numero_iscrizione || '',
@@ -63,6 +64,9 @@ export function StepPersonalData({ data, updateData, onNext, onPrev }: StepPerso
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.name.trim()) e.name = 'Nome obbligatorio';
+    if (data.role === USER_ROLES.CITTADINO) {
+      if (form.cap && !/^\d{5}$/.test(form.cap)) e.cap = 'CAP non valido (5 cifre)';
+    }
     if (data.role === USER_ROLES.PROFESSIONISTA) {
       if (!form.ordine_professionale) e.ordine_professionale = 'Seleziona ordine';
       if (!form.numero_iscrizione.trim()) e.numero_iscrizione = 'Numero iscrizione obbligatorio';
@@ -114,6 +118,24 @@ export function StepPersonalData({ data, updateData, onNext, onPrev }: StepPerso
           <input value={form.phone} onChange={(e) => set('phone', e.target.value)}
             className={inputCls('phone')} placeholder="+39 333 1234567" type="tel" />
         </div>
+
+        {/* CAP — solo Cittadino */}
+        {data.role === USER_ROLES.CITTADINO && (
+          <div>
+            <label className="block text-[12px] font-medium text-[#1a1a1a] mb-1">
+              CAP <span className="text-[#9A9690]">(opzionale — per aggiornamenti locali)</span>
+            </label>
+            <input
+              value={form.cap}
+              onChange={(e) => set('cap', e.target.value.replace(/\D/g, '').slice(0, 5))}
+              className={inputCls('cap')}
+              placeholder="00100"
+              inputMode="numeric"
+              maxLength={5}
+            />
+            {errors.cap && <p className="text-[11px] text-red-500 mt-1">{errors.cap}</p>}
+          </div>
+        )}
 
         {/* PROFESSIONISTA */}
         {data.role === USER_ROLES.PROFESSIONISTA && (
