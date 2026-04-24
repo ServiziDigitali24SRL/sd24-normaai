@@ -17,11 +17,19 @@ interface StepPreferencesProps {
   onPrev: () => void;
 }
 
+const FREQUENZA_OPTIONS = [
+  { id: 'daily',   label: 'Quotidiano',   desc: 'Ogni mattina alle 08:00' },
+  { id: 'weekly',  label: 'Settimanale',  desc: 'Rassegna del lunedì mattina' },
+  { id: 'monthly', label: 'Mensile',      desc: 'Il primo di ogni mese' },
+  { id: 'silent',  label: 'Solo urgenti', desc: 'Alert solo per novità critiche' },
+];
+
 export function StepPreferences({ data, updateData, onNext, onPrev }: StepPreferencesProps) {
   const [aree, setAree] = useState<{ predefinite: string[]; personalizzate: string[] }>(
     data.aree_interesse || { predefinite: [], personalizzate: [] }
   );
   const [obiettivo, setObiettivo] = useState(data.obiettivo_principale || '');
+  const [frequenza, setFrequenza] = useState<string>(data.frequenza_aggiornamenti || '');
   const [nuovaArea, setNuovaArea] = useState('');
   const [error, setError] = useState('');
 
@@ -61,11 +69,13 @@ export function StepPreferences({ data, updateData, onNext, onPrev }: StepPrefer
   };
 
   const handleNext = () => {
-    if (aree.predefinite.length === 0 && aree.personalizzate.length === 0) {
-      setError('Seleziona almeno un\'area di interesse');
+    const totale = aree.predefinite.length + aree.personalizzate.length;
+    const minRequired = data.role === USER_ROLES.CITTADINO ? 3 : 1;
+    if (totale < minRequired) {
+      setError(`Seleziona almeno ${minRequired} ${minRequired === 1 ? 'area di interesse' : 'aree di interesse'}`);
       return;
     }
-    updateData({ aree_interesse: aree, obiettivo_principale: obiettivo });
+    updateData({ aree_interesse: aree, obiettivo_principale: obiettivo, frequenza_aggiornamenti: frequenza });
     onNext();
   };
 
@@ -78,6 +88,11 @@ export function StepPreferences({ data, updateData, onNext, onPrev }: StepPrefer
       <div className="mb-6">
         <label className="block text-[12px] font-medium text-[#1a1a1a] mb-3">
           Aree di interesse *
+          {data.role === USER_ROLES.CITTADINO && (
+            <span className="text-[#9A9690] font-normal ml-1">
+              (min. 3 — {aree.predefinite.length + aree.personalizzate.length} selezionate)
+            </span>
+          )}
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {areeDisponibili.map((area) => {
@@ -132,7 +147,7 @@ export function StepPreferences({ data, updateData, onNext, onPrev }: StepPrefer
       </div>
 
       {/* Obiettivo principale */}
-      <div className="mb-8">
+      <div className="mb-6">
         <label className="block text-[12px] font-medium text-[#1a1a1a] mb-2">
           Obiettivo principale <span className="text-[#9A9690]">(opzionale)</span>
         </label>
@@ -143,6 +158,33 @@ export function StepPreferences({ data, updateData, onNext, onPrev }: StepPrefer
                 obiettivo === obj ? 'border-accent bg-accent/5 text-[#1a1a1a]' : 'border-[#E5E1D8] text-[#6B6763] hover:border-[#C8C2BA]'
               }`}>
               {obj}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Frequenza aggiornamenti */}
+      <div className="mb-8">
+        <label className="block text-[12px] font-medium text-[#1a1a1a] mb-2">
+          Frequenza aggiornamenti <span className="text-[#9A9690]">(opzionale)</span>
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          {FREQUENZA_OPTIONS.map((f) => (
+            <button key={f.id} onClick={() => setFrequenza(f.id === frequenza ? '' : f.id)}
+              className={`text-left p-3 rounded-lg border-2 transition-all ${
+                frequenza === f.id
+                  ? 'border-accent bg-accent/5'
+                  : 'border-[#E5E1D8] hover:border-[#C8C2BA] bg-white'
+              }`}>
+              <div className="flex items-center justify-between">
+                <span className="text-[12.5px] font-medium text-[#1a1a1a]">{f.label}</span>
+                {frequenza === f.id && (
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 stroke-accent fill-none stroke-[2.5]">
+                    <polyline points="20,6 9,17 4,12" />
+                  </svg>
+                )}
+              </div>
+              <p className="text-[11px] text-[#9A9690] mt-0.5">{f.desc}</p>
             </button>
           ))}
         </div>
