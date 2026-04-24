@@ -763,7 +763,54 @@ function SubcategoryDetail({ macroKey, macroLabel, itemLabel, checklist, onToggl
             {/* Voci che abbassano score */}
             {doneCount < checklist.length && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'ntSize: 16, color: 'white', flexShrink: 0 }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Cosa abbassa il punteggio
+                </div>
+                {checklist.filter(c => !c.done).slice(0, 3).map((c, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderBottom: '1px solid var(--paper-line)' }}>
+                    <span style={{ color: 'var(--vermiglio)', fontSize: 10, flexShrink: 0 }}>−{Math.round(100 / checklist.length)}pt</span>
+                    <span style={{ fontSize: 11.5, color: 'var(--ink-2)' }}>{c.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Checklist integrata */}
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Checklist ({doneCount}/{checklist.length})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {checklist.map((c, i) => (
+                <div
+                  key={i}
+                  onClick={() => onToggleCheck(i)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', cursor: 'pointer', opacity: c.done ? 0.55 : 1, transition: 'opacity 0.2s', borderBottom: i < checklist.length - 1 ? '1px solid var(--paper-line)' : 'none' }}
+                >
+                  <span style={{
+                    width: 16, height: 16, borderRadius: 3, flexShrink: 0,
+                    border: `1.5px solid ${c.done ? 'var(--alloro)' : 'var(--ink-4)'}`,
+                    background: c.done ? 'var(--alloro)' : 'transparent',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s ease',
+                  }}>
+                    {c.done && <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><path d="M3 8l3 3 7-7"/></svg>}
+                  </span>
+                  <span style={{ fontSize: 12, color: c.done ? 'var(--ink-4)' : 'var(--ink-1)', textDecoration: c.done ? 'line-through' : 'none', lineHeight: 1.3 }}>
+                    {c.text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </WidgetCard>
+
+          {/* W5 — Professionista (4 stati) */}
+          {hasMarketplace && (
+            <WidgetCard title="Professionista" icon="users" accent="var(--alloro)">
+              {profiloState === 'active' ? (
+                /* Stato 3: Professionista collegato */
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--alloro)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--serif)', fontSize: 16, color: 'white', flexShrink: 0 }}>
                       {profData?.initial || 'M'}
                     </div>
                     <div>
@@ -928,7 +975,7 @@ function SubcategoryDetail({ macroKey, macroLabel, itemLabel, checklist, onToggl
   );
 }
 
-// ─── Chat Compliance Expanded ────────────────────────────────────────────────
+// ─── Chat Compliance Expanded ─────────────────────────────────────────────────
 
 function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToast }: {
   role: string; context: string;
@@ -1087,58 +1134,58 @@ function UploadDocModal({ onClose, onConfirm, pushToast }: { onClose: () => void
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(19,17,15,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150, padding: 40 }}>
       <div style={{ background: 'var(--paper)', borderRadius: 14, width: 'min(560px, 100%)', padding: 36, boxShadow: 'var(--shadow-3)', position: 'relative' }}>
         <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-3)' }}>
-        <Icon name="close" size={16} />
-      </button>
-      {phase === 'select' && (
-        <>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '0.14em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 8 }}>Carica documento</div>
-          <h2 style={{ fontFamily: 'var(--serif)', fontSize: 28, margin: '0 0 14px', letterSpacing: '-0.02em' }}>L&apos;AI analizza e classifica automaticamente.</h2>
-          <div style={{ padding: 32, border: '2px dashed var(--paper-line)', borderRadius: 10, textAlign: 'center', background: 'white', marginTop: 16 }}>
-            <Icon name="paperclip" size={24} />
-            <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8 }}>Trascini un file qui o</div>
-            <button onClick={start} className="btn btn-primary" style={{ marginTop: 12 }}>Selezioni un file</button>
+          <Icon name="close" size={16} />
+        </button>
+        {phase === 'select' && (
+          <>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '0.14em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 8 }}>Carica documento</div>
+            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 28, margin: '0 0 14px', letterSpacing: '-0.02em' }}>L&apos;AI analizza e classifica automaticamente.</h2>
+            <div style={{ padding: 32, border: '2px dashed var(--paper-line)', borderRadius: 10, textAlign: 'center', background: 'white', marginTop: 16 }}>
+              <Icon name="paperclip" size={24} />
+              <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8 }}>Trascini un file qui o</div>
+              <button onClick={start} className="btn btn-primary" style={{ marginTop: 12 }}>Selezioni un file</button>
+            </>
+          </>
+        )}
+        {phase === 'analyzing' && (
+          <div style={{ textAlign: 'center', padding: 30 }}>
+            <div style={{ width: 48, height: 48, margin: '0 auto 20px', border: '3px solid var(--paper-line)', borderTopColor: 'var(--vermiglio)', borderRadius: '50%', animation: 'mdSpin 0.8s linear infinite' }} />
+            <h3 style={{ fontFamily: 'var(--serif)', fontSize: 24, margin: '0 0 8px' }}>Analizzo documento…</h3>
+            <p style={{ color: 'var(--ink-3)', fontSize: 13, fontFamily: 'var(--sans)' }}>{fileName}</p>
+            <div style={{ height: 3, background: 'var(--paper-line)', borderRadius: 2, marginTop: 18, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: '60%', background: 'var(--vermiglio)', animation: 'mdProgress 1.4s ease-in-out' }} />
+            </div>
           </div>
-        </>
-      )}
-      {phase === 'analyzing' && (
-        <div style={{ textAlign: 'center', padding: 30 }}>
-          <div style={{ width: 48, height: 48, margin: '0 auto 20px', border: '3dx solid var(--paper-line)', borderTopColor: 'var(--vermiglio)', borderRadius: '50%', animation: 'mdSpin 0.8s linear infinite' }} />
-          <h3 style={{ fontFamily: 'var(--serif)', fontSize: 24, margin: '0 0 8px' }}>Analizzo documento…</h3>
-          <p style={{ color: 'var(--ink-3)', fontSize: 13, fontFamily: 'var(--sans)' }}>{fileName}</p>
-          <div style={{ height: 3, background: 'var(--paper-line)', borderRadius: 2, marginTop: 18, overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: '60%', background: 'var(--vermiglio)', animation: 'mdProgress 1.4s ease-in-out' }} />
-          </div>
-        </div>
-      )}
-      {phase === 'result' && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, color: 'var(--alloro) '}}>
-            <Icon name="check" size={16} />
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600 }}>Documento analizzato</div>
-          </div>
-          <h2 style={{ fontFamily: 'var(--serif)', fontSize: 24, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>{fileName}</h2>
-          <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 8, fontSize: 12.5, fontFamily: 'var(--sans)' }}>
-            <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Tipo</dt>
-            <dd style={{ margin: 0 }}>Data Processing Agreement</dd>
-            <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Parti</dt>
-            <dd style={{ margin: 0 }}>Acme SRL � AWS</dd>
-            <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Scadenza</dt>
-            <dd style={{ margin: 0 }}><strong>31 Dic 2026</strong></dd>
-            <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Categoria</dt>
-            <dd style={{ margin: 0 }}>Privacy & GDPR › Trasferimenti extra-UE</dd>
-          </dl>
-          <div style={{ marginTop: 18, padding: 14, background: 'var(--paper-tint)', borderRadius: 8, border: '1px solid var(--paper-line)' }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>Task generato</div>
-            <div style={{ fontSize: 13, fontFamily: 'var(--sans)' }}>☐ Rinnovo DPA AWS - 30 Nov 2026</div>
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-            <button onClick={onClose} className="btn btn-ghost" style={{ flex: 1 }}>Modifica</button>
-            <button onClick={() => { onConfirm(fileName); pushToast('📄 Documento classificato in Privacy & GDPR'); }} className="btn btn-primary" style={{ flex: 1 }}>Conferma</button>
-          </div>
-        </>
-      )}
+        )}
+        {phase === 'result' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, color: 'var(--alloro)' }}>
+              <Icon name="check" size={16} />
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 600 }}>Documento analizzato</div>
+            </div>
+            <h2 style={{ fontFamily: 'var(--serif)', fontSize: 24, margin: '8px 0 16px', letterSpacing: '-0.02em' }}>{fileName}</h2>
+            <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: '140px 1fr', rowGap: 8, fontSize: 12.5, fontFamily: 'var(--sans)' }}>
+              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Tipo</dt>
+              <dd style={{ margin: 0 }}>Data Processing Agreement</dd>
+              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Parti</dt>
+              <dd style={{ margin: 0 }}>Acme SRL ↔ AWS</dd>
+              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Scadenza</dt>
+              <dd style={{ margin: 0 }}><strong>31 Dic 2026</strong></dd>
+              <dt style={{ fontFamily: 'var(--mono)', color: 'var(--ink-4)', fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', alignSelf: 'center' }}>Categoria</dt>
+              <dd style={{ margin: 0 }}>Privacy & GDPR › Trasferimenti extra-UE</dd>
+            </dl>
+            <div style={{ marginTop: 18, padding: 14, background: 'var(--paper-tint)', borderRadius: 8, border: '1px solid var(--paper-line)' }}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>Task generato</div>
+              <div style={{ fontSize: 13, fontFamily: 'var(--sans)' }}>☐ Rinnovo DPA AWS — 30 Nov 2026</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+              <button onClick={onClose} className="btn btn-ghost" style={{ flex: 1 }}>Modifica</button>
+              <button onClick={() => { onConfirm(fileName); pushToast('📄 Documento classificato in Privacy & GDPR'); }} className="btn btn-primary" style={{ flex: 1 }}>Conferma</button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
-  </div>
   );
 }
 
@@ -1178,111 +1225,188 @@ function RightPanel({ role, user, onNav, collapsed, onToggle }: {
       <WidgetCard title="Abbonamento">
         <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--ink-4)', textTransform: 'uppercase', marginBottom: 6 }}>Piano attuale</div>
         <div style={{ fontFamily: 'var(--serif)', fontSize: 24, letterSpacing: '-0.02em', marginBottom: 10 }}>{planLabel}</div>
-        {role === 'impresa' && <div style={{ fontSZ^�N�LK�K��܎�	ݘ\�KZ[��L�I��۝�[Z[N�	ݘ\�K\�[��I�_O�L8�$�H\[�[�H0��8��
-�K�Y\�O�]��B��]ۈې�X��^�
-HO�ۓ�]�ˊ	�\ܘYI�_H�\�Ә[YOH�����XX��[���[O^���Y�	�L	I�X\��[���M_O��X�ۈ�[YOH�����^�O^�L�Hψ\ܘYHX[�؝]ۏ����Y�]�\����ܛ�HOOH	��ى�	��
-�]��[O^��X\��[���M_O���Y�]�\�]OH�XYX\��]X�H�X�ۏH��[YH�X��[�H��\�K]�\�ZY�[�H���]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�L]\��X�[�Έ	��L�[I���܎�	ݘ\�KZ[��M
-I�^�[�ٛܛN�	�\\��\�I�_O��[ݚH���O�]���]��[O^���۝�[Z[N�	ݘ\�K\�\�Y�I��۝�^�N�̋X\��[��	�L	�_O���]���]��[O^��\�^N�	ٛ^	��^\�X�[ێ�	���[[���\�L_O���Q�PQ˜�X�J�K�X\
-O�
-�]��^O^��YH�[O^��Y[�ΈL�X��ܛ�[��	��]I��ܙ\��Y]\Έ
-��ܙ\��	�\��Y�\�K\\\�[[�JI�_O��]��[O^���۝�^�N�L��۝�ZY��
-LX\��[����N�
-�۝�[Z[N�	ݘ\�K\�[��I�_O���]_O�]���]��[O^���۝�[Z[N�	ݘ\�K[[ۛ�I��۝�^�N�K�K��܎�	ݘ\�KZ[��M
-I�]\��X�[�Έ	��[I�_O����]K��\\��\�J
-_H0�����Y�]H0����Y\�O�]����]ۈ�\�Ә[YOH�����\�[X\�H��[O^���Y�	�L	I�X\��[���Y[�Έ	�\	��۝�^�N�LH_O�X�]Z\�O؝]ۏ���]���
-J_B��]�����Y�]�\����]���
-_B��ܛ�HOOH	��]Y[���	��
-�]��[O^��X\��[���M_O���Y�]�\�]OH�ZH�\��ۛ�HZ]]�ȈX�ۏH�\�\�ȈX��[�H��\�KX[ܛ�H����[O^���۝�^�N�L���܎�	ݘ\�KZ[��L�I�X\��[��	�L	�[�RZY��K�K�۝�[Z[N�	ݘ\�K\�[��I�_O�\��\�H��\\��K[��ٙ\��[ۚ\�H�\�Y�X�]�p�\��\�\�K�����]ۈې�X��^�
-HO�ۓ�]�ˊ	��ى�_H�\�Ә[YOH�����Y�����[O^���Y�	�L	I��۝�^�N�LK�H_O��ݘH�ٙ\��[ۚ\�O؝]ۏ����Y�]�\����]���
-_B��\�YO��
-NB����8� 8� 8� XZ[�\���\�
-�۝Z[�\�H8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� 8� ��^ܝY�][�[��[ۈXZ[�\���\�
-���K\�\��[X�[ۋې�X��ۓ�]�۔X��XXܛ�X[�Έ�X[��[\�\�N��[\�\�HN�XZ[�\���\����H�ۜ����ܙK�]��ܙWHH\�T�]J
-͊N�ۜ���\��]�\�HH\�T�]O��[���[��[
-N�ۜ���ۙ�]K�]�ۙ�]WHH\�T�]J�[�JN�ۜ���]��]�]�HH\�T�]O��[���[��[
-N�ۜ���]�[��]�]�[�HH\�T�]J�[�JN�ۜ���][�]\���]�][�]\��HH\�T�]J	��N�ۜ�ܚY���\�Y�]�Y���\�YHH\�T�]J
+        {role === 'impresa' && <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--sans)' }}>10–49 dipendenti · €79/mese</div>}
+        <button onClick={() => onNav?.('upgrade')} className="btn btn-accent" style={{ width: '100%', marginTop: 14 }}>
+          <Icon name="bolt" size={12} /> Upgrade piano
+        </button>
+      </WidgetCard>
 
-HO�\[و�[���OOH	�[�Y�[�Y	�	���[��˚[��\��YL�
-N�ۜ��\�Y�[��]\�Y�[�HH\�T�]J�[�JN�ۜ��\����]\���HH\�T�]JQ�T���ЖW�PPԓ�N�ۜ���X��\��]�X��\�HH\�T�]JQ��P��T��Q�US
-N�ۜ����[Y[���]��[Y[��HH\�T�]JQ����N�ۜ��\�[Y\�H\�T�Y��]\��\O\[و�][Y[�]��[��[
-N�\�QY��X�
+      {role === 'prof' && (
+        <div style={{ marginTop: 14 }}>
+          <WidgetCard title="Lead marketplace" icon="flame" accent="var(--vermiglio)">
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Nuovi oggi</div>
+            <div style={{ fontFamily: 'var(--serif)', fontSize: 32, margin: '4px 0 10px' }}>7</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {MD_LEADS.slice(0, 2).map(l => (
+                <div key={l.id} style={{ padding: 10, background: 'white', borderRadius: 6, border: '1px solid var(--paper-line)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, fontFamily: 'var(--sans)' }}>{l.title}</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.08em' }}>{l.city.toUpperCase()} · {l.budget} · {l.tier}</div>
+                  <button className="btn btn-primary" style={{ width: '100%', marginTop: 8, padding: '5px 8px', fontSize: 11 }}>Acquista</button>
+                </div>
+              ))}
+            </div>
+          </WidgetCard>
+        </div>
+      )}
 
+      {role === 'cittadino' && (
+        <div style={{ marginTop: 14 }}>
+          <WidgetCard title="Hai bisogno di aiuto?" icon="users" accent="var(--alloro)">
+            <p style={{ fontSize: 12, color: 'var(--ink-2)', margin: '0 0 10px', lineHeight: 1.5, fontFamily: 'var(--sans)' }}>Per casi complessi, un professionista verificato può assisterLa.</p>
+            <button onClick={() => onNav?.('prof')} className="btn btn-ghost" style={{ width: '100%', fontSize: 11.5 }}>Trova professionista</button>
+          </WidgetCard>
+        </div>
+      )}
+    </aside>
+  );
+}
 
-HO��ۜ�۔�\�^�HH
+// ─── Main Dashboard (container) ───────────────────────────────────────────────
 
-HO��Y�
-�[��˚[��\��YLL
-H�]�Y���\�Y
-�YJN�N�[��˘Y]�[�\�[�\�	ܙ\�^�I�۔�\�^�JN۔�\�^�J
-N�]\��
+export default function MainDashboard({ role, user, selection, onBack, onNav, onPickMacro, piano: _piano, impresa: _impresa }: MainDashboardProps) {
+  const [score, setScore] = useState(76);
+  const [toast, setToast] = useState<string | null>(null);
+  const [confetti, setConfetti] = useState(false);
+  const [chatCtx, setChatCtx] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInitMsg, setChatInitMsg] = useState('');
+  const [rightCollapsed, setRightCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1200);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [tasks, setTasks] = useState(MD_TASKS_BY_MACRO);
+  const [checklist, setChecklist] = useState(MD_CHECKLIST_DEFAULT);
+  const [documents, setDocuments] = useState(MD_DOCS);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-HO��[��˜�[[ݙQ]�[�\�[�\�	ܙ\�^�I�۔�\�^�JNK�JN��ۜ�\��\�H
-\�Έ��[��HO��]�\�
-\��NY�
-�\�[Y\���\��[�
-H�X\�[Y[�]
-�\�[Y\���\��[�
-N�\�[Y\���\��[�H�][Y[�]
+  useEffect(() => {
+    const onResize = () => { if (window.innerWidth < 1100) setRightCollapsed(true); };
+    window.addEventListener('resize', onResize);
+    onResize();
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
+  const pushToast = (msg: string) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
+  };
 
-HO��]�\�
-�[
-K�
-NN��ۜ��[��]H
-\��ܐ�Έ��[��HO��ۜ��۝^�[YHH�[X�[ۏ˛XXܛ�X�[	���[X�[ۏ˚][B��	��[X�[ۋ�XXܛ�X�[H�	��[X�[ۋ�][_X���[X�[ۏ˛XXܛ�X�[�[�]�]�
-�۝^�[YJN�]�][�]\��\��ܐ�	��N�]�]�[��YJNN�ۜ����P�]H
+  const openChat = (msgOrCtx?: string) => {
+    const contextName = selection?.macroLabel && selection?.item
+      ? `${selection.macroLabel} / ${selection.item}`
+      : selection?.macroLabel || null;
+    setChatCtx(contextName);
+    setChatInitMsg(msgOrCtx || '');
+    setChatOpen(true);
+  };
+  const closeChat = () => { setChatOpen(false); setChatInitMsg(''); };
 
-HO���]�]�[��[�JN��]�][�]\��	��N�N��ۜ����U\��H
-Y���[��HO��]\����]�O��ۜ��^H�����]�N�܈
-�ۜ��وؚ�X���^\��^
-JH�^��HH�^��K�X\
-O��YOOHY�����ۙN�]�ۙHH�
-NB��]\���^JN�]��ܙJ�O�X]�Z[�L�
-��JNN��ۜ����P�X��H
-N��[X�\�HO��]�X��\�
-�]�O��ۜ��^H�]��X\
+  const toggleTask = (id: string) => {
+    setTasks(prev => {
+      const next = { ...prev };
+      for (const k of Object.keys(next)) {
+        next[k] = next[k].map(t => t.id === id ? { ...t, done: !t.done } : t);
+      }
+      return next;
+    });
+    setScore(s => Math.min(100, s + 2));
+  };
 
-�Y
-HO�YOOHH������ۙN�X˙ۙHH��N�ۜ�[H�^�]�\�J�O�˙ۙJNY�
-[
-H�]�ۙ�]J�YJN\��\�
-	�'�H�X��\���\]]H[L	HI�N�][Y[�]
+  const toggleCheck = (i: number) => {
+    setChecklist(prev => {
+      const next = prev.map((c, idx) => idx === i ? { ...c, done: !c.done } : c);
+      const all = next.every(c => c.done);
+      if (all) {
+        setConfetti(true);
+        pushToast('🎉 Checklist completata al 100%!');
+        setTimeout(() => setConfetti(false), 3000);
+      } else {
+        pushToast('✓ Task completato · Score +2%');
+      }
+      return next;
+    });
+    setScore(s => Math.min(100, s + 2));
+  };
 
+  const confirmUpload = (name: string) => {
+    setDocuments(d => [{ name, date: '21 Apr 2026', size: '156 KB', tags: ['#nuovo'] }, ...d]);
+    setUploadOpen(false);
+    setScore(s => Math.min(100, s + 3));
+  };
 
-HO��]�ۙ�]J�[�JK�
-NH[�H\��\�
-	��$�\����\]]�0����ܙH
-̉I�NB��]\���^JN�]��ܙJ�O�X]�Z[�L�
-��JNN��ۜ��ۙ�\�U\�YH
-�[YN���[��HO��]��[Y[��O����[YK]N�	̌H\������^�N�	�MM�Љ�Y�Έ��۝[ݛ��HK���JN�]\�Y�[��[�JN�]��ܙJ�O�X]�Z[�L�
-��JNN��ۜ���[��\�HQД�S��T�ܛ�WHQД�S��T˚[\�\�N�]�۝[���XX���XX���NY�
-�[X�[ۈ	���[X�[ۋ�XXܛ�OOH	���\���\����H�۝[�H\���\��\��H��O^ܛ�_H\�\�^�\�\�Hۓ�[��]^��[��]H\��\�^�\��\�HώH[�HY�
-\�[X�[ۈ\�[X�[ۋ�XXܛ�H�۝[�H
-�\���\��YB���O^ܛ�_H\�\�^�\�\�H��ܙO^���ܙ_H��[��\�^؜�[��\�B�۔X��XXܛ�^��^KX�[
-HO�۔X��XXܛ�ˊ�^KX�[
-_B�ۓ�[��]^��[��]H\��\�^�\��\�B�ς�
-NH[�HY�
-\�[X�[ۋ�][JH�۝[�H
-�XXܛ�ݙ\��Y]��O^ܛ�_B�XXܛ��^O^��[X�[ۋ�XXܛ�B�XXܛ�X�[^��[X�[ۋ�XXܛ�X�[B�ې�X��^�ې�X��
+  const branches = MD_BRANCHES[role] || MD_BRANCHES.impresa;
 
+  let content: React.ReactNode;
+  if (selection && selection.macro === '__dashboard__') {
+    content = <DashboardCustom role={role} user={user} onOpenChat={openChat} pushToast={pushToast} />;
+  } else if (!selection || !selection.macro) {
+    content = (
+      <DashboardHome
+        role={role} user={user} score={score} branches={branches}
+        onPickMacro={(key, label) => onPickMacro?.(key, label)}
+        onOpenChat={openChat} pushToast={pushToast}
+      />
+    );
+  } else if (!selection.item) {
+    content = (
+      <MacroOverview
+        role={role}
+        macroKey={selection.macro}
+        macroLabel={selection.macroLabel}
+        onBack={onBack || (() => {})}
+        onOpenChat={openChat}
+        tasks={tasks[selection.macro] || tasks.privacy || []}
+        onToggleTask={toggleTask}
+        deadlines={MD_DEADLINES_BY_MACRO[selection.macro] || MD_DEADLINES_BY_MACRO.privacy || []}
+        pushToast={pushToast}
+      />
+    );
+  } else {
+    content = (
+      <SubcategoryDetail
+        macroKey={selection.macro}
+        macroLabel={selection.macroLabel}
+        itemLabel={selection.item}
+        checklist={checklist}
+        onToggleCheck={toggleCheck}
+        onBack={onBack || (() => {})}
+        onOpenChat={openChat}
+        onUpload={() => setUploadOpen(true)}
+        pushToast={pushToast}
+        documents={documents}
+        isPro={false}
+      />
+    );
+  }
 
-HO��J_B�ۓ�[��]^��[��]B�\���^�\�����[X�[ۋ�XXܛ�H\��˜�]�X�H�_B�ە���U\��^����U\��B�XY[�\�^�Q�PQS�T�ЖW�PPԓ���[X�[ۋ�XXܛ�HQ�PQS�T�ЖW�PPԓ˜�]�X�H�_B�\��\�^�\��\�B�ς�
-NH[�H�۝[�H
-��X��]Y�ܞQ]Z[�XXܛ��^O^��[X�[ۋ�XXܛ�B�XXܛ�X�[^��[X�[ۋ�XXܛ�X�[B�][SX�[^��[X�[ۋ�][_B��X��\�^��X��\�B�ە���P�X��^����P�X��B�ې�X��^�ې�X��
+  // Contesto per la chat bar: sottocategoria > macro > null (home)
+  const chatBarContext = selection?.item || selection?.macro
+    ? `${selection?.macroLabel}${selection?.item ? ' / ' + selection.item : ''}`
+    : null;
 
-
-HO��J_B�ۓ�[��]^��[��]B�ە\�Y^�
-HO��]\�Y�[��YJ_B�\��\�^�\��\�B���[Y[��^���[Y[��B�\���^٘[�_B�ς�
-NB�����۝\��\�H�]�\������]Y�ܚXH�XXܛ���[
-�YJB��ۜ��]�\��۝^H�[X�[ۏ˚][H�[X�[ۏ˛XXܛ�	��[X�[ۏ˛XXܛ�X�[I��[X�[ۏ˚][H�	��	�
-��[X�[ۋ�][H�	��X���[��]\��
-���]��[O^��\�^N�	ٛ^	�ZY��	�L	I�ݙ\���Έ	�Y[��_O���ʈ��ۛ�H�[��[H8�%�ܛ�X�[H
-��]�\��\��H[��ۙ�
-��B�]��[O^���^�K\�^N�	ٛ^	��^\�X�[ێ�	���[[��Z[��Y�ݙ\���Έ	�Y[��_O��XZ[��[O^���^�Kݙ\���Έ	�]]��Z[��Y�_O���۝[�O�XZ[����^Y�]�\���۝^^��]�\��۝^B�۔�[�^�^
-HO��[��]
-^
-_B�ۓ�[��]^��[��]B�ς��]����Y�[�[��O^ܛ�_H\�\�^�\�\�Hۓ�]�^�ۓ�]�H��\�Y^ܚY���\�YHە���O^�
-HO��]�Y���\�Y
-�O�X�_Hς��]����\�Y�[�	��\�Y��[�[ې���O^�
-HO��]\�Y�[��[�J_Hې�ۙ�\�O^��ۙ�\�U\�YH\��\�^�\��\�HϟB�Q�\��\�^��\�Hς�Q�ۙ�]HX�]�O^��ۙ�]_Hς��]�YT[�[��[�^��]�[�B��۝^^��]�B�[�]X[Y\��Y�O^��][�]\��B�\�\�Y^�\[و\�\�˚YOOH	���[����\�\��Y�[�Y�[�YB�ې���O^����P�]B�ς�ς�
-NB
+  return (
+    <>
+      <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+        {/* Colonna centrale — scrollabile + chat bar fissa in fondo */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+          <main style={{ flex: 1, overflow: 'auto', minWidth: 0 }}>{content}</main>
+          <FixedChatBar
+            context={chatBarContext}
+            onSend={(text) => openChat(text)}
+            onOpenChat={openChat}
+          />
+        </div>
+        <RightPanel role={role} user={user} onNav={onNav} collapsed={rightCollapsed} onToggle={() => setRightCollapsed(c => !c)} />
+      </div>
+      {uploadOpen && <UploadDocModal onClose={() => setUploadOpen(false)} onConfirm={confirmUpload} pushToast={pushToast} />}
+      <MDToast toast={toast} />
+      <MDConfetti active={confetti} />
+      <ChatSlidePanel
+        open={chatOpen}
+        context={chatCtx}
+        initialMessage={chatInitMsg}
+        userId={typeof user?.id === 'string' ? user.id : undefined}
+        onClose={closeChat}
+      />
+    </>
+  );
+}
