@@ -6,8 +6,8 @@ import { createClient } from "@supabase/supabase-js";
  * POST /api/mobile/pay-professional
  * Body: { question: string, userId?: string }
  *
- * Creates a Stripe Checkout session for 9â¬ "Chiedi a un Professionista".
- * On success â lead is stored in Supabase and visible to subscribed lawyers.
+ * Creates a Stripe Checkout session for 9€ "Chiedi a un Professionista".
+ * On success → lead is stored in Supabase (marketplace_leads) and visible to professionals.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     const origin = req.headers.get("origin") || "https://normaai.it";
 
-    // Store pending lead in Supabase (status: pending_payment)
+    // Store pending lead in Supabase (marketplace_leads is the real table)
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -29,13 +29,14 @@ export async function POST(req: NextRequest) {
 
     let leadId: string | null = null;
     const { data: lead } = await supabase
-      .from("professional_leads")
+      .from("marketplace_leads")
       .insert({
-        question,
-        user_id: userId,
-        user_type: "cittadino",
+        question_summary: question,
+        consumer_user_id: userId,
+        lead_type: "privato",
         status: "pending_payment",
-        source: "mobile",
+        price_cents: 900,
+        vertical_id: "normaai",
       })
       .select("id")
       .single();
@@ -50,10 +51,10 @@ export async function POST(req: NextRequest) {
         {
           price_data: {
             currency: "eur",
-            unit_amount: 900, // 9â¬ in centesimi
+            unit_amount: 900, // 9€ in centesimi
             product_data: {
               name: "Chiedi a un Professionista",
-              description: "La tua richiesta sarÃ  visibile agli avvocati iscritti a NormaAI.",
+              description: "La tua richiesta sarà visibile ai professionisti iscritti a NormaAI.",
               images: ["https://normaai.it/og-image.png"],
             },
           },
