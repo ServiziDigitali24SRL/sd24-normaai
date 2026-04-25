@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+// Mobile UA patterns
+const MOBILE_UA_RE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i;
+
+function isMobileUA(req: NextRequest): boolean {
+  const ua = req.headers.get("user-agent") ?? "";
+  return MOBILE_UA_RE.test(ua);
+}
+
 // Route API pubbliche (no auth richiesta)
 function isPublicApiRoute(pathname: string): boolean {
   return (
@@ -10,32 +18,49 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/bug-report" ||
     pathname === "/api/developer-waitlist" ||
     pathname === "/api/invest-lead" ||
-    pathname === "/api/leads/preview"           // lead preview pubblica
+    pathname === "/api/leads/preview" ||               // lead preview pubblica
+    pathname.startsWith("/api/mobile/")               // mobile API (pay-professional, etc.)
   );
 }
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ── Determina se la route richiede autenticazione ─────────────────────────
+  // ââ Mobile redirect: homepage â /mobile for mobile browsers ââââââââââââââ
+  // Only redirect GET requests on "/" (not API, not assets)
+  if (
+    pathname === "/" &&
+    req.method === "GET" &&
+    isMobileUA(req) &&
+    !req.nextUrl.searchParams.has("desktop")
+  ) {
+    return NextResponse.redirect(new URL("/mobile", req.url));
+  }
+
+  // ââ /mobile routes are always public (auth handled client-side) âââââââââââ
+  if (pathname.startsWith("/mobile")) {
+    return NextResponse.next();
+  }
+
+  // ââ Determina se la route richiede autenticazione âââââââââââââââââââââââââ
   const isProtectedPageRoute =
     pathname.startsWith("/app") ||
-    (pathname === "/dashboard" || (pathname.startsWith("/dashboard/") && !pathname.startsWith("/dashboard-"))) ||
+    pathname.startsWith("/dashboard") ||
     (pathname.startsWith("/profilo") && !pathname.startsWith("/profilo-pubblico"));
 
   const isProtectedApiRoute =
     pathname.startsWith("/api/") && !isPublicApiRoute(pathname);
 
-  // /onboarding è sempre accessibile agli utenti autenticati
+  // /onboarding Ã¨ sempre accessibile agli utenti autenticati
   const isOnboardingRoute = pathname.startsWith("/onboarding");
-  // /api/onboarding è pubblica per utenti autenticati
+  // /api/onboarding Ã¨ pubblica per utenti autenticati
   const isOnboardingApi = pathname.startsWith("/api/onboarding/");
 
   if (!isProtectedPageRoute && !isProtectedApiRoute && !isOnboardingApi) {
     return NextResponse.next();
   }
 
-  // ── Auth check ────────────────────────────────────────────────────────────
+  // ââ Auth check ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   const response = NextResponse.next();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
