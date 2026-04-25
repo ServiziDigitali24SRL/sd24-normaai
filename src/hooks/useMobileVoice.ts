@@ -60,8 +60,10 @@ export function useMobileVoice(): UseMobileVoiceReturn {
   const [queriesUsed, setQueriesUsed] = useState(0);
   const [queryLimitHit, setQueryLimitHit] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const synthRef = useRef<any>(null);
   const abortRef = useRef(false);
 
   // Init query count on mount (client only)
@@ -219,9 +221,7 @@ export function useMobileVoice(): UseMobileVoiceReturn {
 
     // Start speech recognition
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const SpeechRec: new () => SpeechRecognition =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     const recognition = new SpeechRec();
     recognition.lang = "it-IT";
@@ -232,7 +232,8 @@ export function useMobileVoice(): UseMobileVoiceReturn {
     recognitionRef.current = recognition;
     setOrbState("listening");
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
       const result = event.results[event.results.length - 1];
       const text = result[0].transcript;
       setTranscript(text);
