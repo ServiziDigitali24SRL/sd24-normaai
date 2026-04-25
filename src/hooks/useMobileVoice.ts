@@ -69,7 +69,7 @@ export function useMobileVoice(): UseMobileVoiceReturn {
 
     vapi.on("speech-end", () => {
       if (!mountedRef.current) return;
-      // Assistant finished — user's turn
+      // Assistant finished → user's turn
       setOrbState("listening");
       setAssistantText("");
     });
@@ -89,6 +89,7 @@ export function useMobileVoice(): UseMobileVoiceReturn {
             setOrbState("listening");
           }
         } else if (msg.role === "assistant") {
+          // Show live assistant text while speaking
           if (msg.transcriptType === "partial" || msg.transcriptType === "final") {
             setAssistantText(msg.transcript ?? "");
           }
@@ -110,7 +111,7 @@ export function useMobileVoice(): UseMobileVoiceReturn {
   }, []);
 
   const tapOrb = useCallback(async () => {
-    // If call is active — stop it
+    // If call is active → stop it
     if (callActive || orbState !== "idle") {
       try { vapiRef.current?.stop(); } catch { /* noop */ }
       setCallActive(false);
@@ -119,6 +120,27 @@ export function useMobileVoice(): UseMobileVoiceReturn {
       setAssistantText("");
       return;
     }
+
+    // iOS Safari: unlock audio context SYNCHRONOUSLY within user gesture.
+    // Vapi's buildAudioPlayer calls audio.play() from an async WebRTC handler
+    // which iOS blocks. Playing a silent buffer here unlocks the audio session.
+    try {
+      const AudioCtx =
+        (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
+          .AudioContext ||
+        (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      if (AudioCtx) {
+        const ctx = new AudioCtx();
+        const buf = ctx.createBuffer(1, 1, 22050);
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.connect(ctx.destination);
+        src.start(0);
+        // Keep ctx alive briefly so the unlock persists for the async join
+        setTimeout(() => ctx.close(), 2000);
+      }
+    } catch { /* noop — unlock best-effort */ }
 
     // Start new call — optimistic UI
     setOrbState("thinking");
