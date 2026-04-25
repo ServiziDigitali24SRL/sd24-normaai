@@ -15,14 +15,14 @@ function createSupabase() {
 
 interface Lead {
   id: string;
-  question: string;
-  user_type: "cittadino" | "impresa";
+  question_summary: string;
+  lead_type: string;
   created_at: string;
   purchased: boolean;
 }
 
 function LeadCard({ lead, onBuy }: { lead: Lead; onBuy: (id: string) => void }) {
-  const isImpresa = lead.user_type === "impresa";
+  const isImpresa = lead.lead_type === "impresa";
   return (
     <div style={{
       margin: "0 16px 12px",
@@ -44,7 +44,7 @@ function LeadCard({ lead, onBuy }: { lead: Lead; onBuy: (id: string) => void }) 
               color: isImpresa ? "var(--alloro)" : "var(--vermiglio)",
               textTransform: "uppercase",
             }}>
-              {isImpresa ? "Impresa" : "Cittadino"}
+              {isImpresa ? "Impresa" : "Privato"}
             </span>
           </div>
           <span className="mono" style={{ fontSize: 9, color: "var(--ink-4)", letterSpacing: "0.06em" }}>
@@ -58,7 +58,7 @@ function LeadCard({ lead, onBuy }: { lead: Lead; onBuy: (id: string) => void }) 
           display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" as never,
           overflow: "hidden",
         }}>
-          Â«{lead.question}Â»
+          «{lead.question_summary}»
         </div>
 
         {lead.purchased ? (
@@ -67,7 +67,7 @@ function LeadCard({ lead, onBuy }: { lead: Lead; onBuy: (id: string) => void }) 
             background: "rgba(74,155,110,0.12)",
             fontFamily: "var(--sans)", fontSize: 13, color: "var(--alloro)", textAlign: "center",
           }}>
-            â Lead acquistato â contatta il cliente
+            ✓ Lead acquistato — contatta il cliente
           </div>
         ) : (
           <button
@@ -84,7 +84,7 @@ function LeadCard({ lead, onBuy }: { lead: Lead; onBuy: (id: string) => void }) 
             <span className="mono" style={{
               fontSize: 11, background: "rgba(255,255,255,0.2)",
               padding: "2px 6px", borderRadius: 3,
-            }}>9â¬</span>
+            }}>9€</span>
             Acquista lead
           </button>
         )}
@@ -95,7 +95,7 @@ function LeadCard({ lead, onBuy }: { lead: Lead; onBuy: (id: string) => void }) 
 
 export default function MobileLeadsPage() {
   const [user, setUser] = useState<{ id: string } | null>(null);
-  const [isAvvocato, setIsAvvocato] = useState(false);
+  const [isProfessionista, setIsProfessionista] = useState(false);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
@@ -107,32 +107,33 @@ export default function MobileLeadsPage() {
       if (!user) { setLoading(false); return; }
       setUser(user);
 
-      // Check avvocato role
+      // Check professionista role using the real `role` column in profiles
       const { data: profile } = await supabase
         .from("profiles")
-        .select("subscription_tier, profession")
+        .select("role")
         .eq("id", user.id)
         .single();
 
-      const avv = profile?.subscription_tier === "avvocato" || profile?.profession === "avvocato";
-      setIsAvvocato(avv);
+      const professionista = profile?.role === "professionista";
+      setIsProfessionista(professionista);
 
-      if (avv) {
-        // Fetch available leads
+      if (professionista) {
+        // Fetch available leads from marketplace_leads (real table name)
         const { data: leadsData } = await supabase
-          .from("professional_leads")
-          .select("id, question, user_type, created_at")
+          .from("marketplace_leads")
+          .select("id, question_summary, lead_type, created_at")
           .eq("status", "available")
           .order("created_at", { ascending: false })
           .limit(20);
 
-        // Fetch purchased leads
-        const { data: purchased } = await supabase
-          .from("purchased_leads")
-          .select("lead_id")
-          .eq("professional_id", user.id);
+        // Fetch leads already purchased by this professional
+        const { data: purchasedLeads } = await supabase
+          .from("marketplace_leads")
+          .select("id")
+          .eq("professional_id", user.id)
+          .in("status", ["purchased", "active", "closed"]);
 
-        const purchasedIds = new Set((purchased ?? []).map((p: { lead_id: string }) => p.lead_id));
+        const purchasedIds = new Set((purchasedLeads ?? []).map((l: { id: string }) => l.id));
 
         setLeads((leadsData ?? []).map((l: Omit<Lead, "purchased">) => ({
           ...l,
@@ -152,9 +153,12 @@ export default function MobileLeadsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ leadId }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-    } catch {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+      else throw new Error("No redirect URL");
+    } catch (err) {
+      console.error("[buy-lead]", err);
       setBuyingId(null);
     }
   };
@@ -163,7 +167,7 @@ export default function MobileLeadsPage() {
     return (
       <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: "var(--paper)" }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ color: "var(--ink-4)", fontSize: 14 }}>Caricamentoâ¦</div>
+          <div style={{ color: "var(--ink-4)", fontSize: 14 }}>Caricamento…</div>
         </div>
         <MobileTabBar isAvvocato />
       </div>
@@ -176,7 +180,7 @@ export default function MobileLeadsPage() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
           <Lock size={32} color="var(--ink-4)" style={{ marginBottom: 16 }} />
           <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Area Professionisti</div>
-          <p style={{ fontSize: 14, color: "var(--ink-3)", marginBottom: 24, lineHeight: 1.5 }}>Accedi al tuo account avvocato per vedere i lead disponibili.</p>
+          <p style={{ fontSize: 14, color: "var(--ink-3)", marginBottom: 24, lineHeight: 1.5 }}>Accedi al tuo account professionista per vedere i lead disponibili.</p>
           <button onClick={() => router.push("/")} style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: "var(--vermiglio)", color: "white", fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
             Accedi
           </button>
@@ -186,14 +190,14 @@ export default function MobileLeadsPage() {
     );
   }
 
-  if (!isAvvocato) {
+  if (!isProfessionista) {
     return (
       <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: "var(--paper)" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
-          <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Piano Avvocato</div>
+          <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Piano Professionista</div>
           <p style={{ fontSize: 14, color: "var(--ink-3)", marginBottom: 24, lineHeight: 1.5 }}>
-            Il marketplace lead Ã¨ riservato agli avvocati iscritti.<br />
-            Ogni lead richiede una query "Chiedi a un Professionista" (9â¬).
+            Il marketplace lead è riservato ai professionisti iscritti a NormaAI.<br />
+            Ogni lead costa 9€.
           </p>
           <button onClick={() => router.push("/dashboard")} style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: "var(--vermiglio)", color: "white", fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
             Scopri il piano
@@ -212,7 +216,7 @@ export default function MobileLeadsPage() {
       <div style={{ padding: "10px 16px 14px", borderBottom: "1px solid var(--paper-line)", flexShrink: 0 }}>
         <div className="serif" style={{ fontSize: 20 }}>Lead disponibili</div>
         <div className="mono" style={{ fontSize: 9.5, color: "var(--ink-4)", letterSpacing: "0.08em", marginTop: 3, textTransform: "uppercase" }}>
-          {leads.length} richieste â¢ 9â¬ per lead
+          {leads.length} richieste • 9€ per lead
         </div>
       </div>
 
@@ -221,7 +225,7 @@ export default function MobileLeadsPage() {
         {leads.length === 0 ? (
           <div style={{ padding: "40px 24px", textAlign: "center", color: "var(--ink-4)", fontSize: 14 }}>
             Nessun lead disponibile al momento.<br />
-            <span style={{ fontSize: 13 }}>Ricontrolla piÃ¹ tardi.</span>
+            <span style={{ fontSize: 13 }}>Ricontrolla più tardi.</span>
           </div>
         ) : (
           leads.map((lead) => (
