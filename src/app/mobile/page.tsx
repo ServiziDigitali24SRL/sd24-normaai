@@ -1,125 +1,20 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, BookmarkPlus, Menu } from "lucide-react";
-import { MobileOrb, ListeningDots } from "@/components/mobile/MobileOrb";
+import { X, Menu, PhoneOff, Check } from "lucide-react";
+import { MobileOrb, ListeningDots, type OrbStyle } from "@/components/mobile/MobileOrb";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { useMobileVoice } from "@/hooks/useMobileVoice";
 
-/* ââ Onboarding gate (shown after 10 anonymous queries) âââââââââââââââââââ */
-function OnboardingGate({ onClose }: { onClose: () => void }) {
-  const router = useRouter();
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 200,
-      background: "rgba(26,24,20,0.6)",
-      backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "flex-end",
-    }}>
-      <div style={{
-        width: "100%",
-        background: "var(--paper)",
-        borderRadius: "20px 20px 0 0",
-        padding: "28px 24px 40px",
-        paddingBottom: "calc(40px + env(safe-area-inset-bottom))",
-      }}>
-        {/* Logo */}
-        <div className="serif" style={{
-          fontSize: 26, textAlign: "center", marginBottom: 8, color: "var(--ink)",
-        }}>
-          Norma<span style={{ fontStyle: "italic", color: "var(--vermiglio)" }}>AI</span>
-        </div>
+const ORB_STYLES: { id: OrbStyle; label: string; preview: string }[] = [
+  { id: "classico", label: "Classico", preview: "linear-gradient(135deg, #E6DFCF, #D44A2A)" },
+  { id: "notte",    label: "Notte",    preview: "linear-gradient(135deg, #131A30, #3060A0)" },
+  { id: "natura",   label: "Natura",   preview: "linear-gradient(135deg, #C8DFC0, #40A030)" },
+  { id: "aurora",   label: "Aurora",   preview: "linear-gradient(135deg, #D8C0F0, #C040A0)" },
+];
 
-        <p style={{ textAlign: "center", fontSize: 14, color: "var(--ink-2)", marginBottom: 24, lineHeight: 1.5 }}>
-          Hai usato le 10 query gratuite di oggi.<br />
-          Registrati per continuare â Ã¨ gratis.
-        </p>
-
-        {/* Stats bar */}
-        <div style={{
-          display: "flex", gap: 12, marginBottom: 28, justifyContent: "center",
-        }}>
-          {[
-            { n: "10", label: "query/giorno" },
-            { n: "â", label: "fonti normative" },
-            { n: "9â¬", label: "consulenza pro" },
-          ].map((s) => (
-            <div key={s.label} style={{
-              flex: 1, textAlign: "center",
-              background: "var(--paper-2)", borderRadius: 8, padding: "10px 6px",
-              border: "1px solid var(--paper-line)",
-            }}>
-              <div className="mono" style={{ fontSize: 18, color: "var(--vermiglio)", fontWeight: 600 }}>{s.n}</div>
-              <div style={{ fontSize: 10, color: "var(--ink-3)", marginTop: 2 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <button
-          onClick={() => router.push("/onboarding")}
-          style={{
-            width: "100%", padding: "16px", borderRadius: 12, border: "none",
-            background: "var(--vermiglio)", color: "white",
-            fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600,
-            cursor: "pointer", marginBottom: 12,
-          }}
-        >
-          Registrati gratis
-        </button>
-
-        <button
-          onClick={onClose}
-          style={{
-            width: "100%", padding: "14px", borderRadius: 12,
-            background: "transparent", border: "1px solid var(--paper-line)",
-            fontFamily: "var(--sans)", fontSize: 14, color: "var(--ink-2)",
-            cursor: "pointer",
-          }}
-        >
-          Continua domani
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ââ AI Source card (shown while speaking) ââââââââââââââââââââââââââââââââ */
-function SourceCard({ source, onSave }: {
-  source: { code: string; title: string; snippet: string };
-  onSave: () => void;
-}) {
-  return (
-    <div style={{
-      background: "var(--paper-2)",
-      border: "1px solid var(--paper-line)",
-      borderLeft: "3px solid var(--vermiglio)",
-      borderRadius: 10,
-      padding: "12px 14px",
-      display: "flex", flexDirection: "column", gap: 6,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span className="mono" style={{ fontSize: 10, color: "var(--vermiglio)", fontWeight: 600, letterSpacing: "0.05em" }}>
-          Â§ {source.code}
-        </span>
-        <span style={{ fontSize: 11, color: "var(--ink-3)", fontStyle: "italic", flex: 1 }}>{source.title}</span>
-        <button onClick={onSave} style={{
-          border: "none", background: "transparent", cursor: "pointer",
-          color: "var(--ink-3)", padding: 4,
-        }}>
-          <BookmarkPlus size={15} />
-        </button>
-      </div>
-      <div className="serif" style={{
-        fontSize: 14, fontStyle: "italic", color: "var(--ink)", lineHeight: 1.4,
-      }}>
-        Â«{source.snippet}Â»
-      </div>
-    </div>
-  );
-}
-
-/* ââ Pro query button (9â¬) ââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* -- Pro query button (9 EUR) */
 function ProQueryButton({ question }: { question: string }) {
   const [loading, setLoading] = useState(false);
 
@@ -154,12 +49,11 @@ function ProQueryButton({ question }: { question: string }) {
         fontWeight: 500,
         cursor: loading ? "default" : "pointer",
         display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        marginTop: 8,
       }}
     >
-      {loading ? "Apertura pagamentoâ¦" : (
+      {loading ? "Apertura pagamento..." : (
         <>
-          <span className="mono" style={{ fontSize: 13, color: "var(--vermiglio)", background: "rgba(212,74,42,0.15)", padding: "2px 6px", borderRadius: 4 }}>9â¬</span>
+          <span className="mono" style={{ fontSize: 13, color: "var(--vermiglio)", background: "rgba(212,74,42,0.15)", padding: "2px 6px", borderRadius: 4 }}>9 EUR</span>
           Chiedi a un Professionista
         </>
       )}
@@ -167,37 +61,33 @@ function ProQueryButton({ question }: { question: string }) {
   );
 }
 
-/* ââ Main Mobile Home Page ââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* -- Main Mobile Home Page */
 export default function MobilePage() {
-  const { orbState, transcript, lastResult, tapOrb, queriesUsed, queryLimitHit } = useMobileVoice();
-  const [showGate, setShowGate] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const router = useRouter();
-  const answerRef = useRef<HTMLDivElement>(null);
+  const {
+    orbState,
+    callActive,
+    tapOrb,
+    lastQuestion,
+  } = useMobileVoice();
 
-  // Listen for limit event from hook
+  const [showMenu, setShowMenu] = useState(false);
+  const [orbStyle, setOrbStyle] = useState<OrbStyle>("classico");
+  const router = useRouter();
+
   useEffect(() => {
-    const handler = () => setShowGate(true);
-    window.addEventListener("norma-mobile-limit", handler);
-    return () => window.removeEventListener("norma-mobile-limit", handler);
+    const saved = localStorage.getItem("norma_orb_style") as OrbStyle | null;
+    if (saved && ORB_STYLES.some(s => s.id === saved)) setOrbStyle(saved);
   }, []);
 
-  // Auto-show gate when limit is hit
-  useEffect(() => {
-    if (queryLimitHit && queriesUsed >= 10) setShowGate(true);
-  }, [queryLimitHit, queriesUsed]);
-
-  // Scroll to answer when result arrives
-  useEffect(() => {
-    if (lastResult) {
-      setTimeout(() => answerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), 200);
-    }
-  }, [lastResult]);
+  const handleOrbStyleChange = (style: OrbStyle) => {
+    setOrbStyle(style);
+    localStorage.setItem("norma_orb_style", style);
+  };
 
   const stateCopy: Record<string, string> = {
-    idle: "Tocca per parlare",
-    listening: "Sto ascoltandoâ¦",
-    thinking: "Cerco nelle fontiâ¦",
+    idle: "Tocca per parlare con Norma",
+    listening: "Sto ascoltando...",
+    thinking: "Cerco nelle fonti...",
     speaking: "Norma risponde",
   };
 
@@ -212,10 +102,8 @@ export default function MobilePage() {
       overflow: "hidden",
     }}>
 
-      {/* ââ Status bar spacer ââ */}
       <div style={{ height: "env(safe-area-inset-top, 44px)" }} />
 
-      {/* ââ Header ââ */}
       <div style={{
         padding: "6px 20px 0",
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -238,44 +126,45 @@ export default function MobilePage() {
           </div>
         </div>
 
-        <button
-          onClick={() => setShowMenu(true)}
-          style={{
-            width: 38, height: 38, borderRadius: "50%",
-            border: "1px solid var(--paper-line)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "transparent", cursor: "pointer",
-            WebkitTapHighlightColor: "transparent",
-          }}
-        >
-          <Menu size={17} color="var(--ink-2)" />
-        </button>
-      </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {callActive && (
+            <button
+              onClick={tapOrb}
+              style={{
+                width: 38, height: 38, borderRadius: "50%",
+                border: "none",
+                background: "var(--vermiglio)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <PhoneOff size={16} color="white" />
+            </button>
+          )}
 
-      {/* ââ Query counter bar ââ */}
-      <div style={{ padding: "10px 20px 0", display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-        <div style={{ flex: 1, height: 3, background: "var(--paper-3)", borderRadius: 2, overflow: "hidden" }}>
-          <div style={{
-            width: `${Math.min(queriesUsed / 10, 1) * 100}%`,
-            height: "100%",
-            background: queriesUsed >= 9 ? "var(--vermiglio)" : "var(--ink)",
-            transition: "width 0.4s ease, background 0.3s",
-          }} />
+          <button
+            onClick={() => setShowMenu(true)}
+            style={{
+              width: 38, height: 38, borderRadius: "50%",
+              border: "1px solid var(--paper-line)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "transparent", cursor: "pointer",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            <Menu size={17} color="var(--ink-2)" />
+          </button>
         </div>
-        <span className="mono" style={{ fontSize: 9.5, letterSpacing: "0.08em", color: "var(--ink-3)" }}>
-          {queriesUsed}/10
-        </span>
       </div>
 
-      {/* ââ Orb area ââ */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
-        padding: "0 20px", minHeight: 280,
+        padding: "0 20px", minHeight: 300,
       }}>
-        <MobileOrb state={orbState} onTap={tapOrb} size={180} />
+        <MobileOrb state={orbState} onTap={tapOrb} size={190} orbStyle={orbStyle} />
 
-        {/* State label */}
         <div style={{ marginTop: 28, textAlign: "center" }}>
           <div className="mono" style={{
             fontSize: 10, letterSpacing: "0.22em", color: "var(--ink-3)",
@@ -285,67 +174,38 @@ export default function MobilePage() {
             {stateCopy[orbState]}
           </div>
 
-          {transcript && (
-            <div className="serif" style={{
-              fontSize: 18, fontStyle: "italic", color: "var(--ink)",
-              lineHeight: 1.3, maxWidth: 300, marginTop: 10, textAlign: "center",
-            }}>
-              Â«{transcript}Â»
-            </div>
-          )}
-
-          {!transcript && orbState === "idle" && !lastResult && (
+          {orbState === "idle" && !lastQuestion && (
             <p style={{
               fontSize: 13, color: "var(--ink-3)", maxWidth: 260, lineHeight: 1.45,
               marginTop: 10,
             }}>
-              Parla con Norma â risposta immediata con fonti normative.
+              Parla con Norma risposta immediata con fonti normative.
             </p>
           )}
         </div>
       </div>
 
-      {/* ââ Answer card (scrollable area) ââ */}
-      {lastResult && (
-        <div ref={answerRef} style={{ padding: "0 16px 16px", flexShrink: 0 }}>
-          {/* Answer text */}
+      {lastQuestion && orbState === "idle" && (
+        <div style={{ padding: "0 16px 16px", flexShrink: 0 }}>
           <div style={{
             background: "var(--paper-2)",
             border: "1px solid var(--paper-line)",
-            borderRadius: 12, padding: "14px 16px",
+            borderRadius: 10, padding: "10px 14px",
             marginBottom: 10,
           }}>
-            <div className="serif" style={{
-              fontSize: 14.5, lineHeight: 1.55, color: "var(--ink)",
-              fontStyle: "italic",
-            }}>
-              {lastResult.answer.slice(0, 400)}
-              {lastResult.answer.length > 400 && "â¦"}
+            <div className="mono" style={{ fontSize: 9, letterSpacing: "0.1em", color: "var(--ink-3)", marginBottom: 4 }}>
+              ULTIMA DOMANDA
+            </div>
+            <div className="serif" style={{ fontSize: 13, fontStyle: "italic", color: "var(--ink-2)" }}>
+              {lastQuestion.slice(0, 120)}{lastQuestion.length > 120 ? "..." : ""}
             </div>
           </div>
-
-          {/* Sources */}
-          {lastResult.sources.slice(0, 2).map((src, i) => (
-            <div key={i} style={{ marginBottom: 8 }}>
-              <SourceCard
-                source={src}
-                onSave={() => {/* TODO: save to archivio */}}
-              />
-            </div>
-          ))}
-
-          {/* Pro query CTA */}
-          <ProQueryButton question={lastResult.question} />
+          <ProQueryButton question={lastQuestion} />
         </div>
       )}
 
-      {/* ââ Bottom tab bar ââ */}
       <MobileTabBar />
 
-      {/* ââ Onboarding gate ââ */}
-      {showGate && <OnboardingGate onClose={() => setShowGate(false)} />}
-
-      {/* ââ Menu slide-up ââ */}
       {showMenu && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 200,
@@ -363,34 +223,68 @@ export default function MobilePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <span className="serif" style={{ fontSize: 20 }}>
-                Menu
-              </span>
+              <span className="serif" style={{ fontSize: 20 }}>Impostazioni</span>
               <button onClick={() => setShowMenu(false)} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
                 <X size={20} color="var(--ink-2)" />
               </button>
             </div>
 
-            {[
-              { label: "Accedi al tuo account", action: () => router.push("/") },
-              { label: "Versione desktop", action: () => router.push("/") },
-              { label: "Privacy & Cookie", action: () => router.push("/privacy") },
-            ].map((item) => (
-              <button
-                key={item.label}
-                onClick={() => { setShowMenu(false); item.action(); }}
-                style={{
-                  width: "100%", textAlign: "left", padding: "14px 0",
-                  borderTop: "none", borderLeft: "none", borderRight: "none",
-                  borderBottom: "1px solid var(--paper-line)",
-                  background: "transparent", cursor: "pointer",
-                  fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)",
-                  display: "block",
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
+            <div style={{ marginBottom: 20 }}>
+              <div className="mono" style={{ fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)", marginBottom: 12 }}>
+                STILE PALLA
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {ORB_STYLES.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleOrbStyleChange(s.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "10px 12px", borderRadius: 10,
+                      border: orbStyle === s.id ? "1.5px solid var(--ink)" : "1px solid var(--paper-line)",
+                      background: orbStyle === s.id ? "var(--paper-2)" : "transparent",
+                      cursor: "pointer", textAlign: "left",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    <div style={{
+                      width: 32, height: 32, borderRadius: "50%",
+                      background: s.preview, flexShrink: 0,
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                    }} />
+                    <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
+                      {s.label}
+                    </div>
+                    {orbStyle === s.id && (
+                      <Check size={14} color="var(--ink)" style={{ marginLeft: "auto" }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 16 }}>
+              {[
+                { label: "Accedi al tuo account", action: () => router.push("/") },
+                { label: "Versione desktop", action: () => router.push("/") },
+                { label: "Privacy & Cookie", action: () => router.push("/privacy") },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => { setShowMenu(false); item.action(); }}
+                  style={{
+                    width: "100%", textAlign: "left", padding: "14px 0",
+                    border: "none",
+                    borderBottom: "1px solid var(--paper-line)",
+                    background: "transparent", cursor: "pointer",
+                    fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)",
+                    display: "block",
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
