@@ -13,15 +13,6 @@ interface ConvRow {
   id: string;
   title: string;
   updated_at: string;
-  last_message?: string;
-}
-
-interface ArticleRow {
-  id: string;
-  code: string;
-  title: string;
-  snippet: string;
-  saved_at: string;
 }
 
 function createSupabase() {
@@ -31,7 +22,7 @@ function createSupabase() {
   );
 }
 
-/* ââ Unauthenticated gate ââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Unauthenticated gate ──────────────────────────────────────────────── */
 function AuthGate() {
   const router = useRouter();
   return (
@@ -71,7 +62,7 @@ function AuthGate() {
   );
 }
 
-/* ââ Paywall for free users ââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Paywall for free users ──────────────────────────────────────────────── */
 function SubscriptionGate() {
   const router = useRouter();
   return (
@@ -80,7 +71,7 @@ function SubscriptionGate() {
       alignItems: "center", justifyContent: "center",
       padding: "40px 24px", textAlign: "center",
     }}>
-      <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Archivio â Piano Pro</div>
+      <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Archivio — Piano Pro</div>
       <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.5, marginBottom: 24 }}>
         Salva e ritrova tutta la tua cronologia, gli articoli di legge
         e i documenti caricati. Disponibile con piano a pagamento.
@@ -99,7 +90,22 @@ function SubscriptionGate() {
   );
 }
 
-/* ââ Chat list âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Coming soon placeholder ─────────────────────────────────────────────────── */
+function ComingSoon({ label }: { label: string }) {
+  return (
+    <div style={{ padding: "40px 24px", textAlign: "center" }}>
+      <div className="serif" style={{ fontSize: 20, fontStyle: "italic", color: "var(--ink-3)", marginBottom: 8 }}>
+        {label}
+      </div>
+      <p style={{ fontSize: 13, color: "var(--ink-4)", lineHeight: 1.5 }}>
+        Funzionalità in arrivo.<br />
+        Aggiornamento previsto nelle prossime settimane.
+      </p>
+    </div>
+  );
+}
+
+/* ── Chat list ────────────────────────────────────────────────────────────────────────── */
 function ChatList({ userId }: { userId: string }) {
   const [convs, setConvs] = useState<ConvRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +124,7 @@ function ChatList({ userId }: { userId: string }) {
       });
   }, [userId]);
 
-  if (loading) return <div style={{ padding: 24, color: "var(--ink-4)", fontSize: 14 }}>Caricamentoâ¦</div>;
+  if (loading) return <div style={{ padding: 24, color: "var(--ink-4)", fontSize: 14 }}>Caricamento…</div>;
   if (convs.length === 0) return (
     <div style={{ padding: 32, textAlign: "center", color: "var(--ink-4)", fontSize: 14 }}>
       Nessuna conversazione salvata.
@@ -145,106 +151,7 @@ function ChatList({ userId }: { userId: string }) {
   );
 }
 
-/* ââ Articles list âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
-function ArticleList({ userId }: { userId: string }) {
-  const [articles, setArticles] = useState<ArticleRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const supabase = createSupabase();
-    supabase
-      .from("saved_articles")
-      .select("id, code, title, snippet, saved_at")
-      .eq("user_id", userId)
-      .order("saved_at", { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
-        setArticles((data ?? []) as ArticleRow[]);
-        setLoading(false);
-      });
-  }, [userId]);
-
-  if (loading) return <div style={{ padding: 24, color: "var(--ink-4)", fontSize: 14 }}>Caricamentoâ¦</div>;
-  if (articles.length === 0) return (
-    <div style={{ padding: 32, textAlign: "center", color: "var(--ink-4)", fontSize: 14 }}>
-      Nessun articolo salvato.<br />
-      <span style={{ fontSize: 13 }}>Salva gli articoli durante le risposte.</span>
-    </div>
-  );
-
-  return (
-    <div style={{ padding: "8px 0" }}>
-      {articles.map((a) => (
-        <div key={a.id} style={{
-          padding: "14px 16px",
-          borderBottom: "1px solid var(--paper-line)",
-          borderLeft: "3px solid var(--vermiglio)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-            <span className="mono" style={{ fontSize: 10, color: "var(--vermiglio)", fontWeight: 600 }}>Â§ {a.code}</span>
-            <span style={{ fontSize: 11, color: "var(--ink-3)", fontStyle: "italic" }}>{a.title}</span>
-          </div>
-          {a.snippet && (
-            <div className="serif" style={{ fontSize: 13.5, color: "var(--ink-2)", fontStyle: "italic", lineHeight: 1.4 }}>
-              Â«{a.snippet}Â»
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ââ Documents list ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
-function DocList({ userId }: { userId: string }) {
-  const [docs, setDocs] = useState<{ id: string; name: string; created_at: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const supabase = createSupabase();
-    supabase
-      .from("documents")
-      .select("id, name, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(30)
-      .then(({ data }) => {
-        setDocs((data ?? []) as { id: string; name: string; created_at: string }[]);
-        setLoading(false);
-      });
-  }, [userId]);
-
-  if (loading) return <div style={{ padding: 24, color: "var(--ink-4)", fontSize: 14 }}>Caricamentoâ¦</div>;
-  if (docs.length === 0) return (
-    <div style={{ padding: 32, textAlign: "center", color: "var(--ink-4)", fontSize: 14 }}>
-      Nessun documento caricato.
-    </div>
-  );
-
-  return (
-    <div style={{ padding: "8px 0" }}>
-      {docs.map((d) => (
-        <div key={d.id} style={{
-          padding: "14px 16px",
-          borderBottom: "1px solid var(--paper-line)",
-          display: "flex", alignItems: "center", gap: 12,
-        }}>
-          <File size={18} color="var(--ink-3)" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {d.name}
-            </div>
-            <div className="mono" style={{ fontSize: 10, color: "var(--ink-4)", marginTop: 2, letterSpacing: "0.06em" }}>
-              {new Date(d.created_at).toLocaleDateString("it-IT")}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ââ Main Page âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Main Page ─────────────────────────────────────────────────────────────────────────── */
 export default function MobileArchivioPage() {
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [user, setUser] = useState<User | null>(null);
@@ -256,14 +163,15 @@ export default function MobileArchivioPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
       if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("subscription_status, subscription_tier")
-          .eq("id", user.id)
-          .single();
-        const isPaid = profile?.subscription_status === "active" ||
-          ["cittadino_pro", "professionista", "impresa", "avvocato"].includes(profile?.subscription_tier ?? "");
-        setHasPaidPlan(isPaid);
+        // Check active paid subscription in subscriptions table (source of truth)
+        const { data: sub } = await supabase
+          .from("subscriptions")
+          .select("plan, status")
+          .eq("user_id", user.id)
+          .eq("status", "active")
+          .not("plan", "eq", "free")
+          .maybeSingle();
+        setHasPaidPlan(!!sub);
       }
       setLoading(false);
     });
@@ -319,7 +227,7 @@ export default function MobileArchivioPage() {
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: 72 }}>
         {loading ? (
-          <div style={{ padding: 32, textAlign: "center", color: "var(--ink-4)", fontSize: 14 }}>Caricamentoâ¦</div>
+          <div style={{ padding: 32, textAlign: "center", color: "var(--ink-4)", fontSize: 14 }}>Caricamento…</div>
         ) : !user ? (
           <AuthGate />
         ) : !hasPaidPlan ? (
@@ -327,8 +235,8 @@ export default function MobileArchivioPage() {
         ) : (
           <>
             {activeTab === "chat" && <ChatList userId={user.id} />}
-            {activeTab === "articoli" && <ArticleList userId={user.id} />}
-            {activeTab === "documenti" && <DocList userId={user.id} />}
+            {activeTab === "articoli" && <ComingSoon label="Articoli salvati" />}
+            {activeTab === "documenti" && <ComingSoon label="Documenti" />}
           </>
         )}
       </div>
