@@ -1144,7 +1144,7 @@ function UploadDocModal({ onClose, onConfirm, pushToast }: { onClose: () => void
               <Icon name="paperclip" size={24} />
               <div style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 8 }}>Trascini un file qui o</div>
               <button onClick={start} className="btn btn-primary" style={{ marginTop: 12 }}>Selezioni un file</button>
-            </>
+            </div>
           </>
         )}
         {phase === 'analyzing' && (
