@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 /**
  * POST /api/mobile/buy-lead
@@ -17,6 +19,24 @@ export async function POST(req: NextRequest) {
     if (!leadId) {
       return NextResponse.json({ error: "leadId is required" }, { status: 400 });
     }
+
+    // Authenticate the professional making the purchase
+    const cookieStore = await cookies();
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll() {},
+        },
+      }
+    );
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+    }
+    const professionalId = user.id;
 
     const origin = req.headers.get("origin") || "https://normaai.it";
 
@@ -58,7 +78,9 @@ export async function POST(req: NextRequest) {
         },
       ],
       metadata: {
+        type: "lead_purchase",
         lead_id: leadId,
+        professional_id: professionalId,
         source: "mobile_buy_lead",
       },
       success_url: `${origin}/mobile/leads?payment=success&lead=${leadId}`,
