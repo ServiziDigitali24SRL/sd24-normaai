@@ -68,6 +68,8 @@ export default function MobilePage() {
     callActive,
     tapOrb,
     lastQuestion,
+    voiceError,
+    clearVoiceError,
   } = useMobileVoice();
 
   const [showMenu, setShowMenu] = useState(false);
@@ -209,6 +211,35 @@ export default function MobilePage() {
             </div>
           </div>
           <ProQueryButton question={lastQuestion} />
+        </div>
+      )}
+
+      {/* ── Voice error banner ── */}
+      {voiceError && (
+        <div style={{
+          margin: "0 16px 10px",
+          background: "rgba(212,74,42,0.08)",
+          border: "1px solid rgba(212,74,42,0.25)",
+          borderRadius: 10,
+          padding: "10px 12px",
+          display: "flex", alignItems: "flex-start", gap: 8,
+          fontSize: 12.5, color: "var(--vermiglio-ink)",
+          fontFamily: "var(--sans)", lineHeight: 1.4,
+          flexShrink: 0,
+        }}>
+          <span style={{ flex: 1 }}>{voiceError}</span>
+          <button
+            onClick={clearVoiceError}
+            aria-label="Chiudi"
+            style={{
+              border: "none", background: "transparent",
+              padding: 0, cursor: "pointer",
+              display: "inline-flex", alignItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={14} color="var(--vermiglio-ink)" />
+          </button>
         </div>
       )}
 
