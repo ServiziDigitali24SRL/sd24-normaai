@@ -40,9 +40,13 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' https://js.stripe.com https://plausible.io",
+              // 'unsafe-eval' is required by Daily.co's call-machine bundle
+              // (used internally by the Vapi web SDK) — verified via runtime
+              // CSP error: "Failed to load call object bundle ... EvalError: Refused".
+              // c.daily.co serves the bundle script.
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://plausible.io https://*.daily.co",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: blob: https://images.unsplash.com",
+              "img-src 'self' data: blob: https://images.unsplash.com https://*.daily.co",
               "font-src 'self' data: https://fonts.gstatic.com",
               "media-src 'self' blob: https://*.daily.co",
               "worker-src 'self' blob:",
