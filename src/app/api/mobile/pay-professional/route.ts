@@ -29,12 +29,15 @@ export async function POST(req: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    let leadId: string | null = null;
-    const { data: lead } = await supabase
+    // Insert pending lead. Column is `consumer_id` (matches chat/route.ts and
+    // leads/otp/verify/route.ts). Previous `consumer_user_id` did not exist on
+    // the table → insert failed silently → users paid 9€ but the webhook had
+    // no lead_id to finalize.
+    const { data: lead, error: leadInsertErr } = await supabase
       .from("marketplace_leads")
       .insert({
         question_summary: question,
-        consumer_user_id: userId,
+        consumer_id: userId,
         lead_type: "privato",
         status: "pending_payment",
         price_cents: 900,
@@ -43,7 +46,14 @@ export async function POST(req: NextRequest) {
       .select("id")
       .single();
 
-    if (lead) leadId = lead.id;
+    if (leadInsertErr || !lead?.id) {
+      console.error("[pay-professional] lead insert failed", leadInsertErr);
+      return NextResponse.json(
+        { error: "Impossibile creare la richiesta. Riprova." },
+        { status: 500 }
+      );
+    }
+    const leadId: string = lead.id;
 
     // Create Stripe Checkout session
     const session = await stripe.checkout.sessions.create({
@@ -64,11 +74,11 @@ export async function POST(req: NextRequest) {
         },
       ],
       metadata: {
-        lead_id: leadId ?? "",
+        lead_id: leadId,
         user_id: userId ?? "",
         source: "mobile_pay_professional",
       },
-      success_url: `${origin}/mobile?payment=success&lead=${leadId ?? ""}`,
+      success_url: `${origin}/mobile?payment=success&lead=${leadId}`,
       cancel_url: `${origin}/mobile?payment=cancelled`,
       allow_promotion_codes: false,
     });

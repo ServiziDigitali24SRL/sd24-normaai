@@ -93,7 +93,13 @@ export default function OnboardingWizard() {
         body: JSON.stringify({ userId, email: userEmail, ...data }),
       });
       if (res.ok) {
-        router.replace(data.role === 'impresa' ? '/dashboard-impresa' : '/dashboard');
+        // Route to role-specific dashboard. /dashboard is admin-only Control Room
+        // (ALLOWED_EMAILS gate) — sending regular users there bounces them to /.
+        const dest =
+          data.role === 'impresa'        ? '/dashboard-impresa' :
+          data.role === 'professionista' ? '/dashboard-professionista' :
+          /* cittadino / fallback */       '/dashboard-cittadino';
+        router.replace(dest);
       } else {
         console.error('Onboarding complete error:', await res.text());
       }

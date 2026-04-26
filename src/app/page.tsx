@@ -154,7 +154,9 @@ export default function Home() {
       if (event === "SIGNED_IN" && session?.user) {
         const role = session.user.user_metadata?.role;
         if (role === "professionista") {
-          router.replace("/dashboard");
+          // /dashboard is admin-only Control Room (ALLOWED_EMAILS gate) — route
+          // professionisti to their actual dashboard so they don't bounce.
+          router.replace("/dashboard-professionista");
           return;
         }
         if (role === "impresa") {

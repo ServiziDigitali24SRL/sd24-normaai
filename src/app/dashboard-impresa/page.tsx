@@ -75,7 +75,12 @@ export default function DashboardImpresa() {
         role = profile?.role ?? role;
       }
       if (role !== "impresa") {
-        router.replace(role === "professionista" || role === "privato" ? "/dashboard" : "/");
+        // /dashboard is admin-only Control Room — route to role-specific dashboards instead.
+        router.replace(
+          role === "professionista" ? "/dashboard-professionista" :
+          role === "privato"         ? "/dashboard-cittadino"     :
+                                       "/"
+        );
         return;
       }
       setUser(u);
