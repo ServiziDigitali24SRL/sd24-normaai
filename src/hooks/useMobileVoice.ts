@@ -13,6 +13,38 @@ const VAPI_ASSISTANT_ID = "e4cb1d2b-5afa-440c-94e7-51380cdc1f4a";
 // to idle so the UI doesn't lie about being busy forever.
 const THINKING_WATCHDOG_MS = 15_000;
 
+// Vapi errors come in MANY shapes (Error, plain object, nested .error, raw
+// websocket frame). String(obj) returns "[object Object]" — useless to the
+// user. Dig through the common keys, fall back to JSON, and finally to
+// the constructor name + key list so we always show SOMETHING actionable.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function formatVapiError(err: any): string {
+  if (err == null) return "errore sconosciuto";
+  if (typeof err === "string") return err;
+
+  const candidates = [
+    err.errorMsg,
+    err.message,
+    err.error?.message,
+    err.error?.errorMsg,
+    err.errorReason,
+    err.endedReason,
+    err.error?.error,
+    err.cause?.message,
+    err.action,
+  ].filter((v) => typeof v === "string" && v.length > 0);
+  if (candidates.length) return String(candidates[0]).slice(0, 200);
+
+  try {
+    const j = JSON.stringify(err, Object.getOwnPropertyNames(err));
+    if (j && j !== "{}") return j.slice(0, 200);
+  } catch { /* circular or unserializable */ }
+
+  const name = err.constructor?.name || typeof err;
+  const keys = Object.keys(err).join(",") || "no keys";
+  return `${name} (${keys})`;
+}
+
 export interface UseMobileVoiceReturn {
   orbState: OrbState;
   userTranscript: string;
@@ -137,14 +169,19 @@ export function useMobileVoice(): UseMobileVoiceReturn {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vapi.on("error", (err: any) => {
       console.error("[NormaAI] vapi:error", err);
+      // Dump every key we can find so the Safari Web Inspector shows
+      // structure even when the object isn't a real Error.
+      try {
+        console.error("[NormaAI] vapi:error keys:", Object.keys(err ?? {}));
+        console.error("[NormaAI] vapi:error JSON:", JSON.stringify(err, Object.getOwnPropertyNames(err ?? {})));
+      } catch { /* noop */ }
       disarmWatchdog();
       if (!mountedRef.current) return;
       setCallActive(false);
       setOrbState("idle");
       setUserTranscript("");
       setAssistantText("");
-      const msg = err?.errorMsg || err?.message || err?.error?.message || String(err);
-      setVoiceError(`Errore voce: ${String(msg).slice(0, 140)}`);
+      setVoiceError(`Errore voce: ${formatVapiError(err)}`);
     });
 
     return vapi;
