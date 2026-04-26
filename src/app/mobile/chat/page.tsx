@@ -309,7 +309,7 @@ export default function MobileChatPage() {
               value={input}
               onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
               onKeyDown={handleKeyDown}
-              placeholder="Chiedi a NormaAIâ¦"
+              placeholder="Chiedi a NormaAI..."
               rows={1}
               style={{
                 flex: 1, border: "none", background: "transparent",
