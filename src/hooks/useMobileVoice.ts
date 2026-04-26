@@ -109,6 +109,25 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
     };
   }, [disarmWatchdog]);
 
+  // PERF: pre-warm the Vapi SDK at mount instead of first tap. The dynamic
+  // import + Vapi instantiation + event wiring takes ~500ms-1s on a cold
+  // browser cache. Doing it during the page's idle time means the first
+  // tap goes straight to vapi.start() instead of paying that latency.
+  useEffect(() => {
+    // Use requestIdleCallback if available so we don't compete with critical
+    // first-paint work; setTimeout is the fallback for Safari.
+    type IdleCb = (cb: () => void) => number;
+    const ric: IdleCb =
+      (window as unknown as { requestIdleCallback?: IdleCb }).requestIdleCallback ??
+      ((cb: () => void) => window.setTimeout(cb, 200));
+    const handle = ric(() => { void getVapi(); });
+    return () => {
+      const cancel = (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback;
+      if (cancel) cancel(handle);
+      else window.clearTimeout(handle);
+    };
+  }, [getVapi]);
+
   // Lazy-init Vapi so we only import it client-side
   const getVapi = useCallback(async () => {
     if (vapiRef.current) return vapiRef.current;
