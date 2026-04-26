@@ -41,7 +41,7 @@ function ChatBubble({ msg }: { msg: Message }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "var(--serif)", fontSize: 16, fontStyle: "italic",
         color: "var(--vermiglio)", marginTop: 2,
-      }}>Â§</div>
+      }}>{'\u00A7'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="serif" style={{
           fontSize: 15, lineHeight: 1.55, color: "var(--ink)", fontStyle: "italic",
@@ -58,7 +58,7 @@ function ChatBubble({ msg }: { msg: Message }) {
                 borderRadius: 6, padding: "8px 10px",
               }}>
                 <span className="mono" style={{ fontSize: 10, color: "var(--vermiglio)", fontWeight: 600, marginRight: 6 }}>
-                  Â§ {src.code}
+                  {'\u00A7'} {src.code}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--ink-3)", fontStyle: "italic" }}>{src.title}</span>
               </div>
@@ -78,7 +78,7 @@ function TypingIndicator() {
         background: "var(--paper-2)", border: "1px solid var(--paper-line)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "var(--serif)", fontSize: 16, fontStyle: "italic", color: "var(--vermiglio)",
-      }}>Â§</div>
+      }}>{'\u00A7'}</div>
       <div style={{
         background: "var(--paper-2)", border: "1px solid var(--paper-line)",
         borderRadius: "18px 18px 18px 4px",
@@ -208,7 +208,7 @@ export default function MobileChatPage() {
 
         {/* Header */}
         <div style={{
-          padding: "8px16px",
+          padding: "8px 16px",
           borderBottom: "1px solid var(--paper-line)",
           display: "flex", alignItems: "center", gap: 12,
           flexShrink: 0, background: "var(--paper)",
@@ -232,7 +232,7 @@ export default function MobileChatPage() {
               <div className="serif" style={{
                 fontSize: 28, fontStyle: "italic", color: "var(--ink-4)",
                 marginBottom: 8,
-              }}>Â§</div>
+              }}>{'\u00A7'}</div>
               <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.5 }}>
                 Fai una domanda normativa.<br />
                 Rispondo con fonti di legge.
@@ -270,7 +270,7 @@ export default function MobileChatPage() {
                 background: "var(--paper-2)", border: "1px solid var(--paper-line)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: "var(--serif)", fontSize: 16, fontStyle: "italic", color: "var(--vermiglio)",
-              }}>Â§</div>
+              }}>{'\u00A7'}</div>
               <div className="serif" style={{ flex: 1, fontSize: 15, lineHeight: 1.55, fontStyle: "italic", color: "var(--ink)" }}>
                 {currentText}
               </div>
@@ -299,7 +299,7 @@ export default function MobileChatPage() {
               value={input}
               onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
               onKeyDown={handleKeyDown}
-              placeholder="Chiedi a NormaAIâ¦"
+              placeholder="Chiedi a NormaAI…"
               rows={1}
               style={{
                 flex: 1, border: "none", background: "transparent",
