@@ -142,6 +142,19 @@ export function useMobileVoice(): UseMobileVoiceReturn {
       }
     } catch { /* noop — unlock best-effort */ }
 
+    // Request mic permission explicitly BEFORE vapi.start().
+    // On iOS Safari, getUserMedia must be called within the user-gesture
+    // handler; Vapi calls it internally from an async WebRTC callback which
+    // iOS blocks. Requesting it here (still inside the tap handler) pre-grants
+    // the permission so Vapi's internal call succeeds.
+    try {
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (micErr) {
+      console.warn("[NormaAI] Mic permission denied", micErr);
+      if (mountedRef.current) setOrbState("idle");
+      return;
+    }
+
     // Start new call — optimistic UI
     setOrbState("thinking");
     try {
