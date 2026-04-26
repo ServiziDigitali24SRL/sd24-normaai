@@ -753,9 +753,11 @@ function SubcategoryDetail({ macroKey, macroLabel, itemLabel, checklist, onToggl
                   {subScore}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-4)', fontFamily: 'var(--sans)' }}>/100</div>
-                <Badge tone={subScore >= 80 ? 'ok' : subScore >= 60 ? 'warn' : 'accent'} style={{ marginTop: 4 }}>
-                  {subScore >= 80 ? 'Conforme' : subScore >= 60 ? 'In miglioramento' : 'Attenzione'}
-                </Badge>
+                <div style={{ marginTop: 4 }}>
+                  <Badge tone={subScore >= 80 ? 'ok' : subScore >= 60 ? 'warn' : 'accent'}>
+                    {subScore >= 80 ? 'Conforme' : subScore >= 60 ? 'In miglioramento' : 'Attenzione'}
+                  </Badge>
+                </div>
               </div>
             </div>
 
