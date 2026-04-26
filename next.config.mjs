@@ -32,7 +32,10 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // Permissions-Policy: enable microphone for own origin so the
+          // Vapi voice orb can call getUserMedia. Camera/geolocation stay off.
+          // (Empty `()` means "blocked everywhere"; `(self)` means "this origin".)
+          { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
           {
             key: "Content-Security-Policy",
             value: [
@@ -41,8 +44,11 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://images.unsplash.com",
               "font-src 'self' data: https://fonts.gstatic.com",
+              "media-src 'self' blob: https://*.daily.co",
               "worker-src 'self' blob:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.openai.com https://api.stripe.com https://*.sentry.io https://sentry.io https://de.sentry.io https://plausible.io https://openrouter.ai",
+              // Vapi web SDK signaling: api.vapi.ai (REST) + Daily.co WSS for
+              // WebRTC signaling + LiveKit (some Vapi paths use it).
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.openai.com https://api.stripe.com https://*.sentry.io https://sentry.io https://de.sentry.io https://plausible.io https://openrouter.ai https://api.vapi.ai wss://api.vapi.ai https://*.daily.co wss://*.daily.co https://*.livekit.cloud wss://*.livekit.cloud",
               "frame-src https://js.stripe.com https://hooks.stripe.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
