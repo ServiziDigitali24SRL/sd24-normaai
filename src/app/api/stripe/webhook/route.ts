@@ -41,14 +41,12 @@ export async function POST(req: NextRequest) {
 
   const supabase = getSupabase();
 
-  // CVE-08 fix: idempotency check — ignora eventi già processati
-  // Richiede tabella stripe_processed_events (vedi migration CVE-08)
+  // CVE-08 fix: idempotency check
   try {
     const { error: insertErr } = await supabase
       .from("stripe_processed_events")
       .insert({ event_id: event.id, event_type: event.type });
     if (insertErr && insertErr.code === "23505") {
-      // Duplicate key: evento già processato → ack senza riprocessare
       return NextResponse.json({ received: true, duplicate: true });
     }
   } catch {
@@ -61,9 +59,22 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session;
         const meta = session.metadata ?? {};
 
+        // Consumer paid for "Chiedi a un Professionista" → lead diventa available
+        if (meta.source === "mobile_pay_professional" && meta.lead_id) {
+          await supabase
+            .from("marketplace_leads")
+            .update({
+              status: "available",
+              stripe_payment_id: session.id,
+              paid_at: new Date().toISOString(),
+            })
+            .eq("id", meta.lead_id)
+            .eq("status", "pending_payment");
+          break;
+        }
+
         // Lead purchase: professionista compra lead dal marketplace
         if (meta.type === "lead_purchase" && meta.lead_id && meta.professional_id) {
-          // Fetch lead info per email
           const { data: lead } = await supabase
             .from("marketplace_leads")
             .select("question_summary, price_cents")
@@ -72,10 +83,14 @@ export async function POST(req: NextRequest) {
 
           await supabase
             .from("marketplace_leads")
-            .update({ status: "sold", purchased_by: meta.professional_id })
+            .update({
+              status: "purchased",
+              professional_id: meta.professional_id,
+              stripe_payment_id: session.id,
+              paid_at: new Date().toISOString(),
+            })
             .eq("id", meta.lead_id);
 
-          // Email conferma acquisto lead al professionista
           const customerEmail = session.customer_email ?? session.customer_details?.email;
           if (customerEmail && lead) {
             const { data: profile } = await supabase
@@ -111,7 +126,6 @@ export async function POST(req: NextRequest) {
             })
             .eq("id", userId);
 
-          // Crea company_profile per piani impresa
           if (isImpresaPlan) {
             const QUERY_MAP: Record<string, number> = {
               impresa_micro: 543, impresa_piccola: 1481, impresa_media: 3731, impresa_grande: 9356,
@@ -131,7 +145,6 @@ export async function POST(req: NextRequest) {
               }, { onConflict: "user_id" });
           }
 
-          // Email benvenuto + conferma abbonamento
           const customerEmail = session.customer_email ?? session.customer_details?.email;
           if (customerEmail) {
             const { data: profile } = await supabase
@@ -170,7 +183,6 @@ export async function POST(req: NextRequest) {
           })
           .eq("stripe_customer_id", customerId);
 
-        // Aggiorna stato company_profile se impresa
         if (isImpresaPlan && status === "active") {
           await supabase
             .from("company_profiles")
@@ -208,8 +220,6 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (err) {
-    // CVE-08 fix: restituisci 200 anche su errori handler per evitare retry Stripe
-    // che causerebbero aggiornamenti duplicati. Gli errori vengono loggati.
     console.error("Webhook handler error:", err);
   }
 
