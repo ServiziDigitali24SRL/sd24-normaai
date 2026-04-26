@@ -52,127 +52,72 @@ const ORB_KEYFRAMES = `
   }
 `;
 
-// ── Per-style state configs ────────────────────────────────────────────────
-type StateConfig = {
+// ── Color identity per style (constant across all states) ─────────────────
+// User feedback: the orb must KEEP THE CHOSEN COLOR through the whole call.
+// Only the animation/intensity changes by state (breathe / pulse / rotate /
+// speak-pulse + rings) — never the hue.
+type ColorPalette = {
   inner: string;
   outer: string;
   glow: string;
-  anim: string;
-  ringAnim: string;
   ringColor: string;
 };
 
-type StyleConfig = Record<OrbState, StateConfig>;
-
-const STYLES: Record<OrbStyle, StyleConfig> = {
+const PALETTES: Record<OrbStyle, ColorPalette> = {
   classico: {
-    idle: {
-      inner: "radial-gradient(circle at 30% 30%, #F6F2EA 0%, #E6DFCF 55%, #C9BFA8 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #EFE9DC 0%, #C9BFA8 70%)",
-      glow: "rgba(212,74,42,0.12)", anim: "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(212,74,42,0.7)",
-    },
-    listening: {
-      inner: "radial-gradient(circle at 30% 30%, #E8A87C 0%, #D44A2A 50%, #A83420 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #E09060 0%, #B83A20 70%)",
-      glow: "rgba(212,74,42,0.5)", anim: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
-      ringAnim: "orb-ring-fast 1.4s ease-out infinite", ringColor: "rgba(212,74,42,0.7)",
-    },
-    thinking: {
-      inner: "conic-gradient(from 0deg, #4A7099, #6052A0, #3A6070, #4A7099)",
-      outer: "radial-gradient(circle at 30% 30%, #4A6080 0%, #2A3050 70%)",
-      glow: "rgba(70,80,150,0.4)", anim: "orb-rotate 4s linear infinite, blob-morph-b 8s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(100,120,200,0.7)",
-    },
-    speaking: {
-      inner: "radial-gradient(circle at 35% 35%, #E8C86A 0%, #D4A017 40%, #D44A2A 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #D8B050 0%, #B44020 70%)",
-      glow: "rgba(212,160,23,0.55)", anim: "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
-      ringAnim: "orb-ring 2.2s ease-out infinite", ringColor: "rgba(212,160,23,0.8)",
-    },
+    inner: "radial-gradient(circle at 30% 30%, #F6F2EA 0%, #E6DFCF 55%, #C9BFA8 100%)",
+    outer: "radial-gradient(circle at 30% 30%, #EFE9DC 0%, #C9BFA8 70%)",
+    glow: "rgba(212,74,42,0.18)",
+    ringColor: "rgba(212,74,42,0.7)",
   },
   notte: {
-    idle: {
-      inner: "radial-gradient(circle at 30% 30%, #1E2340 0%, #131A30 55%, #0A0F20 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #1A2038 0%, #0C1025 70%)",
-      glow: "rgba(80,100,200,0.18)", anim: "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(80,120,220,0.6)",
-    },
-    listening: {
-      inner: "radial-gradient(circle at 30% 30%, #4060C0 0%, #2040A0 50%, #102070 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #3050B0 0%, #152080 70%)",
-      glow: "rgba(60,100,220,0.55)", anim: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
-      ringAnim: "orb-ring-fast 1.4s ease-out infinite", ringColor: "rgba(80,130,230,0.8)",
-    },
-    thinking: {
-      inner: "conic-gradient(from 0deg, #3060A0, #7040C0, #2050A0, #3060A0)",
-      outer: "radial-gradient(circle at 30% 30%, #304080 0%, #1A2560 70%)",
-      glow: "rgba(100,60,200,0.4)", anim: "orb-rotate 4s linear infinite, blob-morph-b 8s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(100,60,200,0.7)",
-    },
-    speaking: {
-      inner: "radial-gradient(circle at 35% 35%, #80A8F0 0%, #4070D0 40%, #2040A0 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #6090E0 0%, #2040A0 70%)",
-      glow: "rgba(80,130,220,0.6)", anim: "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
-      ringAnim: "orb-ring 2.2s ease-out infinite", ringColor: "rgba(80,140,240,0.9)",
-    },
+    inner: "radial-gradient(circle at 30% 30%, #1E2340 0%, #131A30 55%, #0A0F20 100%)",
+    outer: "radial-gradient(circle at 30% 30%, #1A2038 0%, #0C1025 70%)",
+    glow: "rgba(80,120,220,0.28)",
+    ringColor: "rgba(80,130,230,0.7)",
   },
   natura: {
-    idle: {
-      inner: "radial-gradient(circle at 30% 30%, #EAF2E8 0%, #C8DFC0 55%, #9BBF90 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #D8ECD0 0%, #96B88A 70%)",
-      glow: "rgba(80,160,80,0.14)", anim: "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(80,160,80,0.6)",
-    },
-    listening: {
-      inner: "radial-gradient(circle at 30% 30%, #80C870 0%, #40A030 50%, #207020 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #70B860 0%, #308020 70%)",
-      glow: "rgba(60,160,50,0.5)", anim: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
-      ringAnim: "orb-ring-fast 1.4s ease-out infinite", ringColor: "rgba(60,170,50,0.7)",
-    },
-    thinking: {
-      inner: "conic-gradient(from 0deg, #508060, #306050, #407060, #508060)",
-      outer: "radial-gradient(circle at 30% 30%, #406858 0%, #2A4838 70%)",
-      glow: "rgba(50,100,70,0.4)", anim: "orb-rotate 4s linear infinite, blob-morph-b 8s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(60,120,80,0.7)",
-    },
-    speaking: {
-      inner: "radial-gradient(circle at 35% 35%, #D0E870 0%, #98C020 40%, #508030 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #B8D850 0%, #608030 70%)",
-      glow: "rgba(150,190,30,0.55)", anim: "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
-      ringAnim: "orb-ring 2.2s ease-out infinite", ringColor: "rgba(150,200,30,0.8)",
-    },
+    inner: "radial-gradient(circle at 30% 30%, #EAF2E8 0%, #C8DFC0 55%, #9BBF90 100%)",
+    outer: "radial-gradient(circle at 30% 30%, #D8ECD0 0%, #96B88A 70%)",
+    glow: "rgba(80,160,80,0.22)",
+    ringColor: "rgba(60,170,80,0.7)",
   },
   aurora: {
-    idle: {
-      inner: "radial-gradient(circle at 30% 30%, #F0E8F8 0%, #D8C0F0 55%, #B890D8 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #E8D8F4 0%, #B888D0 70%)",
-      glow: "rgba(160,80,200,0.14)", anim: "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(160,80,200,0.6)",
-    },
-    listening: {
-      inner: "radial-gradient(circle at 30% 30%, #E080C0 0%, #C040A0 50%, #900880 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #D060B0 0%, #A02890 70%)",
-      glow: "rgba(200,50,160,0.5)", anim: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
-      ringAnim: "orb-ring-fast 1.4s ease-out infinite", ringColor: "rgba(200,50,160,0.7)",
-    },
-    thinking: {
-      inner: "conic-gradient(from 0deg, #9040C0, #C060A0, #8030B0, #9040C0)",
-      outer: "radial-gradient(circle at 30% 30%, #7030A0 0%, #501880 70%)",
-      glow: "rgba(140,40,180,0.4)", anim: "orb-rotate 4s linear infinite, blob-morph-b 8s ease-in-out infinite",
-      ringAnim: "none", ringColor: "rgba(140,60,190,0.7)",
-    },
-    speaking: {
-      inner: "radial-gradient(circle at 35% 35%, #F0A0E0 0%, #D060C0 40%, #9030A0 100%)",
-      outer: "radial-gradient(circle at 30% 30%, #E080D0 0%, #A040B0 70%)",
-      glow: "rgba(200,80,180,0.6)", anim: "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
-      ringAnim: "orb-ring 2.2s ease-out infinite", ringColor: "rgba(210,80,190,0.9)",
-    },
+    inner: "radial-gradient(circle at 30% 30%, #F0E8F8 0%, #D8C0F0 55%, #B890D8 100%)",
+    outer: "radial-gradient(circle at 30% 30%, #E8D8F4 0%, #B888D0 70%)",
+    glow: "rgba(160,80,200,0.22)",
+    ringColor: "rgba(180,80,200,0.7)",
+  },
+};
+
+// ── Animation per state (NO colors here, only motion) ─────────────────────
+type StateAnim = { anim: string; ringAnim: string };
+const STATE_ANIMS: Record<OrbState, StateAnim> = {
+  idle: {
+    anim: "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
+    ringAnim: "none",
+  },
+  listening: {
+    anim: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
+    ringAnim: "orb-ring-fast 1.4s ease-out infinite",
+  },
+  thinking: {
+    // Keep the morph + a slower rotate, but drop the conic-gradient swap so
+    // the hue stays put. Rings off — rotation alone signals "thinking".
+    anim: "orb-breathe 2.2s ease-in-out infinite, blob-morph-b 6s ease-in-out infinite",
+    ringAnim: "none",
+  },
+  speaking: {
+    anim: "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
+    ringAnim: "orb-ring 2.2s ease-out infinite",
   },
 };
 
 export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: MobileOrbProps) {
-  const c = STYLES[orbStyle][state];
+  // Color stays constant per chosen style — only motion varies by state.
+  const palette = PALETTES[orbStyle];
+  const motion = STATE_ANIMS[state];
+  const c = { ...palette, ...motion };
 
   return (
     <>
