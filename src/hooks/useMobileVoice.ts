@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import {
+  type OrbPersonalityId,
+  resolveAssistantId,
+} from "@/lib/orb-personalities";
 
 export type OrbState = "idle" | "listening" | "thinking" | "speaking";
 
-// Vapi public key & assistant — safe to expose client-side
+// Vapi public key — safe to expose client-side
 const VAPI_PUBLIC_KEY = "1fe0aa87-b7a0-4394-b877-d846fa06035d";
-const VAPI_ASSISTANT_ID = "e4cb1d2b-5afa-440c-94e7-51380cdc1f4a";
 
-// Watchdog: if we sit in "thinking" with no Vapi event for this long,
-// something is broken (mic blocked silently, network, SDK hang). Reset
-// to idle so the UI doesn't lie about being busy forever.
-const THINKING_WATCHDOG_MS = 15_000;
+// Watchdog: only protects the *connection* phase (tap → call-start). Once
+// the call connects we disarm — long thinking/listening pauses are normal.
+// Cold Vapi SDK + WebRTC negotiation on 4G can legitimately take ~10-15s,
+// so 20s is a safe ceiling without producing false alarms.
+const THINKING_WATCHDOG_MS = 20_000;
 
 // Vapi errors come in MANY shapes (Error, plain object, nested .error, raw
 // websocket frame). String(obj) returns "[object Object]" — useless to the
@@ -56,7 +60,7 @@ export interface UseMobileVoiceReturn {
   clearVoiceError: () => void;
 }
 
-export function useMobileVoice(): UseMobileVoiceReturn {
+export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseMobileVoiceReturn {
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [userTranscript, setUserTranscript] = useState("");
   const [assistantText, setAssistantText] = useState("");
@@ -115,6 +119,9 @@ export function useMobileVoice(): UseMobileVoiceReturn {
 
     vapi.on("call-start", () => {
       console.log("[NormaAI] vapi:call-start");
+      // Connection succeeded — disarm watchdog. Subsequent long pauses
+      // (LLM thinking, user not speaking) are normal call states, not bugs.
+      disarmWatchdog();
       sawCallStartRef.current = true;
       if (!mountedRef.current) return;
       setCallActive(true);
@@ -211,7 +218,12 @@ export function useMobileVoice(): UseMobileVoiceReturn {
     armWatchdog();
     try {
       const vapi = await getVapi();
-      await vapi.start(VAPI_ASSISTANT_ID);
+      // Resolve the right assistant for the chosen personality. For "globo"
+      // (multilingue) this also runs language detection from navigator.languages
+      // or the user's manual override in localStorage.
+      const assistantId = resolveAssistantId(personality);
+      console.log("[NormaAI] starting call", { personality, assistantId });
+      await vapi.start(assistantId);
     } catch (err) {
       console.error("[NormaAI] vapi.start threw", err);
       disarmWatchdog();
@@ -227,7 +239,7 @@ export function useMobileVoice(): UseMobileVoiceReturn {
         );
       }
     }
-  }, [callActive, orbState, getVapi, armWatchdog, disarmWatchdog]);
+  }, [callActive, orbState, getVapi, armWatchdog, disarmWatchdog, personality]);
 
   return {
     orbState,

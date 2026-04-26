@@ -3,7 +3,7 @@
 import React from "react";
 import type { OrbState } from "@/hooks/useMobileVoice";
 
-export type OrbStyle = "classico" | "notte" | "natura" | "aurora";
+export type OrbStyle = "classico" | "notte" | "natura" | "aurora" | "globo";
 
 interface MobileOrbProps {
   state: OrbState;
@@ -87,6 +87,13 @@ const PALETTES: Record<OrbStyle, ColorPalette> = {
     outer: "radial-gradient(circle at 30% 30%, #E8D8F4 0%, #B888D0 70%)",
     glow: "rgba(160,80,200,0.22)",
     ringColor: "rgba(180,80,200,0.7)",
+  },
+  // 🌍 Multilingue — "earth at twilight": ocean blue + atmosphere glow
+  globo: {
+    inner: "radial-gradient(circle at 30% 30%, #B8D4F0 0%, #4A90E2 50%, #1E5BA8 100%)",
+    outer: "radial-gradient(circle at 30% 30%, #6FA8DC 0%, #1E5BA8 70%)",
+    glow: "rgba(74,144,226,0.30)",
+    ringColor: "rgba(110,170,230,0.7)",
   },
 };
 

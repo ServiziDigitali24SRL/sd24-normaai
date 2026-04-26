@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, Menu, PhoneOff, Check } from "lucide-react";
-import { MobileOrb, ListeningDots, type OrbStyle } from "@/components/mobile/MobileOrb";
+import { X, Menu, PhoneOff, Check, Globe } from "lucide-react";
+import { MobileOrb, ListeningDots } from "@/components/mobile/MobileOrb";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { useMobileVoice } from "@/hooks/useMobileVoice";
-
-const ORB_STYLES: { id: OrbStyle; label: string; preview: string }[] = [
-  { id: "classico", label: "Classico", preview: "linear-gradient(135deg, #E6DFCF, #D44A2A)" },
-  { id: "notte",    label: "Notte",    preview: "linear-gradient(135deg, #131A30, #3060A0)" },
-  { id: "natura",   label: "Natura",   preview: "linear-gradient(135deg, #C8DFC0, #40A030)" },
-  { id: "aurora",   label: "Aurora",   preview: "linear-gradient(135deg, #D8C0F0, #C040A0)" },
-];
+import {
+  ORB_PERSONALITIES,
+  type OrbPersonalityId,
+  type SupportedLang,
+  SUPPORTED_LANGS,
+  langLabel,
+  detectLanguage,
+  ORB_PERSONALITY_KEY,
+  LANG_OVERRIDE_KEY,
+} from "@/lib/orb-personalities";
 
 /* ── Pro query button (9€) ──────────────────────────────────────────────── */
 function ProQueryButton({ question }: { question: string }) {
@@ -63,6 +66,14 @@ function ProQueryButton({ question }: { question: string }) {
 
 /* ── Main Mobile Home Page ──────────────────────────────────────────────── */
 export default function MobilePage() {
+  // The picked personality drives both the orb visuals AND the Vapi assistant
+  // ID resolved inside useMobileVoice.
+  const [personality, setPersonality] = useState<OrbPersonalityId>("classico");
+
+  // For "globo" the active language can be overridden manually; null = auto-detect.
+  const [langOverride, setLangOverride] = useState<SupportedLang | null>(null);
+  const [detectedLang, setDetectedLang] = useState<SupportedLang>("it");
+
   const {
     orbState,
     callActive,
@@ -70,21 +81,41 @@ export default function MobilePage() {
     lastQuestion,
     voiceError,
     clearVoiceError,
-  } = useMobileVoice();
+  } = useMobileVoice(personality);
 
   const [showMenu, setShowMenu] = useState(false);
-  const [orbStyle, setOrbStyle] = useState<OrbStyle>("classico");
   const router = useRouter();
 
-  // Persist orb style preference
+  // Restore picked personality + lang override from localStorage on mount.
   useEffect(() => {
-    const saved = localStorage.getItem("norma_orb_style") as OrbStyle | null;
-    if (saved && ORB_STYLES.some(s => s.id === saved)) setOrbStyle(saved);
+    try {
+      const saved = localStorage.getItem(ORB_PERSONALITY_KEY) as OrbPersonalityId | null;
+      // Legacy key migration: old "norma_orb_style" had the same values.
+      const legacy = localStorage.getItem("norma_orb_style") as OrbPersonalityId | null;
+      const pick = saved || legacy;
+      if (pick && ORB_PERSONALITIES.some((p) => p.id === pick)) {
+        setPersonality(pick);
+      }
+      const lang = localStorage.getItem(LANG_OVERRIDE_KEY) as SupportedLang | null;
+      if (lang && (SUPPORTED_LANGS as readonly string[]).includes(lang)) {
+        setLangOverride(lang);
+      }
+      setDetectedLang(detectLanguage());
+    } catch { /* localStorage may be blocked */ }
   }, []);
 
-  const handleOrbStyleChange = (style: OrbStyle) => {
-    setOrbStyle(style);
-    localStorage.setItem("norma_orb_style", style);
+  const handlePersonalityChange = (id: OrbPersonalityId) => {
+    setPersonality(id);
+    try { localStorage.setItem(ORB_PERSONALITY_KEY, id); } catch { /* noop */ }
+  };
+
+  const handleLangChange = (lang: SupportedLang | null) => {
+    setLangOverride(lang);
+    try {
+      if (lang) localStorage.setItem(LANG_OVERRIDE_KEY, lang);
+      else localStorage.removeItem(LANG_OVERRIDE_KEY);
+    } catch { /* noop */ }
+    setDetectedLang(detectLanguage());
   };
 
   const stateCopy: Record<string, string> = {
@@ -93,6 +124,8 @@ export default function MobilePage() {
     thinking: "Cerco nelle fonti...",
     speaking: "Norma risponde",
   };
+
+  const activeLang = langOverride ?? detectedLang;
 
   return (
     <div style={{
@@ -170,7 +203,7 @@ export default function MobilePage() {
         alignItems: "center", justifyContent: "center",
         padding: "0 20px", minHeight: 300,
       }}>
-        <MobileOrb state={orbState} onTap={tapOrb} size={190} orbStyle={orbStyle} />
+        <MobileOrb state={orbState} onTap={tapOrb} size={190} orbStyle={personality} />
 
         {/* State label */}
         <div style={{ marginTop: 28, textAlign: "center" }}>
@@ -270,41 +303,112 @@ export default function MobilePage() {
               </button>
             </div>
 
-            {/* ── Orb style picker ── */}
-            <div style={{ marginBottom: 20 }}>
+            {/* ── Personality picker ── */}
+            <div style={{ marginBottom: 20, maxHeight: "55vh", overflowY: "auto" }}>
               <div className="mono" style={{ fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)", marginBottom: 12 }}>
-                STILE PALLA
+                PERSONALITÀ
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                {ORB_STYLES.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => handleOrbStyleChange(s.id)}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10,
-                      padding: "10px 12px", borderRadius: 10,
-                      border: orbStyle === s.id ? "1.5px solid var(--ink)" : "1px solid var(--paper-line)",
-                      background: orbStyle === s.id ? "var(--paper-2)" : "transparent",
-                      cursor: "pointer", textAlign: "left",
-                      WebkitTapHighlightColor: "transparent",
-                    }}
-                  >
-                    <div style={{
-                      width: 32, height: 32, borderRadius: "50%",
-                      background: s.preview, flexShrink: 0,
-                      boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                    }} />
-                    <div>
-                      <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
-                        {s.label}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {ORB_PERSONALITIES.map((p) => {
+                  const active = personality === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => handlePersonalityChange(p.id)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 12,
+                        padding: "11px 12px", borderRadius: 10,
+                        border: active ? "1.5px solid var(--ink)" : "1px solid var(--paper-line)",
+                        background: active ? "var(--paper-2)" : "transparent",
+                        cursor: "pointer", textAlign: "left",
+                        WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: "50%",
+                        background: p.preview, flexShrink: 0,
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                      }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: "var(--sans)", fontSize: 14, color: "var(--ink)", fontWeight: 500 }}>
+                          {p.label}
+                        </div>
+                        <div style={{
+                          fontFamily: "var(--sans)", fontSize: 11.5, color: "var(--ink-3)",
+                          marginTop: 2, lineHeight: 1.35,
+                          overflow: "hidden", textOverflow: "ellipsis",
+                        }}>
+                          {p.description}
+                        </div>
                       </div>
-                    </div>
-                    {orbStyle === s.id && (
-                      <Check size={14} color="var(--ink)" style={{ marginLeft: "auto" }} />
-                    )}
-                  </button>
-                ))}
+                      {active && (
+                        <Check size={14} color="var(--ink)" style={{ flexShrink: 0 }} />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Lingua override (only meaningful for Globo) */}
+              {personality === "globo" && (
+                <div style={{ marginTop: 18 }}>
+                  <div className="mono" style={{
+                    fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)",
+                    marginBottom: 8, display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <Globe size={11} /> LINGUA
+                    <span style={{
+                      marginLeft: "auto", fontSize: 10, color: "var(--ink-4)",
+                      letterSpacing: "0.04em", textTransform: "none",
+                    }}>
+                      Auto: {langLabel(detectedLang).flag} {langLabel(detectedLang).native}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    <button
+                      onClick={() => handleLangChange(null)}
+                      style={{
+                        padding: "6px 10px", borderRadius: 8,
+                        border: langOverride === null ? "1.5px solid var(--ink)" : "1px solid var(--paper-line)",
+                        background: langOverride === null ? "var(--paper-2)" : "transparent",
+                        fontFamily: "var(--sans)", fontSize: 12, color: "var(--ink)",
+                        cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                      }}
+                    >
+                      Auto
+                    </button>
+                    {SUPPORTED_LANGS.map((code) => {
+                      const isActive = langOverride === code;
+                      const isAutoMatch = langOverride === null && detectedLang === code;
+                      const l = langLabel(code);
+                      return (
+                        <button
+                          key={code}
+                          onClick={() => handleLangChange(code)}
+                          style={{
+                            padding: "6px 10px", borderRadius: 8,
+                            border: isActive ? "1.5px solid var(--ink)" :
+                                    isAutoMatch ? "1px dashed var(--ink-4)" :
+                                    "1px solid var(--paper-line)",
+                            background: isActive ? "var(--paper-2)" : "transparent",
+                            fontFamily: "var(--sans)", fontSize: 12, color: "var(--ink)",
+                            cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                            display: "inline-flex", alignItems: "center", gap: 5,
+                          }}
+                        >
+                          <span style={{ fontSize: 13 }}>{l.flag}</span>
+                          <span>{l.native}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 8, lineHeight: 1.4 }}>
+                    Norma parla in <strong>{langLabel(activeLang).native}</strong>{" "}
+                    {langLabel(activeLang).flag}.
+                    {langOverride === null && " Riconosciuta dalla lingua del telefono."}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 16 }}>
