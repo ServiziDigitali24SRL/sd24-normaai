@@ -67,12 +67,7 @@ export default function DashboardImpresa() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
-      if (!u) {
-        // Demo mode: show dashboard without auth
-        setCompany({ id: 'demo', piano: 'impresa_media', query_incluse: 500, query_usate_mese: 124, trial_ends_at: null, stato: 'attivo', ragione_sociale: 'Demo S.R.L.', p_iva: '12345678901' });
-        setLoading(false);
-        return;
-      }
+      if (!u) { router.replace("/"); return; }
 
       let role = u.user_metadata?.role as string | undefined;
       if (role !== "impresa") {
@@ -95,10 +90,7 @@ export default function DashboardImpresa() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (!session) {
-        setCompany({ id: 'demo', piano: 'impresa_media', query_incluse: 500, query_usate_mese: 124, trial_ends_at: null, stato: 'attivo', ragione_sociale: 'Demo S.R.L.', p_iva: '12345678901' });
-        setLoading(false);
-      }
+      if (!session) router.replace("/");
     });
     return () => subscription.unsubscribe();
   }, [supabase, router]);

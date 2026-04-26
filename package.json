@@ -34,7 +34,7 @@
     "stripe": "^21.0.1",
     "tailwind-merge": "^3.5.0",
     "twilio": "^5.13.1",
-    "@vapi-ai/web": "^2.3.3"
+    "@vapi-ai/web": "^2.3.1"
   },
   "devDependencies": {
     "@types/node": "^20",

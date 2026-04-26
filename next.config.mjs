@@ -32,7 +32,7 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           {
             key: "Content-Security-Policy",
             value: [
@@ -42,8 +42,7 @@ const nextConfig = {
               "img-src 'self' data: blob: https://images.unsplash.com",
               "font-src 'self' data: https://fonts.gstatic.com",
               "worker-src 'self' blob:",
-              "media-src 'self' blob: mediastream:",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.openai.com https://api.stripe.com https://*.sentry.io https://sentry.io https://de.sentry.io https://plausible.io https://openrouter.ai https://*.vapi.ai wss://*.vapi.ai https://*.daily.co wss://*.daily.co https://*.twilio.com wss://*.twilio.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.openai.com https://api.stripe.com https://*.sentry.io https://sentry.io https://de.sentry.io https://plausible.io https://openrouter.ai",
               "frame-src https://js.stripe.com https://hooks.stripe.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",

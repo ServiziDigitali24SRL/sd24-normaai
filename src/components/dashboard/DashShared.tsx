@@ -5,13 +5,13 @@ import Icon from "./Icon";
 
 // ─── Badge ────────────────────────────────────────────────────────────────────
 
-export function Badge({ children, tone, style }: { children: React.ReactNode; tone?: string; style?: React.CSSProperties }) {
+export function Badge({ children, tone }: { children: React.ReactNode; tone?: string }) {
   const cls =
     tone === 'ok'     ? 'badge badge-ok'     :
     tone === 'warn'   ? 'badge badge-warn'   :
     tone === 'accent' ? 'badge badge-accent' :
                         'badge badge-ink';
-  return <span className={cls} style={style}>{children}</span>;
+  return <span className={cls}>{children}</span>;
 }
 
 // ─── WidgetCard ───────────────────────────────────────────────────────────────

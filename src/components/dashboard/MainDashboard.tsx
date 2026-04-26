@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import Icon from "./Icon";
 import { Badge, WidgetCard, ComplianceScoreCircle, CountUp } from "./DashShared";
 import FixedChatBar from "./FixedChatBar";
-import ChatSlidePanel from "./ChatSlidePanel";
 
 const DashboardCustom = dynamic(() => import("./DashboardCustom"), { ssr: false });
 
@@ -754,9 +753,11 @@ function SubcategoryDetail({ macroKey, macroLabel, itemLabel, checklist, onToggl
                   {subScore}
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-4)', fontFamily: 'var(--sans)' }}>/100</div>
-                <Badge tone={subScore >= 80 ? 'ok' : subScore >= 60 ? 'warn' : 'accent'} style={{ marginTop: 4 }}>
-                  {subScore >= 80 ? 'Conforme' : subScore >= 60 ? 'In miglioramento' : 'Attenzione'}
-                </Badge>
+                <div style={{ marginTop: 4 }}>
+                  <Badge tone={subScore >= 80 ? 'ok' : subScore >= 60 ? 'warn' : 'accent'}>
+                    {subScore >= 80 ? 'Conforme' : subScore >= 60 ? 'In miglioramento' : 'Attenzione'}
+                  </Badge>
+                </div>
               </div>
             </div>
 
@@ -1268,8 +1269,6 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
   const [toast, setToast] = useState<string | null>(null);
   const [confetti, setConfetti] = useState(false);
   const [chatCtx, setChatCtx] = useState<string | null>(null);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatInitMsg, setChatInitMsg] = useState('');
   const [rightCollapsed, setRightCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1200);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [tasks, setTasks] = useState(MD_TASKS_BY_MACRO);
@@ -1290,15 +1289,8 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   };
 
-  const openChat = (msgOrCtx?: string) => {
-    const contextName = selection?.macroLabel && selection?.item
-      ? `${selection.macroLabel} / ${selection.item}`
-      : selection?.macroLabel || null;
-    setChatCtx(contextName);
-    setChatInitMsg(msgOrCtx || '');
-    setChatOpen(true);
-  };
-  const closeChat = () => { setChatOpen(false); setChatInitMsg(''); };
+  const openChat = (ctx?: string) => setChatCtx(ctx || selection?.item || selection?.macro || 'generale');
+  const closeChat = () => setChatCtx(null);
 
   const toggleTask = (id: string) => {
     setTasks(prev => {
@@ -1334,6 +1326,15 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
   };
 
   const branches = MD_BRANCHES[role] || MD_BRANCHES.impresa;
+
+  if (chatCtx) {
+    return (
+      <>
+        <ChatComplianceExpanded role={role} context={chatCtx} onClose={closeChat} score={score} pushToast={pushToast} />
+        <MDToast toast={toast} />
+      </>
+    );
+  }
 
   let content: React.ReactNode;
   if (selection && selection.macro === '__dashboard__') {
@@ -1400,13 +1401,6 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
       {uploadOpen && <UploadDocModal onClose={() => setUploadOpen(false)} onConfirm={confirmUpload} pushToast={pushToast} />}
       <MDToast toast={toast} />
       <MDConfetti active={confetti} />
-      <ChatSlidePanel
-        open={chatOpen}
-        context={chatCtx}
-        initialMessage={chatInitMsg}
-        userId={typeof user?.id === 'string' ? user.id : undefined}
-        onClose={closeChat}
-      />
     </>
   );
 }

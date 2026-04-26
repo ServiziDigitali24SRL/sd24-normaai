@@ -22,7 +22,7 @@ function createSupabase() {
   );
 }
 
-/* ── Unauthenticated gate ──────────────────────────────────────────────── */
+/* ── Unauthenticated gate ────────────────────────────────────────────────── */
 function AuthGate() {
   const router = useRouter();
   return (
@@ -90,7 +90,7 @@ function SubscriptionGate() {
   );
 }
 
-/* ── Coming soon placeholder ─────────────────────────────────────────────────── */
+/* ── Coming soon placeholder ─────────────────────────────────────────────── */
 function ComingSoon({ label }: { label: string }) {
   return (
     <div style={{ padding: "40px 24px", textAlign: "center" }}>
@@ -105,7 +105,7 @@ function ComingSoon({ label }: { label: string }) {
   );
 }
 
-/* ── Chat list ────────────────────────────────────────────────────────────────────────── */
+/* ── Chat list ───────────────────────────────────────────────────────────── */
 function ChatList({ userId }: { userId: string }) {
   const [convs, setConvs] = useState<ConvRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +151,7 @@ function ChatList({ userId }: { userId: string }) {
   );
 }
 
-/* ── Main Page ─────────────────────────────────────────────────────────────────────────── */
+/* ── Main Page ───────────────────────────────────────────────────────────── */
 export default function MobileArchivioPage() {
   const [activeTab, setActiveTab] = useState<Tab>("chat");
   const [user, setUser] = useState<User | null>(null);

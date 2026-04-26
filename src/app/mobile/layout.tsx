@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "NormaAI â Agente Vocale",
+  title: "NormaAI — Agente Vocale",
   description: "Consulenza normativa istantanea tramite agente vocale AI",
 };
 

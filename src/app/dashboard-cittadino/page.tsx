@@ -54,12 +54,7 @@ export default function DashboardCittadino() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
-      if (!u) {
-        // Demo mode
-        setProfile({ id: 'demo', piano: 'gratis', query_incluse: 10, query_usate_mese: 3, trial_ends_at: null });
-        setLoading(false);
-        return;
-      }
+      if (!u) { router.replace("/"); return; }
 
       let role = u.user_metadata?.role as string | undefined;
       if (role !== "privato" && role !== "cittadino") {
@@ -85,10 +80,7 @@ export default function DashboardCittadino() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      if (!session) {
-        setProfile({ id: 'demo', piano: 'gratis', query_incluse: 10, query_usate_mese: 3, trial_ends_at: null });
-        setLoading(false);
-      }
+      if (!session) router.replace("/");
     });
     return () => subscription.unsubscribe();
   }, [supabase, router]);

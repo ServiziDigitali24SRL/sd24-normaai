@@ -14,7 +14,7 @@ const ORB_STYLES: { id: OrbStyle; label: string; preview: string }[] = [
   { id: "aurora",   label: "Aurora",   preview: "linear-gradient(135deg, #D8C0F0, #C040A0)" },
 ];
 
-/* -- Pro query button (9 EUR) */
+/* ── Pro query button (9€) ──────────────────────────────────────────────── */
 function ProQueryButton({ question }: { question: string }) {
   const [loading, setLoading] = useState(false);
 
@@ -53,7 +53,7 @@ function ProQueryButton({ question }: { question: string }) {
     >
       {loading ? "Apertura pagamento..." : (
         <>
-          <span className="mono" style={{ fontSize: 13, color: "var(--vermiglio)", background: "rgba(212,74,42,0.15)", padding: "2px 6px", borderRadius: 4 }}>9 EUR</span>
+          <span className="mono" style={{ fontSize: 13, color: "var(--vermiglio)", background: "rgba(212,74,42,0.15)", padding: "2px 6px", borderRadius: 4 }}>9€</span>
           Chiedi a un Professionista
         </>
       )}
@@ -61,7 +61,7 @@ function ProQueryButton({ question }: { question: string }) {
   );
 }
 
-/* -- Main Mobile Home Page */
+/* ── Main Mobile Home Page ──────────────────────────────────────────────── */
 export default function MobilePage() {
   const {
     orbState,
@@ -74,6 +74,7 @@ export default function MobilePage() {
   const [orbStyle, setOrbStyle] = useState<OrbStyle>("classico");
   const router = useRouter();
 
+  // Persist orb style preference
   useEffect(() => {
     const saved = localStorage.getItem("norma_orb_style") as OrbStyle | null;
     if (saved && ORB_STYLES.some(s => s.id === saved)) setOrbStyle(saved);
@@ -102,8 +103,10 @@ export default function MobilePage() {
       overflow: "hidden",
     }}>
 
+      {/* ── Status bar spacer ── */}
       <div style={{ height: "env(safe-area-inset-top, 44px)" }} />
 
+      {/* ── Header ── */}
       <div style={{
         padding: "6px 20px 0",
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -127,6 +130,7 @@ export default function MobilePage() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* End call button — visible only during active call */}
           {callActive && (
             <button
               onClick={tapOrb}
@@ -158,6 +162,7 @@ export default function MobilePage() {
         </div>
       </div>
 
+      {/* ── Orb area ── */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
@@ -165,6 +170,7 @@ export default function MobilePage() {
       }}>
         <MobileOrb state={orbState} onTap={tapOrb} size={190} orbStyle={orbStyle} />
 
+        {/* State label */}
         <div style={{ marginTop: 28, textAlign: "center" }}>
           <div className="mono" style={{
             fontSize: 10, letterSpacing: "0.22em", color: "var(--ink-3)",
@@ -174,17 +180,19 @@ export default function MobilePage() {
             {stateCopy[orbState]}
           </div>
 
+          {/* Idle subtitle */}
           {orbState === "idle" && !lastQuestion && (
             <p style={{
               fontSize: 13, color: "var(--ink-3)", maxWidth: 260, lineHeight: 1.45,
               marginTop: 10,
             }}>
-              Parla con Norma risposta immediata con fonti normative.
+              Parla con Norma — risposta immediata con fonti normative.
             </p>
           )}
         </div>
       </div>
 
+      {/* ── Pro query CTA (after conversation) ── */}
       {lastQuestion && orbState === "idle" && (
         <div style={{ padding: "0 16px 16px", flexShrink: 0 }}>
           <div style={{
@@ -197,15 +205,17 @@ export default function MobilePage() {
               ULTIMA DOMANDA
             </div>
             <div className="serif" style={{ fontSize: 13, fontStyle: "italic", color: "var(--ink-2)" }}>
-              {lastQuestion.slice(0, 120)}{lastQuestion.length > 120 ? "..." : ""}
+              «{lastQuestion.slice(0, 120)}{lastQuestion.length > 120 ? "…" : ""}»
             </div>
           </div>
           <ProQueryButton question={lastQuestion} />
         </div>
       )}
 
+      {/* ── Bottom tab bar ── */}
       <MobileTabBar />
 
+      {/* ── Menu slide-up ── */}
       {showMenu && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 200,
@@ -229,6 +239,7 @@ export default function MobilePage() {
               </button>
             </div>
 
+            {/* ── Orb style picker ── */}
             <div style={{ marginBottom: 20 }}>
               <div className="mono" style={{ fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)", marginBottom: 12 }}>
                 STILE PALLA
@@ -252,8 +263,10 @@ export default function MobilePage() {
                       background: s.preview, flexShrink: 0,
                       boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                     }} />
-                    <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
-                      {s.label}
+                    <div>
+                      <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
+                        {s.label}
+                      </div>
                     </div>
                     {orbStyle === s.id && (
                       <Check size={14} color="var(--ink)" style={{ marginLeft: "auto" }} />

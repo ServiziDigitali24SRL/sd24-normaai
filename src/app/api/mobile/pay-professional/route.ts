@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createClient } from "@supabase/supabase-js";
@@ -7,7 +9,7 @@ import { createClient } from "@supabase/supabase-js";
  * Body: { question: string, userId?: string }
  *
  * Creates a Stripe Checkout session for 9€ "Chiedi a un Professionista".
- * On success → lead is stored in Supabase (marketplace_leads) and visible to professionals.
+ * On success → lead is stored in Supabase and visible to subscribed lawyers.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const origin = req.headers.get("origin") || "https://normaai.it";
 
-    // Store pending lead in Supabase (marketplace_leads is the real table)
+    // Store pending lead in Supabase (status: pending_payment)
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
             unit_amount: 900, // 9€ in centesimi
             product_data: {
               name: "Chiedi a un Professionista",
-              description: "La tua richiesta sarà visibile ai professionisti iscritti a NormaAI.",
+              description: "La tua richiesta sarà visibile agli avvocati iscritti a NormaAI.",
               images: ["https://normaai.it/og-image.png"],
             },
           },
