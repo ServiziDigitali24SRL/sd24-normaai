@@ -21,14 +21,12 @@ interface MobileTabBarProps {
   isAvvocato?: boolean;
 }
 
-export function MobileTabBar({ isAvvocato = false }: MobileTabBarProps) {
+export function MobileTabBar({ isAvvocato: _isAvvocato = false }: MobileTabBarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const visibleTabs = TABS.filter((t) => {
-    if (t.path === "/mobile/leads") return isAvvocato;
-    return true;
-  });
+  // Always show all 4 tabs — the leads page handles role gating internally
+  const visibleTabs = TABS;
 
   return (
     <nav style={{
