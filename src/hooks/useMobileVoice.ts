@@ -142,6 +142,18 @@ export function useMobileVoice(): UseMobileVoiceReturn {
       }
     } catch { /* noop — unlock best-effort */ }
 
+    // iOS Safari: request mic permission EXPLICITLY within the user gesture
+    // before Vapi's WebRTC getUserMedia call — otherwise iOS blocks it silently
+    // causing error-assistant-did-not-receive-customer-audio on every call.
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(t => t.stop()); // release — Vapi re-acquires
+    } catch (err) {
+      console.warn("[NormaAI] Mic permission denied", err);
+      if (mountedRef.current) setOrbState("idle");
+      return;
+    }
+
     // Start new call — optimistic UI
     setOrbState("thinking");
     try {
