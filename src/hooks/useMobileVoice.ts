@@ -121,34 +121,24 @@ export function useMobileVoice(): UseMobileVoiceReturn {
       return;
     }
 
-    // iOS Safari: unlock audio context SYNCHRONOUSLY within user gesture.
-    // Vapi's buildAudioPlayer calls audio.play() from an async WebRTC handler
-    // which iOS blocks. Playing a silent buffer here unlocks the audio session.
+    // iOS Safari mic-grant pattern.
+    //
+    // Background: every Vapi call was ending instantly with
+    // `error-assistant-did-not-receive-customer-audio` (verified via Vapi API,
+    // 10/10 recent calls). Permission was granted but no audio frames reached
+    // Vapi's Daily.co WebRTC room.
+    //
+    // Two sources of the corruption:
+    //  1. The previous AudioContext "silent buffer" unlock trick puts iOS into
+    //     a playback session that conflicts with subsequent capture. Removed.
+    //  2. Calling getUserMedia and dropping the stream on the floor leaves the
+    //     audio tracks in `live` state until GC. On iOS that brief window
+    //     overlaps Vapi's own getUserMedia → Vapi gets a duplicate-but-muted
+    //     stream from the same mic. Fix: explicitly stop our tracks BEFORE
+    //     Vapi grabs the mic. Permission is sticky for the page session.
     try {
-      const AudioCtx =
-        (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
-          .AudioContext ||
-        (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        const buf = ctx.createBuffer(1, 1, 22050);
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        src.connect(ctx.destination);
-        src.start(0);
-        // Keep ctx alive briefly so the unlock persists for the async join
-        setTimeout(() => ctx.close(), 2000);
-      }
-    } catch { /* noop — unlock best-effort */ }
-
-    // Request mic permission explicitly BEFORE vapi.start().
-    // On iOS Safari, getUserMedia must be called within the user-gesture
-    // handler; Vapi calls it internally from an async WebRTC callback which
-    // iOS blocks. Requesting it here (still inside the tap handler) pre-grants
-    // the permission so Vapi's internal call succeeds.
-    try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
     } catch (micErr) {
       console.warn("[NormaAI] Mic permission denied", micErr);
       if (mountedRef.current) setOrbState("idle");
