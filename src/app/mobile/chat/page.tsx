@@ -42,13 +42,13 @@ function ChatBubble({ msg }: { msg: Message }) {
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "var(--serif)", fontSize: 16, fontStyle: "italic",
         color: "var(--vermiglio)", marginTop: 2,
-      }}>{'\u00A7'}<\/div>
+      }}>{'\u00A7'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div className="serif norma-md" style={{
           fontSize: 15, lineHeight: 1.55, color: "var(--ink)", fontStyle: "italic",
         }}>
-          <ReactMarkdown>{msg.text}<\/ReactMarkdown>
-        <\/div>
+          <ReactMarkdown>{msg.text}</ReactMarkdown>
+        </div>
         {msg.sources && msg.sources.length > 0 && (
           <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
             {msg.sources.slice(0, 2).map((src, i) => (
@@ -60,14 +60,14 @@ function ChatBubble({ msg }: { msg: Message }) {
               }}>
                 <span className="mono" style={{ fontSize: 10, color: "var(--vermiglio)", fontWeight: 600, marginRight: 6 }}>
                   {'\u00A7'} {src.code}
-                <\/span>
-                <span style={{ fontSize: 11, color: "var(--ink-3)", fontStyle: "italic" }}>{src.title}<\/span>
-              <\/div>
+                </span>
+                <span style={{ fontSize: 11, color: "var(--ink-3)", fontStyle: "italic" }}>{src.title}</span>
+              </div>
             ))}
-          <\/div>
+          </div>
         )}
-      <\/div>
-    <\/div>
+      </div>
+    </div>
   );
 }
 
@@ -79,7 +79,7 @@ function TypingIndicator() {
         background: "var(--paper-2)", border: "1px solid var(--paper-line)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontFamily: "var(--serif)", fontSize: 16, fontStyle: "italic", color: "var(--vermiglio)",
-      }}>{'\u00A7'}<\/div>
+      }}>{'\u00A7'}</div>
       <div style={{
         background: "var(--paper-2)", border: "1px solid var(--paper-line)",
         borderRadius: "18px 18px 18px 4px",
@@ -93,8 +93,8 @@ function TypingIndicator() {
             display: "inline-block",
           }} />
         ))}
-      <\/div>
-    <\/div>
+      </div>
+    </div>
   );
 }
 
@@ -208,7 +208,7 @@ export default function MobileChatPage() {
         .norma-md ul,.norma-md ol { padding-left: 18px; margin: 6px 0; }
         .norma-md li { margin-bottom: 4px; }
         .norma-md code { font-family: var(--mono); font-size: 12px; background: var(--paper-3); padding: 1px 4px; border-radius: 3px; font-style: normal; }
-      `}<\/style>
+      `}</style>
       <div style={{
         minHeight: "100dvh", display: "flex", flexDirection: "column",
         background: "var(--paper)",
@@ -224,12 +224,12 @@ export default function MobileChatPage() {
           flexShrink: 0, background: "var(--paper)",
         }}>
           <div className="serif" style={{ flex: 1, fontSize: 18 }}>
-            Norma<span style={{ fontStyle: "italic", color: "var(--vermiglio)" }}>AI<\/span>
-          <\/div>
+            Norma<span style={{ fontStyle: "italic", color: "var(--vermiglio)" }}>AI</span>
+          </div>
           <span className="mono" style={{ fontSize: 9, letterSpacing: "0.12em", color: "var(--ink-4)", textTransform: "uppercase" }}>
             Chat
-          <\/span>
-        <\/div>
+          </span>
+        </div>
 
         {/* Messages */}
         <div style={{
@@ -242,11 +242,11 @@ export default function MobileChatPage() {
               <div className="serif" style={{
                 fontSize: 28, fontStyle: "italic", color: "var(--ink-4)",
                 marginBottom: 8,
-              }}>{'\u00A7'}<\/div>
+              }}>{'\u00A7'}</div>
               <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.5 }}>
                 Fai una domanda normativa.<br />
                 Rispondo con fonti di legge.
-              <\/p>
+              </p>
               <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
                   "Come si redige una diffida formale?",
@@ -266,10 +266,10 @@ export default function MobileChatPage() {
                     }}
                   >
                     {q}
-                  <\/button>
+                  </button>
                 ))}
-              <\/div>
-            <\/div>
+              </div>
+            </div>
           )}
 
           {messages.map((msg) => <ChatBubble key={msg.id} msg={msg} />)}
@@ -280,15 +280,15 @@ export default function MobileChatPage() {
                 background: "var(--paper-2)", border: "1px solid var(--paper-line)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: "var(--serif)", fontSize: 16, fontStyle: "italic", color: "var(--vermiglio)",
-              }}>{'\u00A7'}<\/div>
+              }}>{'\u00A7'}</div>
               <div className="serif norma-md" style={{ flex: 1, fontSize: 15, lineHeight: 1.55, fontStyle: "italic", color: "var(--ink)" }}>
-                <ReactMarkdown>{currentText}<\/ReactMarkdown>
-              <\/div>
-            <\/div>
+                <ReactMarkdown>{currentText}</ReactMarkdown>
+              </div>
+            </div>
           )}
           {streaming && !currentText && <TypingIndicator />}
           <div ref={bottomRef} style={{ height: 1 }} />
-        <\/div>
+        </div>
 
         {/* Input bar */}
         <div style={{
@@ -309,7 +309,7 @@ export default function MobileChatPage() {
               value={input}
               onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px"; }}
               onKeyDown={handleKeyDown}
-              placeholder="Chiedi a NormaAI\u2026"
+              placeholder="Chiedi a NormaAIâ¦"
               rows={1}
               style={{
                 flex: 1, border: "none", background: "transparent",
@@ -331,9 +331,9 @@ export default function MobileChatPage() {
               }}
             >
               <ArrowUp size={16} color={input.trim() && !streaming ? "white" : "var(--ink-4)"} />
-            <\/button>
-          <\/div>
-        <\/div>
+            </button>
+          </div>
+        </div>
 
         <MobileTabBar />
 
@@ -352,10 +352,10 @@ export default function MobileChatPage() {
             }}>
               <div className="serif" style={{ fontSize: 22, marginBottom: 10 }}>
                 Limite raggiunto
-              <\/div>
+              </div>
               <p style={{ fontSize: 14, color: "var(--ink-2)", marginBottom: 20, lineHeight: 1.5 }}>
                 Registrati gratis per 10 query al giorno.
-              <\/p>
+              </p>
               <button
                 onClick={() => router.push("/onboarding")}
                 style={{
@@ -366,7 +366,7 @@ export default function MobileChatPage() {
                 }}
               >
                 Registrati gratis
-              <\/button>
+              </button>
               <button
                 onClick={() => setShowGate(false)}
                 style={{
@@ -376,11 +376,11 @@ export default function MobileChatPage() {
                 }}
               >
                 Chiudi
-              <\/button>
-            <\/div>
-          <\/div>
+              </button>
+            </div>
+          </div>
         )}
-      <\/div>
+      </div>
     </>
   );
 }
