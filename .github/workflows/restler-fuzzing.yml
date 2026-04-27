@@ -1,0 +1,137 @@
+name: RESTler Fuzzing (manual)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Triggered ONLY manually to avoid fuzzing production on every push.
+# Go to Actions → "RESTler Fuzzing (manual)" → Run workflow.
+# ──────────────────────────────────────────────────────────────────────────────
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Base URL to fuzz (default: production)"
+        required: false
+        default: "https://normaai.it"
+      fuzz_mode:
+        description: "RESTler mode: fuzz-lean (quick) or fuzz (deep)"
+        required: false
+        default: "fuzz-lean"
+        type: choice
+        options:
+          - fuzz-lean
+          - fuzz
+      time_budget:
+        description: "Max fuzzing time in hours (fuzz mode only)"
+        required: false
+        default: "1"
+
+jobs:
+  restler:
+    name: RESTler — compile + ${{ inputs.fuzz_mode }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      TARGET_URL: ${{ inputs.target_url || 'https://normaai.it' }}
+      FUZZ_MODE: ${{ inputs.fuzz_mode || 'fuzz-lean' }}
+      TIME_BUDGET: ${{ inputs.time_budget || '1' }}
+      RESTLER_IMAGE: mcr.microsoft.com/restler/restler:latest
+      # Working dirs inside the container
+      SPEC_DIR: /restler/spec
+      COMPILE_DIR: /restler/compiled
+      RESULTS_DIR: /restler/results
+
+    steps:
+      # ── 1. Checkout repo to get the OpenAPI spec ────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Pull RESTler Docker image ────────────────────────────────────────
+      - name: Pull RESTler image
+        run: docker pull "$RESTLER_IMAGE"
+
+      # ── 3. Prepare host directories ─────────────────────────────────────────
+      - name: Prepare workspace directories
+        run: |
+          mkdir -p \
+            "${{ github.workspace }}/restler-compiled" \
+            "${{ github.workspace }}/restler-results"
+
+      # ── 4. RESTler compile ───────────────────────────────────────────────────
+      - name: RESTler compile
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/docs:/restler/spec:ro" \
+            -v "${{ github.workspace }}/restler-compiled:/restler/compiled" \
+            "$RESTLER_IMAGE" \
+            compile \
+              --api_spec /restler/spec/openapi.yaml \
+              --dest_dir /restler/compiled
+
+      # ── 5. RESTler fuzz-lean (or fuzz) ──────────────────────────────────────
+      - name: RESTler ${{ env.FUZZ_MODE }}
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/restler-compiled:/restler/compiled:ro" \
+            -v "${{ github.workspace }}/restler-results:/restler/results" \
+            "$RESTLER_IMAGE" \
+            "$FUZZ_MODE" \
+              --grammar_file /restler/compiled/Compile/grammar.py \
+              --dictionary_file /restler/compiled/Compile/dict.json \
+              --settings /restler/compiled/Compile/config.json \
+              --target_ip "" \
+              --target_port 443 \
+              --connection_settings_per_target_ms 5000 \
+              --no_ssl false \
+              --host "$(echo "$TARGET_URL" | sed 's|https\?://||')" \
+              --time_budget "$TIME_BUDGET" \
+              --results_dir /restler/results \
+              --include_user_agent "RESTler/NormaAI-CI"
+        # Note: fuzz-lean ignores --time_budget; it runs until exhaustion.
+        # For a deep fuzz run select mode "fuzz" and set time_budget.
+
+      # ── 6. Show summary in workflow log ─────────────────────────────────────
+      - name: Print bug bucket summary
+        if: always()
+        run: |
+          echo "=== RESTler result files ==="
+          find "${{ github.workspace }}/restler-results" -type f | sort
+
+          BUG_DIR="${{ github.workspace }}/restler-results/FuzzLean/RestlerResults/bug_buckets"
+          if [ -d "$BUG_DIR" ]; then
+            echo ""
+            echo "=== Bug buckets ==="
+            ls -lh "$BUG_DIR"
+            echo ""
+            # Print first 100 lines of each bug file for quick triage
+            find "$BUG_DIR" -name "*.txt" | while read -r f; do
+              echo "--- $f ---"
+              head -100 "$f"
+              echo ""
+            done
+          else
+            echo "No bug_buckets directory found (no bugs, or different path for 'fuzz' mode)."
+          fi
+
+      # ── 7. Upload results as artifact ────────────────────────────────────────
+      - name: Upload RESTler results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: restler-results-${{ github.run_id }}
+          path: restler-results/
+          retention-days: 30
+
+      # ── 8. Fail the job if RESTler found confirmed bugs ──────────────────────
+      - name: Fail if bugs found
+        if: always()
+        run: |
+          # RESTler writes confirmed bugs into bug_buckets/*.txt
+          # Look in both fuzz-lean and fuzz result paths.
+          BUG_COUNT=$(find "${{ github.workspace }}/restler-results" \
+            -path "*/bug_buckets/*.txt" | wc -l)
+
+          echo "RESTler confirmed bug files: $BUG_COUNT"
+          if [ "$BUG_COUNT" -gt 0 ]; then
+            echo "::error::RESTler found $BUG_COUNT bug bucket(s). Check the uploaded artifact."
+            exit 1
+          fi
