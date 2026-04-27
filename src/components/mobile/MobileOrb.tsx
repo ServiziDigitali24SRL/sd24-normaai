@@ -324,8 +324,8 @@ export function MobileOrb({ state, onTap, size = 240, orbStyle = "classico" }: M
                 transform: "translateX(-50%)",
                 width: orbitDot, height: orbitDot,
                 borderRadius: "50%",
-                background: c.orbit ?? "oklch(0.85 0.1 230)",
-                boxShadow: `0 0 ${12 * scale}px ${c.orbit ?? "oklch(0.85 0.1 230)"}`,
+                background: c.orbit ?? "#D4A060",
+                boxShadow: `0 0 ${12 * scale}px ${c.orbit ?? "#D4A060"}`,
               }} />
             </div>
           )}
