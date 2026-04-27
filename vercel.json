@@ -14,9 +14,5 @@
       "path": "/api/impresa/report-compliance?cron=1",
       "schedule": "0 9 1 * *"
     },
-    {
-      "path": "/api/marketplace/reassign-expired",
-      "schedule": "*/30 * * * *"
-    }
   ]
 }

@@ -118,6 +118,7 @@ export default function MobilePage() {
   } = useMobileVoice(personality);
 
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPanel, setMenuPanel] = useState<"menu" | "settings">("menu");
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [authedUser, setAuthedUser] = useState<{ email: string | null; name: string } | null>(null);
@@ -462,77 +463,261 @@ export default function MobilePage() {
       {/* ── Bottom tab bar ── */}
       <MobileTabBar />
 
-      {/* ── Menu slide-up (impostazioni) ── */}
+      {/* ── Side Drawer (menu + impostazioni) ── */}
       {showMenu && (
-        <div
-          style={{
-            position: "fixed", inset: 0, zIndex: 200,
-            background: "rgba(26,24,20,0.5)",
-            backdropFilter: "blur(2px)",
-          }}
-          onClick={() => setShowMenu(false)}
-        >
+        <>
+          {/* Backdrop */}
           <div
-            onClick={(e) => e.stopPropagation()}
             style={{
-              position: "absolute", bottom: 0, left: 0, right: 0,
+              position: "fixed", inset: 0, zIndex: 200,
+              background: "rgba(19,17,15,0.45)",
+              backdropFilter: "blur(2px)",
+            }}
+            onClick={() => { setShowMenu(false); setMenuPanel("menu"); }}
+          />
+
+          {/* Drawer — full height, slides from right */}
+          <div
+            style={{
+              position: "fixed", top: 0, right: 0, bottom: 0,
+              width: "min(100%, 380px)", zIndex: 201,
               background: "var(--paper)",
-              borderRadius: "20px 20px 0 0",
-              maxHeight: "92dvh",
               display: "flex", flexDirection: "column",
+              boxShadow: "-20px 0 60px rgba(19,17,15,0.18)",
+              borderLeft: "1px solid var(--paper-line)",
               overflow: "hidden",
             }}
           >
-            {/* Drag handle */}
-            <div style={{
-              width: 36, height: 4, background: "var(--paper-3)",
-              borderRadius: 2, margin: "14px auto 0", flexShrink: 0,
-            }} />
+            {/* Status bar space */}
+            <div style={{ height: "env(safe-area-inset-top, 44px)", flexShrink: 0 }} />
 
-            {/* Header sticky */}
+            {/* Header */}
             <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              padding: "12px 20px 10px", flexShrink: 0,
-              borderBottom: "1px solid var(--paper-line)",
+              padding: "6px 20px 14px",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              flexShrink: 0,
             }}>
-              <span className="serif" style={{ fontSize: 20 }}>Impostazioni</span>
+              {menuPanel === "menu" ? (
+                <div className="mono" style={{ fontSize: 10, letterSpacing: "0.18em", color: "var(--vermiglio)" }}>
+                  § MENU
+                </div>
+              ) : (
+                <button
+                  onClick={() => setMenuPanel("menu")}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 5,
+                    border: "none", background: "transparent", cursor: "pointer",
+                    padding: 0, fontFamily: "var(--mono)", fontSize: 10,
+                    letterSpacing: "0.18em", color: "var(--vermiglio)",
+                  }}
+                >
+                  ‹ MENU
+                </button>
+              )}
               <button
-                onClick={() => setShowMenu(false)}
-                style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}
+                onClick={() => { setShowMenu(false); setMenuPanel("menu"); }}
                 aria-label="Chiudi"
+                style={{
+                  width: 34, height: 34, borderRadius: "50%",
+                  border: "1px solid var(--paper-line)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "transparent", cursor: "pointer",
+                }}
               >
-                <X size={20} color="var(--ink-2)" />
+                <X size={16} color="var(--ink-2)" />
               </button>
             </div>
 
-            {/* Scrollable content */}
-            <div style={{ flex: 1, overflowY: "auto" }}>
-
-              {/* ── Carosello personalità ── */}
-              <div style={{ paddingTop: 10 }}>
-                <div className="mono" style={{
-                  fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
-                  textTransform: "uppercase", paddingLeft: 20, marginBottom: 10,
-                }}>
-                  Personalità
+            {/* ── Panel: MENU ── */}
+            {menuPanel === "menu" && (
+              <>
+                {/* Profile block */}
+                <div style={{ padding: "0 20px 18px", flexShrink: 0 }}>
+                  {authedUser ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{
+                        width: 48, height: 48, borderRadius: "50%",
+                        background: "var(--ink)", color: "var(--paper)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontFamily: "var(--serif)", fontSize: 20, fontStyle: "italic",
+                        flexShrink: 0,
+                      }}>
+                        {(authedUser.name || authedUser.email || "?")[0].toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="serif" style={{ fontSize: 20, lineHeight: 1, letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {authedUser.name || authedUser.email?.split("@")[0]}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 3 }}>
+                          {authedUser.email} · Piano Gratis
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="serif" style={{ fontSize: 22, lineHeight: 1.15 }}>
+                        Benvenuto <span style={{ fontStyle: "italic" }}>su Norma</span>
+                      </div>
+                      <div style={{ fontSize: 12.5, color: "var(--ink-3)", marginTop: 4, fontFamily: "var(--sans)" }}>
+                        Accedi per salvare le conversazioni
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Carosello — 1 palla grande, scroll-snap */}
-                <div
-                  ref={personalityCarouselRef}
-                  onScroll={handlePersonalityScroll}
-                  style={{
-                    display: "flex",
-                    overflowX: "scroll",
-                    scrollSnapType: "x mandatory",
-                    scrollbarWidth: "none",
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    WebkitOverflowScrolling: "touch" as any,
-                  }}
-                >
-                  {ORB_PERSONALITIES.map((p) => {
-                    const active = personality === p.id;
-                    return (
+                <div style={{ margin: "0 20px", height: 1, background: "var(--paper-line)", flexShrink: 0 }} />
+
+                {/* Nav items */}
+                <div style={{ flex: 1, padding: "10px 12px", overflowY: "auto" }}>
+                  {/* Impostazioni */}
+                  <button
+                    onClick={() => setMenuPanel("settings")}
+                    style={{
+                      width: "100%", textAlign: "left", padding: "14px 10px",
+                      display: "flex", alignItems: "center", gap: 12, borderRadius: 8,
+                      border: "none", background: "transparent", cursor: "pointer",
+                    }}
+                  >
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 6,
+                      border: "1px solid var(--paper-line)", background: "var(--paper-2)",
+                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    }}>
+                      <span style={{ fontSize: 16 }}>⚙</span>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14.5, color: "var(--ink)" }}>Impostazioni Norma</div>
+                      <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 1 }}>Personalità · Lingua</div>
+                    </div>
+                    <span style={{ color: "var(--ink-3)", fontSize: 18, lineHeight: 1 }}>›</span>
+                  </button>
+
+                  {/* Privacy */}
+                  <button
+                    onClick={() => { setShowMenu(false); setMenuPanel("menu"); router.push("/privacy"); }}
+                    style={{
+                      width: "100%", textAlign: "left", padding: "14px 10px",
+                      display: "flex", alignItems: "center", gap: 12, borderRadius: 8,
+                      border: "none", background: "transparent", cursor: "pointer",
+                    }}
+                  >
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 6,
+                      border: "1px solid var(--paper-line)", background: "var(--paper-2)",
+                      display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    }}>
+                      <span style={{ fontSize: 15 }}>🔒</span>
+                    </div>
+                    <div style={{ fontSize: 14.5, color: "var(--ink)" }}>Privacy & Cookie</div>
+                  </button>
+
+                  <div style={{ margin: "8px 10px", height: 1, background: "var(--paper-line)" }} />
+
+                  {/* Auth actions */}
+                  {authedUser ? (
+                    <button
+                      onClick={async () => {
+                        setShowMenu(false);
+                        setMenuPanel("menu");
+                        const supabase = createClient();
+                        await supabase.auth.signOut();
+                        setAuthedUser(null);
+                      }}
+                      style={{
+                        width: "100%", textAlign: "left", padding: "14px 10px",
+                        display: "flex", alignItems: "center", gap: 12, borderRadius: 8,
+                        border: "none", background: "transparent", cursor: "pointer",
+                        color: "var(--vermiglio)",
+                      }}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 6,
+                        border: "1px solid rgba(212,74,42,0.2)", background: "rgba(212,74,42,0.06)",
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}>
+                        <LogOut size={16} color="var(--vermiglio)" />
+                      </div>
+                      <div style={{ fontSize: 14.5, fontWeight: 500 }}>Esci dall&apos;account</div>
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => { setShowMenu(false); setMenuPanel("menu"); setAuthMode("login"); setShowAuth(true); }}
+                        style={{
+                          width: "100%", textAlign: "left", padding: "14px 10px",
+                          display: "flex", alignItems: "center", gap: 12, borderRadius: 8,
+                          border: "none", background: "transparent", cursor: "pointer",
+                        }}
+                      >
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 6,
+                          border: "1px solid var(--paper-line)", background: "var(--paper-2)",
+                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        }}>
+                          <span style={{ fontSize: 16 }}>→</span>
+                        </div>
+                        <div style={{ fontSize: 14.5, color: "var(--ink)" }}>Accedi al tuo account</div>
+                      </button>
+                      <button
+                        onClick={() => { setShowMenu(false); setMenuPanel("menu"); setAuthMode("signup"); setShowAuth(true); }}
+                        style={{
+                          width: "100%", textAlign: "left", padding: "14px 10px",
+                          display: "flex", alignItems: "center", gap: 12, borderRadius: 8,
+                          border: "none", background: "transparent", cursor: "pointer",
+                        }}
+                      >
+                        <div style={{
+                          width: 36, height: 36, borderRadius: 6,
+                          border: "1px solid var(--paper-line)", background: "var(--paper-2)",
+                          display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        }}>
+                          <span style={{ fontSize: 14 }}>✦</span>
+                        </div>
+                        <div style={{ fontSize: 14.5, color: "var(--ink)" }}>Crea account gratuito</div>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div style={{
+                  padding: "14px 20px",
+                  paddingBottom: "calc(14px + env(safe-area-inset-bottom))",
+                  borderTop: "1px solid var(--paper-line)",
+                  display: "flex", alignItems: "center", gap: 8,
+                  fontSize: 10.5, color: "var(--ink-3)", fontFamily: "var(--mono)",
+                  letterSpacing: "0.08em", flexShrink: 0,
+                }}>
+                  <span style={{ color: "oklch(0.48 0.09 145)", fontSize: 8 }}>●</span>
+                  SINCRONIZZATO
+                  <div style={{ flex: 1 }} />
+                  v2.6.0
+                </div>
+              </>
+            )}
+
+            {/* ── Panel: IMPOSTAZIONI ── */}
+            {menuPanel === "settings" && (
+              <div style={{ flex: 1, overflowY: "auto" }}>
+
+                {/* Carosello personalità */}
+                <div style={{ paddingTop: 10 }}>
+                  <div className="mono" style={{
+                    fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
+                    textTransform: "uppercase", paddingLeft: 20, marginBottom: 10,
+                  }}>
+                    Personalità
+                  </div>
+
+                  <div
+                    ref={personalityCarouselRef}
+                    onScroll={handlePersonalityScroll}
+                    style={{
+                      display: "flex", overflowX: "scroll",
+                      scrollSnapType: "x mandatory", scrollbarWidth: "none",
+                    }}
+                  >
+                    {ORB_PERSONALITIES.map((p) => (
                       <div
                         key={p.id}
                         style={{
@@ -542,18 +727,13 @@ export default function MobilePage() {
                           alignItems: "center", padding: "6px 28px 12px",
                         }}
                       >
-                        {/* Stessa palla animata della voce — solo più piccola */}
                         <MobileOrb
                           state="idle"
                           onTap={() => handlePersonalityChange(p.id)}
                           size={130}
                           orbStyle={p.id}
                         />
-                        {/* Nome + descrizione */}
-                        <div className="serif" style={{
-                          fontSize: 20, marginTop: 0, marginBottom: 4,
-                          color: "var(--ink)",
-                        }}>
+                        <div className="serif" style={{ fontSize: 20, marginTop: 0, marginBottom: 4, color: "var(--ink)" }}>
                           {p.label}
                         </div>
                         <div style={{
@@ -564,226 +744,157 @@ export default function MobilePage() {
                           {p.description}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
 
-                {/* Dots */}
-                <div style={{
-                  display: "flex", justifyContent: "center",
-                  gap: 7, paddingBottom: 4,
-                }}>
-                  {ORB_PERSONALITIES.map((p, i) => (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        handlePersonalityChange(p.id);
-                        if (personalityCarouselRef.current) {
-                          personalityCarouselRef.current.scrollTo({
-                            left: i * personalityCarouselRef.current.clientWidth,
-                            behavior: "smooth",
-                          });
-                        }
-                      }}
-                      style={{
-                        height: 6, borderRadius: 3,
-                        width: personality === p.id ? 20 : 6,
-                        background: personality === p.id ? "var(--ink)" : "var(--paper-3)",
-                        cursor: "pointer",
-                        transition: "all 0.22s ease",
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* ── Carosello lingua ── */}
-              <div style={{ paddingTop: 10, paddingBottom: 4 }}>
-                <div className="mono" style={{
-                  fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
-                  textTransform: "uppercase", paddingLeft: 20,
-                  marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
-                }}>
-                  <Globe size={10} /> Lingua
-                  <span style={{ marginLeft: "auto", paddingRight: 20, fontSize: 9.5, color: "var(--ink-4)", letterSpacing: "0.04em", textTransform: "none" }}>
-                    Auto: {langLabel(detectedLang).flag} {langLabel(detectedLang).native}
-                  </span>
-                </div>
-
-                {/* Carosello lingue — palla più piccola */}
-                {(() => {
-                  const allLangs: (SupportedLang | "auto")[] = ["auto", ...SUPPORTED_LANGS];
-                  const activeIdx = langOverride === null ? 0 : allLangs.indexOf(langOverride);
-                  return (
-                    <>
+                  {/* Dots personalità */}
+                  <div style={{ display: "flex", justifyContent: "center", gap: 7, paddingBottom: 4 }}>
+                    {ORB_PERSONALITIES.map((p, i) => (
                       <div
-                        ref={langCarouselRef}
-                        onScroll={handleLangScroll}
-                        style={{
-                          display: "flex",
-                          overflowX: "scroll",
-                          scrollSnapType: "x mandatory",
-                          scrollbarWidth: "none",
-                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    WebkitOverflowScrolling: "touch" as any,
+                        key={p.id}
+                        onClick={() => {
+                          handlePersonalityChange(p.id);
+                          if (personalityCarouselRef.current) {
+                            personalityCarouselRef.current.scrollTo({
+                              left: i * personalityCarouselRef.current.clientWidth,
+                              behavior: "smooth",
+                            });
+                          }
                         }}
-                      >
-                        {allLangs.map((code) => {
-                          const isAuto = code === "auto";
-                          const label = isAuto
-                            ? { flag: "🌐", native: "Auto" }
-                            : langLabel(code as SupportedLang);
-                          const isActive = isAuto ? langOverride === null : langOverride === code;
-                          return (
-                            <div
-                              key={code}
-                              style={{
-                                flexShrink: 0, width: "100%",
-                                scrollSnapAlign: "center",
-                                display: "flex", flexDirection: "column",
-                                alignItems: "center", padding: "4px 28px 8px",
-                              }}
-                            >
-                              {/* Palla piccola */}
+                        style={{
+                          height: 6, borderRadius: 3,
+                          width: personality === p.id ? 20 : 6,
+                          background: personality === p.id ? "var(--ink)" : "var(--paper-3)",
+                          cursor: "pointer", transition: "all 0.22s ease",
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Carosello lingua */}
+                <div style={{ paddingTop: 10, paddingBottom: 4 }}>
+                  <div className="mono" style={{
+                    fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
+                    textTransform: "uppercase", paddingLeft: 20,
+                    marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <Globe size={10} /> Lingua
+                    <span style={{ marginLeft: "auto", paddingRight: 20, fontSize: 9.5, color: "var(--ink-4)", letterSpacing: "0.04em", textTransform: "none" }}>
+                      Auto: {langLabel(detectedLang).flag} {langLabel(detectedLang).native}
+                    </span>
+                  </div>
+
+                  {(() => {
+                    const allLangs: (SupportedLang | "auto")[] = ["auto", ...SUPPORTED_LANGS];
+                    const activeIdx = langOverride === null ? 0 : allLangs.indexOf(langOverride);
+                    return (
+                      <>
+                        <div
+                          ref={langCarouselRef}
+                          onScroll={handleLangScroll}
+                          style={{
+                            display: "flex", overflowX: "scroll",
+                            scrollSnapType: "x mandatory", scrollbarWidth: "none",
+                          }}
+                        >
+                          {allLangs.map((code) => {
+                            const isAuto = code === "auto";
+                            const label = isAuto
+                              ? { flag: "🌐", native: "Auto" }
+                              : langLabel(code as SupportedLang);
+                            const isActive = isAuto ? langOverride === null : langOverride === code;
+                            return (
                               <div
-                                onClick={() => {
-                                  const newLang = isAuto ? null : code as SupportedLang;
-                                  handleLangChange(newLang);
-                                  if (!isAuto && personality !== "globo") handlePersonalityChange("globo");
-                                }}
+                                key={code}
                                 style={{
-                                  width: 68, height: 68, borderRadius: "50%",
-                                  background: isAuto
-                                    ? "linear-gradient(135deg, var(--paper-2), var(--paper-3))"
-                                    : "linear-gradient(135deg, #B8D4F0, #4A90E2 40%, #1E5BA8)",
-                                  boxShadow: isActive
-                                    ? "0 0 0 3px var(--ink), 0 6px 20px rgba(0,0,0,0.2)"
-                                    : "0 4px 14px rgba(0,0,0,0.14)",
-                                  cursor: "pointer",
-                                  transition: "box-shadow 0.2s",
-                                  display: "flex", alignItems: "center", justifyContent: "center",
-                                  fontSize: isAuto ? 28 : 24,
+                                  flexShrink: 0, width: "100%",
+                                  scrollSnapAlign: "center",
+                                  display: "flex", flexDirection: "column",
+                                  alignItems: "center", padding: "4px 28px 8px",
                                 }}
                               >
-                                {label.flag}
-                              </div>
-                              <div style={{
-                                fontFamily: "var(--sans)", fontSize: 15,
-                                color: "var(--ink)", marginTop: 10, marginBottom: 2,
-                              }}>
-                                {label.native}
-                              </div>
-                              {!isAuto && personality !== "globo" && (
-                                <div style={{
-                                  fontSize: 10.5, color: "var(--ink-4)",
-                                  fontFamily: "var(--sans)", textAlign: "center",
-                                  lineHeight: 1.4,
-                                }}>
-                                  Attiva Globo
+                                <div
+                                  onClick={() => {
+                                    const newLang = isAuto ? null : code as SupportedLang;
+                                    handleLangChange(newLang);
+                                    if (!isAuto && personality !== "globo") handlePersonalityChange("globo");
+                                  }}
+                                  style={{
+                                    width: 68, height: 68, borderRadius: "50%",
+                                    background: isAuto
+                                      ? "linear-gradient(135deg, var(--paper-2), var(--paper-3))"
+                                      : "linear-gradient(135deg, #B8D4F0, #4A90E2 40%, #1E5BA8)",
+                                    boxShadow: isActive
+                                      ? "0 0 0 3px var(--ink), 0 6px 20px rgba(0,0,0,0.2)"
+                                      : "0 4px 14px rgba(0,0,0,0.14)",
+                                    cursor: "pointer", transition: "box-shadow 0.2s",
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    fontSize: isAuto ? 28 : 24,
+                                  }}
+                                >
+                                  {label.flag}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                                <div style={{
+                                  fontFamily: "var(--sans)", fontSize: 15,
+                                  color: "var(--ink)", marginTop: 10, marginBottom: 2,
+                                }}>
+                                  {label.native}
+                                </div>
+                                {!isAuto && personality !== "globo" && (
+                                  <div style={{
+                                    fontSize: 10.5, color: "var(--ink-4)",
+                                    fontFamily: "var(--sans)", textAlign: "center",
+                                  }}>
+                                    Attiva Globo
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
 
-                      {/* Dots lingua */}
-                      <div style={{ display: "flex", justifyContent: "center", gap: 5, paddingBottom: 8 }}>
-                        {allLangs.map((code, i) => (
-                          <div
-                            key={code}
-                            onClick={() => {
-                              if (langCarouselRef.current) {
-                                langCarouselRef.current.scrollTo({
-                                  left: i * langCarouselRef.current.clientWidth,
-                                  behavior: "smooth",
-                                });
-                              }
-                            }}
-                            style={{
-                              height: 5, borderRadius: 2.5,
-                              width: activeIdx === i ? 16 : 5,
-                              background: activeIdx === i ? "var(--ink)" : "var(--paper-3)",
-                              cursor: "pointer",
-                              transition: "all 0.22s ease",
-                            }}
-                          />
-                        ))}
-                      </div>
+                        {/* Dots lingua */}
+                        <div style={{ display: "flex", justifyContent: "center", gap: 5, paddingBottom: 8 }}>
+                          {allLangs.map((code, i) => (
+                            <div
+                              key={code}
+                              onClick={() => {
+                                if (langCarouselRef.current) {
+                                  langCarouselRef.current.scrollTo({
+                                    left: i * langCarouselRef.current.clientWidth,
+                                    behavior: "smooth",
+                                  });
+                                }
+                              }}
+                              style={{
+                                height: 5, borderRadius: 2.5,
+                                width: activeIdx === i ? 16 : 5,
+                                background: activeIdx === i ? "var(--ink)" : "var(--paper-3)",
+                                cursor: "pointer", transition: "all 0.22s ease",
+                              }}
+                            />
+                          ))}
+                        </div>
 
-                      <div style={{
-                        fontSize: 11, color: "var(--ink-4)", lineHeight: 1.4,
-                        textAlign: "center", padding: "0 20px 10px",
-                        fontFamily: "var(--sans)",
-                      }}>
-                        Norma parla in{" "}
-                        <strong>{langLabel(activeLang).native}</strong>{" "}
-                        {langLabel(activeLang).flag}
-                        {langOverride === null && " · Dalla lingua del telefono"}
-                      </div>
-                    </>
-                  );
-                })()}
+                        <div style={{
+                          fontSize: 11, color: "var(--ink-4)", lineHeight: 1.4,
+                          textAlign: "center", padding: "0 20px 16px",
+                          fontFamily: "var(--sans)",
+                        }}>
+                          Norma parla in{" "}
+                          <strong>{langLabel(activeLang).native}</strong>{" "}
+                          {langLabel(activeLang).flag}
+                          {langOverride === null && " · Dalla lingua del telefono"}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
               </div>
-            </div>
-
-            {/* Footer account — fisso in basso */}
-            <div style={{
-              borderTop: "1px solid var(--paper-line)",
-              padding: "8px 20px",
-              paddingBottom: "calc(8px + env(safe-area-inset-bottom))",
-              flexShrink: 0,
-            }}>
-              {authedUser ? (
-                <>
-                  <div style={{ paddingBottom: 10, borderBottom: "1px solid var(--paper-line)", marginBottom: 6 }}>
-                    <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
-                      {authedUser.name || authedUser.email}
-                    </div>
-                    {authedUser.name && (
-                      <div style={{ fontFamily: "var(--sans)", fontSize: 11.5, color: "var(--ink-4)", marginTop: 1 }}>
-                        {authedUser.email}
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => { setShowMenu(false); router.push("/privacy"); }}
-                    style={{ width: "100%", textAlign: "left", padding: "9px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
-                  >
-                    Privacy & Cookie
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setShowMenu(false);
-                      const supabase = createClient();
-                      await supabase.auth.signOut();
-                      setAuthedUser(null);
-                    }}
-                    style={{ width: "100%", textAlign: "left", padding: "9px 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, display: "flex", alignItems: "center", gap: 8, color: "var(--vermiglio-ink)", marginTop: 2 }}
-                  >
-                    <LogOut size={14} /> Esci dall&apos;account
-                  </button>
-                </>
-              ) : (
-                <>
-                  {[
-                    { label: "Accedi al tuo account", action: () => { setAuthMode("login");  setShowAuth(true); } },
-                    { label: "Crea account gratuito", action: () => { setAuthMode("signup"); setShowAuth(true); } },
-                    { label: "Privacy & Cookie",      action: () => router.push("/privacy") },
-                  ].map((item) => (
-                    <button
-                      key={item.label}
-                      onClick={() => { setShowMenu(false); item.action(); }}
-                      style={{ width: "100%", textAlign: "left", padding: "9px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
+            )}
           </div>
-        </div>
+        </>
       )}
 
       {/* ── Onboarding primo accesso ── */}

@@ -1,4 +1,7 @@
--- Migration 009: GDPR Consent Fields + DSAR Table
+-- ⚠️  FILE RINOMINATO — usare 009b_gdpr_consent_fields.sql
+-- Questo file è mantenuto per compatibilità storica locale.
+-- La versione canonica su Supabase Cloud è timestamped: 20260408175451
+-- Migration 009b: GDPR Consent Fields + DSAR Table
 -- Art. 7 GDPR — Prova del consenso
 -- Art. 17 GDPR — Diritto all'oblio
 -- Art. 20 GDPR — Portabilità

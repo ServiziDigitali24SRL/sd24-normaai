@@ -127,6 +127,8 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
       if (!mountedRef.current) return;
       setCallActive(true);
       setOrbState("thinking");
+      // Reset last question so stale transcripts from previous calls don't show
+      setLastQuestion("");
     });
 
     vapi.on("call-end", () => {
@@ -161,7 +163,12 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
         if (msg.role === "user") {
           setUserTranscript(msg.transcript ?? "");
           if (msg.transcriptType === "final" && msg.transcript) {
-            setLastQuestion(msg.transcript);
+            // Guard: ignore very short transcripts — these are usually Vapi
+            // echoing the assistant's own greeting (e.g. "Ti dica,") back as
+            // user speech due to mobile VAD / echo-cancellation quirks.
+            if (msg.transcript.trim().length > 12) {
+              setLastQuestion(msg.transcript);
+            }
             setOrbState("thinking");
           } else if (msg.transcriptType === "partial") {
             setOrbState("listening");

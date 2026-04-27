@@ -15,7 +15,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const question: string = (body.question ?? "").slice(0, 500).trim();
-    const userId: string | null = body.userId ?? null;
+
+    // CVE: userId sempre dalla sessione, mai dal body client
+    let userId: string | null = null;
+    try {
+      const { createClient: createServerClient } = await import("@/lib/supabase-server");
+      const authClient = await createServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      userId = user?.id ?? null;
+    } catch { /* continua come anonimo */ }
 
     if (!question) {
       return NextResponse.json({ error: "question is required" }, { status: 400 });

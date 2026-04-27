@@ -131,10 +131,13 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
         setError("Connessione non riuscita. Riprova o tocca Salta.");
       });
 
-      // Avvia con il messaggio di benvenuto come firstMessage override
+      // Avvia con il messaggio di benvenuto come firstMessage override.
+      // NOTA: firstMessage va dentro assistantOverrides, non top-level.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (vapi as any).start(VAPI_ASSISTANT_IDS.classico, {
-        firstMessage: WELCOME_FIRST_MESSAGE,
+        assistantOverrides: {
+          firstMessage: WELCOME_FIRST_MESSAGE,
+        },
       });
     } catch {
       if (mounted.current) {
@@ -197,16 +200,30 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
             </div>
             <p style={{
               fontSize: 15, color: "var(--ink-3)", lineHeight: 1.65,
-              marginBottom: 28, fontFamily: "var(--sans)",
+              marginBottom: 24, fontFamily: "var(--sans)",
             }}>
-              La tua assistente legale vocale.<br />
-              Tocca la palla per conoscerti.
+              La tua assistente legale vocale.
             </p>
+            <button
+              onClick={handleOrbTap}
+              style={{
+                width: "100%", padding: "15px",
+                borderRadius: 12, border: "none",
+                background: "var(--vermiglio)",
+                color: "white",
+                fontFamily: "var(--sans)", fontSize: 16, fontWeight: 600,
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+                marginBottom: 12,
+              }}
+            >
+              Parla con Norma →
+            </button>
             <div className="mono" style={{
-              fontSize: 9.5, letterSpacing: "0.18em",
+              fontSize: 9, letterSpacing: "0.14em",
               color: "var(--ink-4)", textTransform: "uppercase",
             }}>
-              tocca per iniziare
+              abilita microfono quando richiesto
             </div>
           </>
         )}

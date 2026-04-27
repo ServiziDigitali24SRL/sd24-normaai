@@ -21,7 +21,10 @@ export const dynamic = "force-dynamic";
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const EMBED_VPS_URL = process.env.EMBED_VPS_URL || "http://89.167.123.25:8765";
+const EMBED_VPS_URL = process.env.EMBED_VPS_URL ?? null;
+if (!EMBED_VPS_URL) {
+  console.warn("[chat/route] EMBED_VPS_URL not set — embedding will be skipped");
+}
 
 // CVE-06 fix: escape wildcard chars per prevenire enumerazione via ILIKE
 function sanitizeLike(v: string | null): string | null {
@@ -278,6 +281,7 @@ ${CITATION_RULES}${followUp}${proponi}
 // 2 tentativi su VPS con backoff 1.5s. Se VPS down → null → Claude risponde senza RAG.
 
 async function generateEmbedding(text: string): Promise<number[] | null> {
+  if (!EMBED_VPS_URL) return null;
   const input = text.slice(0, 8000);
   const url = `${EMBED_VPS_URL}/embed`;
 
