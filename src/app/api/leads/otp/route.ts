@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendOtpSms } from "@/lib/twilio";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,15 @@ async function sendOtpEmail(
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const { allowed } = await rateLimit(`otp:${ip}`, 5, 15 * 60 * 1000);
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: "Troppi tentativi. Riprova tra 15 minuti." }), {
+      status: 429,
+      headers: { "Content-Type": "application/json", "Retry-After": "900" },
+    });
+  }
+
   try {
     const { userId, email, phone, leadContext } = await req.json();
 

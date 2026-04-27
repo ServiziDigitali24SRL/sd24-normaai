@@ -1,21 +1,8 @@
-import { NextResponse } from "next/server";
-import * as Sentry from "@sentry/nextjs";
 export const dynamic = "force-dynamic";
 
-class SentryExampleAPIError extends Error {
-  constructor(message: string | undefined) {
-    super(message);
-    this.name = "SentryExampleAPIError";
+export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: {"Content-Type":"application/json"} });
   }
-}
-
-// B-18 fix: route di test — disabilitata in produzione
-export function GET() {
-  if (process.env.NODE_ENV === "production" && process.env.SENTRY_EXAMPLE_ENABLED !== "1") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  Sentry.logger.info("Sentry example API called");
-  throw new SentryExampleAPIError(
-    "This error is raised on the backend called by the example page.",
-  );
+  throw new Error("Sentry Example API Route Error");
 }
