@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
-import SentryExampleClient from "./_client";
 
+// Sentry example page — disponibile solo in development.
 export default function Page() {
-  if (process.env.NODE_ENV === "production") {
-    notFound();
-  }
-  return <SentryExampleClient />;
+  // Mai mostrare in produzione
+  notFound();
 }
