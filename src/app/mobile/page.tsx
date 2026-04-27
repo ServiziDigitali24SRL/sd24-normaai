@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { X, Menu, PhoneOff, Globe, LogOut } from "lucide-react";
-import { MobileOrb, OrbMini, ListeningDots } from "@/components/mobile/MobileOrb";
+import { MobileOrb, ListeningDots } from "@/components/mobile/MobileOrb";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 import { MobileOnboarding } from "@/components/mobile/MobileOnboarding";
@@ -542,13 +542,16 @@ export default function MobilePage() {
                           alignItems: "center", padding: "6px 28px 12px",
                         }}
                       >
-                        {/* OrbMini — sfera dal design handoff */}
-                        <div onClick={() => handlePersonalityChange(p.id)} style={{ cursor: "pointer" }}>
-                          <OrbMini orbStyle={p.id} size={100} active={active} />
-                        </div>
+                        {/* Stessa palla animata della voce — solo più piccola */}
+                        <MobileOrb
+                          state="idle"
+                          onTap={() => handlePersonalityChange(p.id)}
+                          size={130}
+                          orbStyle={p.id}
+                        />
                         {/* Nome + descrizione */}
                         <div className="serif" style={{
-                          fontSize: 20, marginTop: 12, marginBottom: 4,
+                          fontSize: 20, marginTop: 0, marginBottom: 4,
                           color: "var(--ink)",
                         }}>
                           {p.label}
