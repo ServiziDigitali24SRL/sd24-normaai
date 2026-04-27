@@ -6,6 +6,7 @@ import { MessageSquare, FileText, File, Lock } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
+import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 
 type Tab = "chat" | "articoli" | "documenti";
 
@@ -23,8 +24,7 @@ function createSupabase() {
 }
 
 /* ── Unauthenticated gate ────────────────────────────────────────────────── */
-function AuthGate() {
-  const router = useRouter();
+function AuthGate({ onRegister, onLogin }: { onRegister: () => void; onLogin: () => void }) {
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column",
@@ -38,7 +38,7 @@ function AuthGate() {
         gli articoli salvati e i documenti caricati.
       </p>
       <button
-        onClick={() => router.push("/onboarding")}
+        onClick={onRegister}
         style={{
           padding: "14px 28px", borderRadius: 10, border: "none",
           background: "var(--vermiglio)", color: "white",
@@ -49,7 +49,7 @@ function AuthGate() {
         Registrati gratis
       </button>
       <button
-        onClick={() => router.push("/")}
+        onClick={onLogin}
         style={{
           padding: "12px 28px", borderRadius: 10,
           background: "transparent", border: "1px solid var(--paper-line)",
@@ -157,6 +157,8 @@ export default function MobileArchivioPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasPaidPlan, setHasPaidPlan] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<"signup" | "login">("signup");
 
   useEffect(() => {
     const supabase = createSupabase();
@@ -229,7 +231,10 @@ export default function MobileArchivioPage() {
         {loading ? (
           <div style={{ padding: 32, textAlign: "center", color: "var(--ink-4)", fontSize: 14 }}>Caricamento…</div>
         ) : !user ? (
-          <AuthGate />
+          <AuthGate
+            onRegister={() => { setAuthMode("signup"); setShowAuth(true); }}
+            onLogin={() => { setAuthMode("login"); setShowAuth(true); }}
+          />
         ) : !hasPaidPlan ? (
           <SubscriptionGate />
         ) : (
@@ -242,6 +247,31 @@ export default function MobileArchivioPage() {
       </div>
 
       <MobileTabBar />
+
+      <MobileAuthSheet
+        open={showAuth}
+        initialMode={authMode}
+        initialRole="privato"
+        onClose={() => setShowAuth(false)}
+        onSuccess={() => {
+          setShowAuth(false);
+          // Reload auth state so the UI refreshes with the logged-in view
+          const supabase = createSupabase();
+          supabase.auth.getUser().then(async ({ data: { user: u } }) => {
+            setUser(u);
+            if (u) {
+              const { data: sub } = await supabase
+                .from("subscriptions")
+                .select("plan, status")
+                .eq("user_id", u.id)
+                .eq("status", "active")
+                .not("plan", "eq", "free")
+                .maybeSingle();
+              setHasPaidPlan(!!sub);
+            }
+          });
+        }}
+      />
     </div>
   );
 }
