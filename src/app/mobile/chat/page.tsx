@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, X } from "lucide-react";
+import { ArrowUp, X, Paperclip } from "lucide-react";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 import ReactMarkdown from "react-markdown";
@@ -108,19 +108,31 @@ export default function MobileChatPage() {
   const [currentText, setCurrentText] = useState("");
   const [showGate, setShowGate] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
+  const [attachment, setAttachment] = useState<File | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, currentText]);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || streaming) return;
-    setInput("");
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setAttachment(file);
+    e.target.value = "";
+  };
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text: text.trim(), ts: Date.now() };
+  const sendMessage = async (text: string) => {
+    if ((!text.trim() && !attachment) || streaming) return;
+    const fullText = attachment
+      ? `${text.trim()}${text.trim() ? "\n" : ""}[Allegato: ${attachment.name}]`
+      : text.trim();
+    setInput("");
+    setAttachment(null);
+
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text: fullText, ts: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setStreaming(true);
     setCurrentText("");
@@ -134,7 +146,7 @@ export default function MobileChatPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: text.trim(),
+          question: fullText,
           vertical: null,
           userId: null,
           conversationHistory: history,
@@ -279,12 +291,60 @@ export default function MobileChatPage() {
           background: "var(--paper)",
           flexShrink: 0,
         }}>
+          {/* Attachment chip */}
+          {attachment && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              marginBottom: 8, padding: "6px 10px",
+              background: "var(--paper-2)", border: "1px solid var(--paper-line)",
+              borderRadius: 20, width: "fit-content", maxWidth: "100%",
+            }}>
+              <Paperclip size={12} color="var(--ink-3)" />
+              <span style={{
+                fontFamily: "var(--sans)", fontSize: 12.5, color: "var(--ink-2)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200,
+              }}>
+                {attachment.name}
+              </span>
+              <button
+                onClick={() => setAttachment(null)}
+                style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", display: "flex", flexShrink: 0 }}
+                aria-label="Rimuovi allegato"
+              >
+                <X size={12} color="var(--ink-3)" />
+              </button>
+            </div>
+          )}
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt,.doc,.docx,image/*"
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+
           <div style={{
             display: "flex", alignItems: "flex-end", gap: 6,
             background: "var(--paper-2)",
             border: "1px solid var(--paper-line)",
-            borderRadius: 22, padding: "6px 6px 6px 12px",
+            borderRadius: 22, padding: "6px 6px 6px 6px",
           }}>
+            {/* Attachment button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              aria-label="Allega file"
+              style={{
+                width: 36, height: 36, borderRadius: "50%",
+                border: "none", background: "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, cursor: "pointer",
+              }}
+            >
+              <Paperclip size={17} color="var(--ink-3)" />
+            </button>
+
             <textarea
               ref={inputRef}
               value={input}
@@ -306,17 +366,17 @@ export default function MobileChatPage() {
             />
             <button
               onClick={() => sendMessage(input)}
-              disabled={!input.trim() || streaming}
+              disabled={(!input.trim() && !attachment) || streaming}
               aria-label="Invia messaggio"
               style={{
                 width: 36, height: 36, borderRadius: "50%",
-                background: input.trim() && !streaming ? "var(--vermiglio)" : "var(--paper-3)",
-                border: "none", cursor: input.trim() && !streaming ? "pointer" : "default",
+                background: (input.trim() || attachment) && !streaming ? "var(--vermiglio)" : "var(--paper-3)",
+                border: "none", cursor: (input.trim() || attachment) && !streaming ? "pointer" : "default",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "background 0.15s",
               }}
             >
-              <ArrowUp size={16} color={input.trim() && !streaming ? "white" : "var(--ink-4)"} />
+              <ArrowUp size={16} color={(input.trim() || attachment) && !streaming ? "white" : "var(--ink-4)"} />
             </button>
           </div>
         </div>

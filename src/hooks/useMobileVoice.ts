@@ -248,7 +248,15 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
       // or the user's manual override in localStorage.
       const assistantId = resolveAssistantId(personality);
       console.log("[NormaAI] starting call", { personality, assistantId });
-      await vapi.start(assistantId);
+      // startSpeakingPlan.waitSeconds: delay (in seconds) after assistant
+      // finishes speaking before the VAD opens the mic. Prevents the first
+      // word of the user's reply from being clipped when they speak immediately
+      // after Norma stops talking.
+      await vapi.start(assistantId, {
+        assistantOverrides: {
+          startSpeakingPlan: { waitSeconds: 0.4 },
+        },
+      });
     } catch (err) {
       console.error("[NormaAI] vapi.start threw", err);
       disarmWatchdog();
