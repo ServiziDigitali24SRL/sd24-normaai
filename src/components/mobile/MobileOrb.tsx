@@ -12,39 +12,70 @@ interface MobileOrbProps {
   orbStyle?: OrbStyle;
 }
 
+// ── Keyframes ────────────────────────────────────────────────────────────────
 const ORB_KEYFRAMES = `
   @keyframes orb-breathe {
-    0%, 100% { transform: scale(1); }
-    50%       { transform: scale(1.04); }
+    0%, 100% { transform: scale(1);     filter: brightness(1); }
+    50%       { transform: scale(1.046); filter: brightness(1.07); }
   }
-  @keyframes orb-listen-pulse {
-    0%, 100% { transform: scale(1); }
-    50%       { transform: scale(1.09); }
-  }
-  @keyframes orb-rotate {
-    to { transform: rotate(360deg); }
+  @keyframes orb-glow-breathe {
+    0%, 100% { opacity: 0.55; transform: scale(1); }
+    50%       { opacity: 1;   transform: scale(1.18); }
   }
   @keyframes orb-speak {
-    0%, 100% { transform: scale(1); }
-    25%       { transform: scale(1.06); }
-    60%       { transform: scale(0.97); }
+    0%   { transform: scale(1); }
+    12%  { transform: scale(1.075); }
+    28%  { transform: scale(1.02); }
+    48%  { transform: scale(1.09); }
+    68%  { transform: scale(0.975); }
+    84%  { transform: scale(1.055); }
+    100% { transform: scale(1); }
+  }
+  @keyframes orb-speak-glow {
+    0%   { opacity: 0.45; transform: scale(1); }
+    30%  { opacity: 1;    transform: scale(1.35); }
+    65%  { opacity: 0.65; transform: scale(1.15); }
+    100% { opacity: 0.45; transform: scale(1); }
+  }
+  @keyframes orb-listen {
+    0%, 100% { transform: scale(1);    }
+    35%      { transform: scale(1.065);}
+    65%      { transform: scale(0.972);}
+  }
+  @keyframes orb-think {
+    0%, 100% { transform: scale(1);    filter: brightness(1);    }
+    50%      { transform: scale(1.028); filter: brightness(1.12); }
   }
   @keyframes orb-ring {
-    0%   { transform: scale(0.9); opacity: 0.55; }
-    100% { transform: scale(1.5);  opacity: 0; }
+    0%   { transform: scale(1);   opacity: 0.75; }
+    100% { transform: scale(1.78); opacity: 0; }
   }
-  @keyframes orb-ring-fast {
-    0%   { transform: scale(0.9); opacity: 0.6; }
-    100% { transform: scale(1.4); opacity: 0; }
+  @keyframes orb-ring-b {
+    0%   { transform: scale(1);   opacity: 0.5; }
+    100% { transform: scale(2.0);  opacity: 0; }
   }
-  @keyframes blob-morph-a {
-    0%, 100% { border-radius: 58% 42% 55% 45% / 52% 48% 52% 48%; }
-    33%       { border-radius: 45% 55% 42% 58% / 48% 55% 45% 52%; }
-    66%       { border-radius: 52% 48% 58% 42% / 45% 52% 48% 55%; }
+  @keyframes blob-a {
+    0%, 100% { border-radius: 58% 42% 56% 44% / 52% 48% 53% 47%; }
+    20%      { border-radius: 44% 56% 47% 53% / 57% 43% 59% 41%; }
+    40%      { border-radius: 52% 48% 63% 37% / 40% 60% 44% 56%; }
+    60%      { border-radius: 38% 62% 51% 49% / 56% 44% 54% 46%; }
+    80%      { border-radius: 62% 38% 44% 56% / 46% 54% 48% 52%; }
   }
-  @keyframes blob-morph-b {
-    0%, 100% { border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%; }
-    50%       { border-radius: 55% 45% 52% 48% / 48% 55% 45% 52%; }
+  @keyframes blob-b {
+    0%, 100% { border-radius: 53% 47% 44% 56% / 51% 57% 43% 49%; }
+    25%      { border-radius: 61% 39% 53% 47% / 44% 52% 59% 41%; }
+    50%      { border-radius: 45% 55% 61% 39% / 57% 43% 46% 54%; }
+    75%      { border-radius: 56% 44% 38% 62% / 48% 61% 39% 52%; }
+  }
+  @keyframes shimmer-sweep {
+    0%   { transform: translateX(-150%) rotate(-15deg); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateX(250%) rotate(-15deg); opacity: 0; }
+  }
+  @keyframes think-dot {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
   @keyframes dots-bounce {
     0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
@@ -52,79 +83,124 @@ const ORB_KEYFRAMES = `
   }
 `;
 
-// ── Color identity per style (constant across all states) ─────────────────
-// User feedback: the orb must KEEP THE CHOSEN COLOR through the whole call.
-// Only the animation/intensity changes by state (breathe / pulse / rotate /
-// speak-pulse + rings) — never the hue.
-type ColorPalette = {
-  inner: string;
-  outer: string;
-  glow: string;
-  ringColor: string;
+// ── Color palettes — true 3D sphere gradients ────────────────────────────────
+type Palette = {
+  sphere: string;   // main radial gradient (light→mid→dark, 3D feel)
+  blob: string;     // outer blurry halo
+  glow: string;     // ambient glow rgba
+  ring: string;     // expanding ring color
+  hi1: string;      // primary specular highlight
+  hi2: string;      // micro specular dot
 };
 
-const PALETTES: Record<OrbStyle, ColorPalette> = {
+const PALETTES: Record<OrbStyle, Palette> = {
+  // ☀️ Warm amber-gold  — "Avvocato amico"
   classico: {
-    inner: "radial-gradient(circle at 30% 30%, #F6F2EA 0%, #E6DFCF 55%, #C9BFA8 100%)",
-    outer: "radial-gradient(circle at 30% 30%, #EFE9DC 0%, #C9BFA8 70%)",
-    glow: "rgba(212,74,42,0.18)",
-    ringColor: "rgba(212,74,42,0.7)",
+    sphere: "radial-gradient(circle at 33% 28%, #FFFDE8 0%, #F7CA50 22%, #D98A1A 58%, #7C4210 100%)",
+    blob:   "radial-gradient(circle at 40% 40%, #F7CA50 0%, #C47018 55%, #7C4210 100%)",
+    glow:   "rgba(222, 148, 30, 0.55)",
+    ring:   "rgba(222, 148, 30, 0.72)",
+    hi1:    "rgba(255, 252, 220, 0.88)",
+    hi2:    "rgba(255, 255, 255, 0.96)",
   },
+  // 🌌 Midnight cosmos  — "Diretto"
   notte: {
-    inner: "radial-gradient(circle at 30% 30%, #1E2340 0%, #131A30 55%, #0A0F20 100%)",
-    outer: "radial-gradient(circle at 30% 30%, #1A2038 0%, #0C1025 70%)",
-    glow: "rgba(80,120,220,0.28)",
-    ringColor: "rgba(80,130,230,0.7)",
+    sphere: "radial-gradient(circle at 33% 28%, #AAC8F0 0%, #2858B8 22%, #0D2270 58%, #040B22 100%)",
+    blob:   "radial-gradient(circle at 40% 40%, #2858B8 0%, #0A1A68 55%, #040B22 100%)",
+    glow:   "rgba(48, 105, 225, 0.55)",
+    ring:   "rgba(90, 150, 245, 0.72)",
+    hi1:    "rgba(185, 215, 255, 0.82)",
+    hi2:    "rgba(220, 238, 255, 0.96)",
   },
+  // 🌿 Living forest    — "Calmo e paziente"
   natura: {
-    inner: "radial-gradient(circle at 30% 30%, #EAF2E8 0%, #C8DFC0 55%, #9BBF90 100%)",
-    outer: "radial-gradient(circle at 30% 30%, #D8ECD0 0%, #96B88A 70%)",
-    glow: "rgba(80,160,80,0.22)",
-    ringColor: "rgba(60,170,80,0.7)",
+    sphere: "radial-gradient(circle at 33% 28%, #CCEECC 0%, #3CAE62 22%, #186838 58%, #072A16 100%)",
+    blob:   "radial-gradient(circle at 40% 40%, #3CAE62 0%, #186838 55%, #072A16 100%)",
+    glow:   "rgba(38, 165, 85, 0.55)",
+    ring:   "rgba(62, 185, 98, 0.72)",
+    hi1:    "rgba(200, 242, 212, 0.82)",
+    hi2:    "rgba(230, 255, 238, 0.96)",
   },
+  // 🌸 Aurora violet    — "Linguaggio semplice"
   aurora: {
-    inner: "radial-gradient(circle at 30% 30%, #F0E8F8 0%, #D8C0F0 55%, #B890D8 100%)",
-    outer: "radial-gradient(circle at 30% 30%, #E8D8F4 0%, #B888D0 70%)",
-    glow: "rgba(160,80,200,0.22)",
-    ringColor: "rgba(180,80,200,0.7)",
+    sphere: "radial-gradient(circle at 33% 28%, #FAE8FF 0%, #C455EC 22%, #7218B0 58%, #320870 100%)",
+    blob:   "radial-gradient(circle at 40% 40%, #C455EC 0%, #7218B0 55%, #320870 100%)",
+    glow:   "rgba(182, 52, 228, 0.55)",
+    ring:   "rgba(202, 88, 245, 0.72)",
+    hi1:    "rgba(252, 225, 255, 0.86)",
+    hi2:    "rgba(255, 245, 255, 0.97)",
   },
-  // 🌍 Multilingue — "earth at twilight": ocean blue + atmosphere glow
+  // 🌍 Ocean earth      — "Multilingue"
   globo: {
-    inner: "radial-gradient(circle at 30% 30%, #B8D4F0 0%, #4A90E2 50%, #1E5BA8 100%)",
-    outer: "radial-gradient(circle at 30% 30%, #6FA8DC 0%, #1E5BA8 70%)",
-    glow: "rgba(74,144,226,0.30)",
-    ringColor: "rgba(110,170,230,0.7)",
+    sphere: "radial-gradient(circle at 33% 28%, #B0DCFA 0%, #2A88DE 22%, #0C52B0 58%, #041E40 100%)",
+    blob:   "radial-gradient(circle at 40% 40%, #2A88DE 0%, #0C52B0 55%, #041E40 100%)",
+    glow:   "rgba(38, 125, 225, 0.55)",
+    ring:   "rgba(82, 162, 245, 0.72)",
+    hi1:    "rgba(185, 225, 255, 0.82)",
+    hi2:    "rgba(220, 242, 255, 0.96)",
   },
 };
 
-// ── Animation per state (NO colors here, only motion) ─────────────────────
-type StateAnim = { anim: string; ringAnim: string };
-const STATE_ANIMS: Record<OrbState, StateAnim> = {
+// ── Per-state animation config ───────────────────────────────────────────────
+type StateCfg = {
+  orb:      string;
+  blob:     string;
+  glow:     string;
+  rings:    boolean;
+  ring1:    string;
+  ring2:    string;
+  shimmer:  boolean;
+  thinkDot: boolean;
+};
+
+const STATES: Record<OrbState, StateCfg> = {
   idle: {
-    anim: "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
-    ringAnim: "none",
+    orb:      "orb-breathe 4.8s ease-in-out infinite, blob-a 15s ease-in-out infinite",
+    blob:     "orb-breathe 4.8s ease-in-out infinite, blob-b 15s ease-in-out infinite",
+    glow:     "orb-glow-breathe 4.8s ease-in-out infinite",
+    rings:    false,
+    ring1:    "none",
+    ring2:    "none",
+    shimmer:  false,
+    thinkDot: false,
   },
   listening: {
-    anim: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
-    ringAnim: "orb-ring-fast 1.4s ease-out infinite",
+    orb:      "orb-listen 0.88s ease-in-out infinite, blob-a 5s ease-in-out infinite",
+    blob:     "orb-listen 0.88s ease-in-out infinite, blob-b 5s ease-in-out infinite",
+    glow:     "orb-glow-breathe 0.88s ease-in-out infinite",
+    rings:    true,
+    ring1:    "orb-ring 1.85s ease-out infinite",
+    ring2:    "orb-ring-b 1.85s ease-out infinite 0.65s",
+    shimmer:  false,
+    thinkDot: false,
   },
   thinking: {
-    // Keep the morph + a slower rotate, but drop the conic-gradient swap so
-    // the hue stays put. Rings off — rotation alone signals "thinking".
-    anim: "orb-breathe 2.2s ease-in-out infinite, blob-morph-b 6s ease-in-out infinite",
-    ringAnim: "none",
+    orb:      "orb-think 2.4s ease-in-out infinite, blob-b 8s ease-in-out infinite",
+    blob:     "orb-think 2.4s ease-in-out infinite, blob-a 8s ease-in-out infinite",
+    glow:     "orb-glow-breathe 2.4s ease-in-out infinite",
+    rings:    false,
+    ring1:    "none",
+    ring2:    "none",
+    shimmer:  true,
+    thinkDot: true,
   },
   speaking: {
-    anim: "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
-    ringAnim: "orb-ring 2.2s ease-out infinite",
+    orb:      "orb-speak 1.45s ease-in-out infinite, blob-a 4.2s ease-in-out infinite",
+    blob:     "orb-speak 1.45s ease-in-out infinite 0.22s, blob-b 4.2s ease-in-out infinite",
+    glow:     "orb-speak-glow 1.45s ease-in-out infinite",
+    rings:    true,
+    ring1:    "orb-ring 2.5s ease-out infinite",
+    ring2:    "orb-ring-b 2.5s ease-out infinite 0.95s",
+    shimmer:  false,
+    thinkDot: false,
   },
 };
 
+// ── Component ────────────────────────────────────────────────────────────────
 export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: MobileOrbProps) {
-  // Color stays constant per chosen style — only motion varies by state.
-  const palette = PALETTES[orbStyle];
-  const motion = STATE_ANIMS[state];
-  const c = { ...palette, ...motion };
+  const p   = PALETTES[orbStyle];
+  const cfg = STATES[state];
+  const s   = size;
 
   return (
     <>
@@ -132,8 +208,8 @@ export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: M
       <button
         onClick={onTap}
         style={{
-          width: size + 60,
-          height: size + 60,
+          width:  s + 80,
+          height: s + 80,
           position: "relative",
           display: "flex",
           alignItems: "center",
@@ -143,103 +219,154 @@ export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: M
           cursor: "pointer",
           WebkitTapHighlightColor: "transparent",
           outline: "none",
+          flexShrink: 0,
         }}
-        aria-label={`Orb — stato: ${state}`}
+        aria-label={`Norma — ${state}`}
       >
-        {/* Ambient glow */}
+        {/* ── Deep ambient glow ── */}
         <div style={{
           position: "absolute",
-          inset: -20,
+          inset: -32,
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${c.glow}, transparent 70%)`,
-          filter: "blur(20px)",
+          background: `radial-gradient(circle, ${p.glow} 0%, transparent 68%)`,
+          animation: cfg.glow,
+          filter: "blur(26px)",
           pointerEvents: "none",
-          transition: "background 0.6s ease",
+          transition: "background 1.1s ease",
         }} />
 
-        {/* Expanding rings */}
-        {c.ringAnim !== "none" && (
+        {/* ── Outer blurry blob ── */}
+        <div style={{
+          position: "absolute",
+          width:  s + 48,
+          height: s + 48,
+          background: p.blob,
+          borderRadius: "58% 42% 56% 44% / 52% 48% 53% 47%",
+          animation: cfg.blob,
+          opacity: 0.38,
+          filter: "blur(20px)",
+          transition: "background 1.1s ease",
+          pointerEvents: "none",
+        }} />
+
+        {/* ── Expanding rings ── */}
+        {cfg.rings && (
           <>
             <div style={{
               position: "absolute",
-              inset: 0,
+              width: s, height: s,
               borderRadius: "50%",
-              border: `1.5px solid ${c.ringColor}`,
-              animation: c.ringAnim,
+              border: `2px solid ${p.ring}`,
+              animation: cfg.ring1,
               pointerEvents: "none",
             }} />
             <div style={{
               position: "absolute",
-              inset: 0,
+              width: s, height: s,
               borderRadius: "50%",
-              border: `1.5px solid ${c.ringColor}`,
-              animation: c.ringAnim,
-              animationDelay: "0.7s",
+              border: `1.5px solid ${p.ring}`,
+              animation: cfg.ring2,
               pointerEvents: "none",
             }} />
           </>
         )}
 
-        {/* Outer blob (morphing) */}
-        <div style={{
-          position: "absolute",
-          width: size + 24,
-          height: size + 24,
-          background: c.outer,
-          borderRadius: "58% 42% 55% 45% / 52% 48% 52% 48%",
-          animation: c.anim,
-          transition: "background 0.8s ease",
-          opacity: 0.55,
-          filter: "blur(8px)",
-        }} />
-
-        {/* Main orb */}
+        {/* ── Main sphere ── */}
         <div style={{
           position: "relative",
-          width: size,
-          height: size,
-          background: c.inner,
-          borderRadius: state === "thinking"
-            ? "50%"
-            : "58% 42% 55% 45% / 52% 48% 52% 48%",
-          animation: c.anim,
-          transition: "background 0.8s ease, border-radius 0.8s ease",
-          boxShadow: `
-            inset -8px -8px 24px rgba(19,17,15,0.2),
-            inset 8px 8px 32px rgba(255,255,255,0.35),
-            0 10px 40px rgba(19,17,15,0.14)
-          `,
+          width:  s,
+          height: s,
+          background: p.sphere,
+          borderRadius: "58% 42% 56% 44% / 52% 48% 53% 47%",
+          animation: cfg.orb,
+          transition: "background 1.1s ease, border-radius 0.8s ease",
+          boxShadow: [
+            `inset -${s * 0.065}px -${s * 0.065}px ${s * 0.18}px rgba(0,0,0,0.38)`,
+            `inset  ${s * 0.065}px  ${s * 0.065}px ${s * 0.22}px rgba(255,255,255,0.18)`,
+            `0 ${s * 0.09}px ${s * 0.32}px rgba(0,0,0,0.28)`,
+          ].join(", "),
+          overflow: "hidden",
+          flexShrink: 0,
         }}>
-          {/* Glossy shine */}
+
+          {/* Primary specular highlight */}
           <div style={{
             position: "absolute",
-            top: "12%",
-            left: "18%",
-            width: size * 0.33,
-            height: size * 0.22,
-            background: "radial-gradient(ellipse, rgba(255,255,255,0.6), transparent 60%)",
+            top:  "9%",
+            left: "15%",
+            width:  s * 0.40,
+            height: s * 0.26,
+            background: `radial-gradient(ellipse, ${p.hi1} 0%, transparent 72%)`,
             borderRadius: "50%",
-            filter: "blur(4px)",
+            filter: "blur(7px)",
             pointerEvents: "none",
           }} />
 
-          {/* Thinking orbit dot */}
-          {state === "thinking" && (
+          {/* Micro specular dot */}
+          <div style={{
+            position: "absolute",
+            top:  "16%",
+            left: "22%",
+            width:  s * 0.12,
+            height: s * 0.07,
+            background: p.hi2,
+            borderRadius: "50%",
+            filter: "blur(3.5px)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Bottom rim light */}
+          <div style={{
+            position: "absolute",
+            bottom: "6%",
+            right:  "10%",
+            width:  s * 0.28,
+            height: s * 0.12,
+            background: "rgba(255,255,255,0.08)",
+            borderRadius: "50%",
+            filter: "blur(8px)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Thinking shimmer sweep */}
+          {cfg.shimmer && (
             <div style={{
               position: "absolute",
               inset: 0,
-              animation: "orb-rotate 2s linear infinite reverse",
+              overflow: "hidden",
+              borderRadius: "inherit",
+              pointerEvents: "none",
             }}>
               <div style={{
                 position: "absolute",
-                top: size * 0.04,
+                top: 0,
+                left: 0,
+                width: "55%",
+                height: "100%",
+                background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%)",
+                animation: "shimmer-sweep 2.2s ease-in-out infinite",
+              }} />
+            </div>
+          )}
+
+          {/* Thinking orbit dot */}
+          {cfg.thinkDot && (
+            <div style={{
+              position: "absolute",
+              inset: 0,
+              animation: "think-dot 2.8s linear infinite",
+              pointerEvents: "none",
+            }}>
+              <div style={{
+                position: "absolute",
+                top: s * 0.06,
                 left: "50%",
                 transform: "translateX(-50%)",
-                width: 8,
-                height: 8,
+                width: 7,
+                height: 7,
                 borderRadius: "50%",
-                background: "rgba(180,200,230,0.9)",
-                boxShadow: "0 0 12px rgba(180,200,230,0.9)",
+                background: p.hi2,
+                boxShadow: `0 0 10px ${p.glow}, 0 0 20px ${p.glow}`,
               }} />
             </div>
           )}
@@ -249,7 +376,7 @@ export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: M
   );
 }
 
-// Listening dots indicator
+// ── Listening dots ────────────────────────────────────────────────────────────
 export function ListeningDots() {
   return (
     <span style={{ display: "flex", gap: 3, alignItems: "center" }}>
