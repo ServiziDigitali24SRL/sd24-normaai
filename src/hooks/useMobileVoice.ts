@@ -202,21 +202,12 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
     return vapi;
   }, [disarmWatchdog]);
 
-  // PERF: pre-warm the Vapi SDK at mount instead of first tap. The dynamic
-  // import + Vapi instantiation + event wiring takes ~500ms-1s on a cold
-  // browser cache. Doing it during the page's idle time means the first
-  // tap goes straight to vapi.start() instead of paying that latency.
+  // PERF: pre-warm the Vapi SDK immediately at mount (not on idle).
+  // Dynamic import + Vapi init + event wiring = 500ms-1s cold start.
+  // Firing immediately (vs requestIdleCallback which can wait 1-2s) cuts
+  // that latency window and means the first tap hits vapi.start() instantly.
   useEffect(() => {
-    type IdleCb = (cb: () => void) => number;
-    const ric: IdleCb =
-      (window as unknown as { requestIdleCallback?: IdleCb }).requestIdleCallback ??
-      ((cb: () => void) => window.setTimeout(cb, 200));
-    const handle = ric(() => { void getVapi(); });
-    return () => {
-      const cancel = (window as unknown as { cancelIdleCallback?: (h: number) => void }).cancelIdleCallback;
-      if (cancel) cancel(handle);
-      else window.clearTimeout(handle);
-    };
+    void getVapi();
   }, [getVapi]);
 
   const tapOrb = useCallback(async () => {
@@ -248,13 +239,14 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
       // or the user's manual override in localStorage.
       const assistantId = resolveAssistantId(personality);
       console.log("[NormaAI] starting call", { personality, assistantId });
-      // startSpeakingPlan.waitSeconds: delay (in seconds) after assistant
-      // finishes speaking before the VAD opens the mic. Prevents the first
-      // word of the user's reply from being clipped when they speak immediately
-      // after Norma stops talking.
+      // assistantOverrides applied at call-time for minimum latency:
+      // - startSpeakingPlan.waitSeconds 0.2s: short delay after Norma stops
+      //   so VAD doesn't clip the user's first word (was 0.4s, halved)
+      // - backgroundSound off: skips background audio mixing → saves ~100ms
       await vapi.start(assistantId, {
         assistantOverrides: {
-          startSpeakingPlan: { waitSeconds: 0.4 },
+          startSpeakingPlan: { waitSeconds: 0.2 },
+          backgroundSound: "off",
         },
       });
     } catch (err) {
