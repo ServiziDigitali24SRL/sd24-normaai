@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 import DualSidebar from "@/components/dashboard/DualSidebar";
 import MainDashboard from "@/components/dashboard/MainDashboard";
 import lazyDynamic from "next/dynamic";
+import { type Selection, daysUntil, LoadingSpinner } from "@/lib/dashboard-utils";
 
 const ModalBug = lazyDynamic(() => import("@/components/modals/ModalBug"), { ssr: false });
 
@@ -22,22 +23,13 @@ interface CitizenProfile {
   trial_ends_at: string | null;
 }
 
-interface Selection {
-  macro: string;
-  macroLabel: string;
-  item: string | null;
-}
-
 // ─── Helpers ───────────────────────────────────────────────────────────────────
+// Selection + daysUntil + LoadingSpinner importati da @/lib/dashboard-utils
 
 const PIANO_LABELS: Record<string, string> = {
   gratis:        'Piano Gratuito',
   cittadino_pro: 'Cittadino PRO',
 };
-
-function daysUntil(dateStr: string) {
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
-}
 
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
@@ -52,6 +44,13 @@ export default function DashboardCittadino() {
   const [showBug, setShowBug] = useState(false);
 
   useEffect(() => {
+    // The role-specific dashboards are desktop-only layouts (no media queries,
+    // no safe-area-inset). On a mobile viewport, send the user to /mobile,
+    // which is the personalised mobile home (Voice/Chat/Lead/Archivio).
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      router.replace("/mobile");
+      return;
+    }
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
       if (!u) { router.replace("/"); return; }
@@ -94,13 +93,7 @@ export default function DashboardCittadino() {
     setSelection({ macro: payload.macro.key, macroLabel: payload.macro.label, item: payload.item });
   };
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--paper)' }}>
-        <div style={{ width: 24, height: 24, border: '2px solid var(--paper-line)', borderTopColor: 'var(--vermiglio)', borderRadius: '50%', animation: 'mdSpin 0.8s linear infinite' }} />
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner />;
 
   const firstName = user?.user_metadata?.nome || user?.email?.split('@')[0] || '';
   const pianoLabel = PIANO_LABELS[profile?.piano ?? ''] ?? 'Piano Gratuito';

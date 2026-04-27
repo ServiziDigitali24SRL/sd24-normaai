@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { User, Building2, Lock } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
+import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 
 function createSupabase() {
   return createBrowserClient(
@@ -99,6 +100,7 @@ export default function MobileLeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -181,11 +183,17 @@ export default function MobileLeadsPage() {
           <Lock size={32} color="var(--ink-4)" style={{ marginBottom: 16 }} />
           <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Area Professionisti</div>
           <p style={{ fontSize: 14, color: "var(--ink-3)", marginBottom: 24, lineHeight: 1.5 }}>Accedi al tuo account professionista per vedere i lead disponibili.</p>
-          <button onClick={() => router.push("/")} style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: "var(--vermiglio)", color: "white", fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
+          <button onClick={() => setShowAuth(true)} style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: "var(--vermiglio)", color: "white", fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
             Accedi
           </button>
         </div>
         <MobileTabBar isAvvocato />
+        <MobileAuthSheet
+          open={showAuth}
+          initialMode="login"
+          initialRole="professionista"
+          onClose={() => setShowAuth(false)}
+        />
       </div>
     );
   }

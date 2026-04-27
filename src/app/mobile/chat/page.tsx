@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, Plus, X, Paperclip, Image as ImageIcon, Camera, FileText } from "lucide-react";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
+import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
@@ -104,6 +105,7 @@ export default function MobileChatPage() {
   const [streaming, setStreaming] = useState(false);
   const [currentText, setCurrentText] = useState("");
   const [showGate, setShowGate] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -450,6 +452,14 @@ export default function MobileChatPage() {
 
         <MobileTabBar />
 
+        {/* Mobile auth sheet — opened by 402 paywall instead of routing to /onboarding */}
+        <MobileAuthSheet
+          open={showAuth}
+          initialMode="signup"
+          initialRole="privato"
+          onClose={() => setShowAuth(false)}
+        />
+
         {/* Attachment menu (bottom sheet) */}
         {showAttachMenu && (
           <div
@@ -550,7 +560,7 @@ export default function MobileChatPage() {
                 Registrati gratis per 10 query al giorno.
               </p>
               <button
-                onClick={() => router.push("/onboarding")}
+                onClick={() => { setShowGate(false); setShowAuth(true); }}
                 style={{
                   width: "100%", padding: "15px", borderRadius: 10, border: "none",
                   background: "var(--vermiglio)", color: "white",

@@ -95,7 +95,12 @@ export default function OnboardingWizard() {
       if (res.ok) {
         // Route to role-specific dashboard. /dashboard is admin-only Control Room
         // (ALLOWED_EMAILS gate) — sending regular users there bounces them to /.
+        // On a mobile viewport the role-specific dashboards are desktop-only
+        // layouts: send mobile users back to /mobile (which is now their
+        // personalised home with Voice/Chat/Lead/Archivio).
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
         const dest =
+          isMobile                       ? '/mobile' :
           data.role === 'impresa'        ? '/dashboard-impresa' :
           data.role === 'professionista' ? '/dashboard-professionista' :
           /* cittadino / fallback */       '/dashboard-cittadino';

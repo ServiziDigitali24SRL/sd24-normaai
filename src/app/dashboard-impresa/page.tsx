@@ -9,6 +9,7 @@ import type { User } from "@supabase/supabase-js";
 import DualSidebar from "@/components/dashboard/DualSidebar";
 import MainDashboard from "@/components/dashboard/MainDashboard";
 import lazyDynamic from "next/dynamic";
+import { type Selection, daysUntil, LoadingSpinner } from "@/lib/dashboard-utils";
 
 const ModalBug = lazyDynamic(() => import("@/components/modals/ModalBug"), { ssr: false });
 const ModalBusinessPlan = lazyDynamic(() => import("@/components/modals/ModalBusinessPlan"), { ssr: false });
@@ -26,13 +27,8 @@ interface CompanyProfile {
   p_iva: string | null;
 }
 
-interface Selection {
-  macro: string;
-  macroLabel: string;
-  item: string | null;
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// Selection + daysUntil + LoadingSpinner importati da @/lib/dashboard-utils
 
 const PIANO_LABELS: Record<string, string> = {
   impresa_micro:    'Micro',
@@ -45,10 +41,6 @@ const PIANO_PREZZI: Record<string, string> = {
   impresa_piccola: '€79/mese',
   impresa_media:   '€199/mese',
 };
-
-function daysUntil(dateStr: string) {
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
-}
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
@@ -65,6 +57,12 @@ export default function DashboardImpresa() {
   const [showBusinessPlan, setShowBusinessPlan] = useState(false);
 
   useEffect(() => {
+    // Mobile-width users get bounced to /mobile — these dashboards are
+    // desktop-only layouts.
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      router.replace("/mobile");
+      return;
+    }
     supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user;
       if (!u) { router.replace("/"); return; }
@@ -118,9 +116,7 @@ export default function DashboardImpresa() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--paper)' }}>
-        <div style={{ width: 24, height: 24, border: '2px solid var(--paper-line)', borderTopColor: 'var(--vermiglio)', borderRadius: '50%', animation: 'mdSpin 0.8s linear infinite' }} />
-      </div>
+      <LoadingSpinner />
     );
   }
 

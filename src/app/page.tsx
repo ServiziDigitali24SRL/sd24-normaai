@@ -1,10 +1,17 @@
 "use client";
 export const dynamic = "force-dynamic";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamicImport from "next/dynamic";
 import DualSidebar from "@/components/dashboard/DualSidebar";
 import MainDashboard from "@/components/dashboard/MainDashboard";
+
+// Real Supabase signup/login modals (lazy-loaded). The on-page Onboarding
+// tab is a marketing preview only — these are the actual auth surface.
+const ModalCittadino      = dynamicImport(() => import("@/components/modals/ModalCittadino"),      { ssr: false });
+const ModalProfessionista = dynamicImport(() => import("@/components/modals/ModalProfessionista"), { ssr: false });
+const ModalImpresa        = dynamicImport(() => import("@/components/modals/ModalImpresa"),        { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TabId = '01' | '02' | '03' | '04' | '05' | '06' | '07';
@@ -971,6 +978,35 @@ function DashboardTab({ role, demoUser }: { role: 'cittadino' | 'prof' | 'impres
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PreviewPage() {
   const [tab, setTab] = useState<TabId>('01');
+  const [authModal, setAuthModal] = useState<null | "cittadino" | "professionista" | "impresa">(null);
+
+  // If the user is already authenticated, send them to their actual dashboard
+  // instead of leaving them on this marketing preview.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase-browser");
+        const sb = createClient();
+        const { data: { user } } = await sb.auth.getUser();
+        if (cancelled || !user) return;
+        // Mobile width gets the mobile home; desktop goes to role dashboard.
+        if (window.innerWidth < 768) { window.location.replace("/mobile"); return; }
+        let role = (user.user_metadata?.role as string | undefined);
+        if (!role) {
+          const { data: p } = await sb.from("profiles").select("role").eq("id", user.id).single();
+          role = p?.role as string | undefined;
+        }
+        const dest =
+          role === "impresa"        ? "/dashboard-impresa" :
+          role === "professionista" ? "/dashboard-professionista" :
+          role === "privato" || role === "cittadino" ? "/dashboard-cittadino" :
+          null;
+        if (dest) window.location.replace(dest);
+      } catch { /* not signed in or supabase failure — stay on the preview */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const tabs: { id: TabId; label: string; locked?: boolean }[] = [
     { id: '01', label: 'Chat' },
@@ -1015,6 +1051,36 @@ export default function PreviewPage() {
             </button>
           );
         })}
+
+        {/* Real-auth CTAs pinned right — open ModalCittadino with the right
+            initial mode. Wired to Supabase signUp / signInWithPassword. */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            onClick={() => setAuthModal('cittadino')}
+            style={{
+              padding: '6px 12px', background: 'transparent',
+              border: '1px solid rgba(246,242,234,0.18)', borderRadius: 6,
+              fontFamily: T.sans, fontSize: 12.5,
+              color: '#A89F90', cursor: 'pointer',
+              whiteSpace: 'nowrap', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F6F2EA'; e.currentTarget.style.borderColor = 'rgba(246,242,234,0.32)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#A89F90'; e.currentTarget.style.borderColor = 'rgba(246,242,234,0.18)'; }}
+          >
+            Accedi
+          </button>
+          <button
+            onClick={() => setAuthModal('cittadino')}
+            style={{
+              padding: '6px 14px', background: T.v,
+              border: 'none', borderRadius: 6,
+              fontFamily: T.sans, fontSize: 12.5, fontWeight: 600,
+              color: 'white', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            Inizia gratis
+          </button>
+        </div>
       </div>
 
       {/* ── Content ── */}
@@ -1027,6 +1093,11 @@ export default function PreviewPage() {
         {tab === '06' && <ApiScreen />}
         {tab === '07' && <EnterpriseScreen />}
       </div>
+
+      {/* ── Real auth modals (Supabase) ── */}
+      <ModalCittadino      open={authModal === 'cittadino'}      onClose={() => setAuthModal(null)} />
+      <ModalProfessionista open={authModal === 'professionista'} onClose={() => setAuthModal(null)} />
+      <ModalImpresa        open={authModal === 'impresa'}        onClose={() => setAuthModal(null)} />
     </div>
   );
 }

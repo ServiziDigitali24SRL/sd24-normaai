@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { X, Menu, PhoneOff, Check, Globe } from "lucide-react";
 import { MobileOrb, ListeningDots } from "@/components/mobile/MobileOrb";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
+import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 import { useMobileVoice } from "@/hooks/useMobileVoice";
 import {
   ORB_PERSONALITIES,
@@ -84,6 +85,8 @@ export default function MobilePage() {
   } = useMobileVoice(personality);
 
   const [showMenu, setShowMenu] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const router = useRouter();
 
   // Restore picked personality + lang override from localStorage on mount.
@@ -276,6 +279,13 @@ export default function MobilePage() {
         </div>
       )}
 
+      {/* ── Mobile auth sheet (login + signup) ── */}
+      <MobileAuthSheet
+        open={showAuth}
+        initialMode={authMode}
+        onClose={() => setShowAuth(false)}
+      />
+
       {/* ── Bottom tab bar ── */}
       <MobileTabBar />
 
@@ -413,9 +423,14 @@ export default function MobilePage() {
 
             <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 16 }}>
               {[
-                { label: "Accedi al tuo account", action: () => router.push("/") },
-                { label: "Versione desktop", action: () => router.push("/") },
-                { label: "Privacy & Cookie", action: () => router.push("/privacy") },
+                // Open the inline mobile auth sheet — never bounce out to /
+                // (the mobile UA middleware would just send the user back here).
+                { label: "Accedi al tuo account",  action: () => { setAuthMode("login");  setShowAuth(true); } },
+                { label: "Crea account gratuito",  action: () => { setAuthMode("signup"); setShowAuth(true); } },
+                // ?desktop=1 bypasses the middleware mobile-UA redirect so the
+                // user actually lands on the desktop landing.
+                { label: "Versione desktop",       action: () => { window.location.href = "/?desktop=1"; } },
+                { label: "Privacy & Cookie",       action: () => router.push("/privacy") },
               ].map((item) => (
                 <button
                   key={item.label}
