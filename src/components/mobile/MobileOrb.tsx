@@ -64,107 +64,110 @@ const PALLA_STYLES: Record<OrbStyle, StylePalette> = {
     idle: {
       inner: "radial-gradient(circle at 30% 30%, #F6F2EA 0%, #E6DFCF 55%, #C9BFA8 100%)",
       outer: "radial-gradient(circle at 30% 30%, #EFE9DC 0%, #C9BFA8 70%)",
-      glow:  "oklch(0.58 0.18 35 / 0.12)",
+      glow:  "rgba(180,130,80,0.12)",
     },
     listening: {
-      inner: "radial-gradient(circle at 30% 30%, oklch(0.82 0.14 45) 0%, oklch(0.65 0.19 35) 50%, oklch(0.48 0.18 30) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.7 0.18 40) 0%, oklch(0.5 0.17 30) 70%)",
-      glow:  "oklch(0.58 0.2 35 / 0.5)",
-      ring:  "oklch(0.58 0.19 35 / 0.7)",
+      inner: "radial-gradient(circle at 30% 30%, #F0D4A0 0%, #D4956A 50%, #A85A38 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #D4A060 0%, #A05030 70%)",
+      glow:  "rgba(180,100,50,0.5)",
+      ring:  "rgba(180,100,50,0.7)",
     },
+    // thinking = idle colors + orbit dot. NO conic-gradient (oklch in conic broken on Safari iOS)
     thinking: {
-      // Warm amber rotation — stays on-brand with classico (no blue!)
-      inner: "conic-gradient(from 0deg, oklch(0.75 0.15 55), oklch(0.58 0.18 35), oklch(0.45 0.15 28), oklch(0.75 0.15 55))",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.62 0.17 42) 0%, oklch(0.42 0.16 28) 70%)",
-      glow:  "oklch(0.58 0.18 35 / 0.45)",
-      orbit: "oklch(0.9 0.13 72)",
+      inner: "radial-gradient(circle at 30% 30%, #F6F2EA 0%, #E6DFCF 55%, #C9BFA8 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #EFE9DC 0%, #C9BFA8 70%)",
+      glow:  "rgba(180,130,80,0.28)",
+      orbit: "#D4956A",
     },
     speaking: {
-      inner: "radial-gradient(circle at 35% 35%, oklch(0.85 0.15 85) 0%, oklch(0.7 0.17 65) 40%, oklch(0.58 0.18 35) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.75 0.17 60) 0%, oklch(0.55 0.18 35) 70%)",
-      glow:  "oklch(0.7 0.17 65 / 0.55)",
-      ring:  "oklch(0.7 0.17 65 / 0.8)",
+      inner: "radial-gradient(circle at 35% 35%, #F5E090 0%, #E0A850 40%, #C06030 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #D4A060 0%, #A05030 70%)",
+      glow:  "rgba(200,140,60,0.55)",
+      ring:  "rgba(200,140,60,0.8)",
     },
   },
 
   // ── NOTTE → fire (vermiglio intenso — diretto/aggressivo) ───────────────
   notte: {
     idle: {
-      inner: "radial-gradient(circle at 30% 30%, oklch(0.86 0.14 55) 0%, oklch(0.68 0.19 40) 55%, oklch(0.48 0.19 28) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.72 0.2 45) 0%, oklch(0.48 0.19 28) 70%)",
-      glow:  "oklch(0.62 0.2 35 / 0.35)",
+      inner: "radial-gradient(circle at 30% 30%, #F0B870 0%, #C06030 55%, #803020 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #C07040 0%, #803020 70%)",
+      glow:  "rgba(200,80,40,0.35)",
     },
     listening: {
-      inner: "radial-gradient(circle at 30% 30%, oklch(0.9 0.14 70) 0%, oklch(0.72 0.2 45) 45%, oklch(0.5 0.22 28) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.78 0.21 50) 0%, oklch(0.5 0.22 28) 70%)",
-      glow:  "oklch(0.62 0.22 35 / 0.65)",
-      ring:  "oklch(0.6 0.22 30 / 0.85)",
+      inner: "radial-gradient(circle at 30% 30%, #F8D080 0%, #D07040 45%, #902820 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #D08040 0%, #902820 70%)",
+      glow:  "rgba(210,80,30,0.65)",
+      ring:  "rgba(200,70,30,0.85)",
     },
+    // thinking = idle colors + orbit dot
     thinking: {
-      inner: "conic-gradient(from 0deg, oklch(0.88 0.14 70), oklch(0.65 0.2 40), oklch(0.45 0.2 25), oklch(0.88 0.14 70))",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.7 0.2 50) 0%, oklch(0.4 0.2 30) 70%)",
-      glow:  "oklch(0.58 0.2 35 / 0.55)",
-      orbit: "oklch(0.92 0.14 80)",
+      inner: "radial-gradient(circle at 30% 30%, #F0B870 0%, #C06030 55%, #803020 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #C07040 0%, #803020 70%)",
+      glow:  "rgba(200,80,40,0.55)",
+      orbit: "#F8D080",
     },
     speaking: {
-      inner: "radial-gradient(circle at 35% 35%, oklch(0.92 0.15 85) 0%, oklch(0.75 0.2 55) 40%, oklch(0.55 0.22 30) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.8 0.2 55) 0%, oklch(0.5 0.22 30) 70%)",
-      glow:  "oklch(0.75 0.2 60 / 0.7)",
-      ring:  "oklch(0.7 0.2 50 / 0.85)",
+      inner: "radial-gradient(circle at 35% 35%, #F8E090 0%, #E08040 40%, #A03020 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #D08040 0%, #902820 70%)",
+      glow:  "rgba(220,120,40,0.7)",
+      ring:  "rgba(200,100,40,0.85)",
     },
   },
 
   // ── NATURA → forest (verde alloro — dolce e calmo) ──────────────────────
   natura: {
     idle: {
-      inner: "radial-gradient(circle at 30% 30%, oklch(0.82 0.08 140) 0%, oklch(0.6 0.11 145) 55%, oklch(0.38 0.1 150) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.68 0.1 145) 0%, oklch(0.4 0.1 150) 70%)",
-      glow:  "oklch(0.5 0.1 145 / 0.3)",
+      inner: "radial-gradient(circle at 30% 30%, #A8C880 0%, #608050 55%, #304030 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #709060 0%, #385040 70%)",
+      glow:  "rgba(80,130,70,0.3)",
     },
     listening: {
-      inner: "radial-gradient(circle at 30% 30%, oklch(0.86 0.1 135) 0%, oklch(0.62 0.14 145) 45%, oklch(0.4 0.12 155) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.7 0.12 140) 0%, oklch(0.42 0.12 155) 70%)",
-      glow:  "oklch(0.55 0.13 145 / 0.55)",
-      ring:  "oklch(0.52 0.13 145 / 0.85)",
+      inner: "radial-gradient(circle at 30% 30%, #C0D890 0%, #709060 45%, #385040 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #80A870 0%, #3A5040 70%)",
+      glow:  "rgba(90,145,80,0.55)",
+      ring:  "rgba(80,135,70,0.85)",
     },
+    // thinking = idle colors + orbit dot
     thinking: {
-      inner: "conic-gradient(from 0deg, oklch(0.72 0.08 135), oklch(0.5 0.12 155), oklch(0.4 0.1 130), oklch(0.72 0.08 135))",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.55 0.1 140) 0%, oklch(0.34 0.1 150) 70%)",
-      glow:  "oklch(0.48 0.1 145 / 0.5)",
-      orbit: "oklch(0.9 0.09 130)",
+      inner: "radial-gradient(circle at 30% 30%, #A8C880 0%, #608050 55%, #304030 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #709060 0%, #385040 70%)",
+      glow:  "rgba(80,130,70,0.45)",
+      orbit: "#C0E890",
     },
     speaking: {
-      inner: "radial-gradient(circle at 35% 35%, oklch(0.9 0.1 130) 0%, oklch(0.7 0.14 140) 40%, oklch(0.48 0.12 150) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.75 0.13 140) 0%, oklch(0.48 0.12 150) 70%)",
-      glow:  "oklch(0.62 0.13 140 / 0.6)",
-      ring:  "oklch(0.55 0.13 140 / 0.8)",
+      inner: "radial-gradient(circle at 35% 35%, #D0E8A0 0%, #80A860 40%, #405040 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #90B870 0%, #405040 70%)",
+      glow:  "rgba(100,160,80,0.6)",
+      ring:  "rgba(90,140,70,0.8)",
     },
   },
 
   // ── AURORA → ocean (blu profondo — giovani/fresco) ──────────────────────
   aurora: {
     idle: {
-      inner: "radial-gradient(circle at 30% 30%, oklch(0.86 0.08 220) 0%, oklch(0.62 0.13 230) 55%, oklch(0.38 0.13 235) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.68 0.13 225) 0%, oklch(0.4 0.13 235) 70%)",
-      glow:  "oklch(0.55 0.13 230 / 0.3)",
+      inner: "radial-gradient(circle at 30% 30%, #B0C8E8 0%, #6080B8 55%, #304080 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #7090C0 0%, #304080 70%)",
+      glow:  "rgba(70,110,200,0.3)",
     },
     listening: {
-      inner: "conic-gradient(from 0deg, oklch(0.82 0.11 210), oklch(0.58 0.16 235), oklch(0.42 0.16 250), oklch(0.82 0.11 210))",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.65 0.15 225) 0%, oklch(0.38 0.15 240) 70%)",
-      glow:  "oklch(0.55 0.16 230 / 0.6)",
-      ring:  "oklch(0.55 0.16 230 / 0.85)",
+      inner: "radial-gradient(circle at 30% 30%, #C8D8F0 0%, #7090C8 45%, #3050A0 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #80A0D0 0%, #304090 70%)",
+      glow:  "rgba(80,120,210,0.6)",
+      ring:  "rgba(80,120,210,0.85)",
     },
+    // thinking = idle colors + orbit dot
     thinking: {
-      inner: "conic-gradient(from 0deg, oklch(0.7 0.1 200), oklch(0.5 0.14 260), oklch(0.4 0.1 220), oklch(0.7 0.1 200))",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.58 0.13 230) 0%, oklch(0.35 0.13 240) 70%)",
-      glow:  "oklch(0.5 0.13 235 / 0.5)",
-      orbit: "oklch(0.88 0.1 215)",
+      inner: "radial-gradient(circle at 30% 30%, #B0C8E8 0%, #6080B8 55%, #304080 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #7090C0 0%, #304080 70%)",
+      glow:  "rgba(70,110,200,0.45)",
+      orbit: "#C8E8FF",
     },
     speaking: {
-      inner: "radial-gradient(circle at 35% 35%, oklch(0.88 0.1 210) 0%, oklch(0.65 0.15 225) 40%, oklch(0.45 0.15 240) 100%)",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.72 0.14 220) 0%, oklch(0.45 0.15 240) 70%)",
-      glow:  "oklch(0.62 0.15 225 / 0.6)",
-      ring:  "oklch(0.62 0.15 225 / 0.8)",
+      inner: "radial-gradient(circle at 35% 35%, #D0E8FF 0%, #80A8D8 40%, #3860A8 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #90B8D8 0%, #385090 70%)",
+      glow:  "rgba(90,140,220,0.6)",
+      ring:  "rgba(90,140,220,0.8)",
     },
   },
 
@@ -181,9 +184,10 @@ const PALLA_STYLES: Record<OrbStyle, StylePalette> = {
       glow:  "rgba(19,17,15,0.55)",
       ring:  "rgba(246,242,234,0.6)",
     },
+    // thinking = idle colors + orbit dot
     thinking: {
-      inner: "conic-gradient(from 0deg, #4E4840, #2A2622, #15130F, #4E4840)",
-      outer: "radial-gradient(circle at 30% 30%, #35302B 0%, #15130F 70%)",
+      inner: "radial-gradient(circle at 30% 30%, #3E3A35 0%, #272420 55%, #13110F 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #2E2A25 0%, #13110F 70%)",
       glow:  "rgba(19,17,15,0.5)",
       orbit: "#F6F2EA",
     },
@@ -211,7 +215,8 @@ export function MobileOrb({ state, onTap, size = 240, orbStyle = "classico" }: M
   const anim = {
     idle:      "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
     listening: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
-    thinking:  "orb-rotate 4s linear infinite, blob-morph-b 8s ease-in-out infinite",
+    // thinking: faster breathe (2.5s) + blob-morph-b — same color as idle, orbit dot rotates
+    thinking:  "orb-breathe 2.5s ease-in-out infinite, blob-morph-b 6s ease-in-out infinite",
     speaking:  "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
   }[state];
 
@@ -285,7 +290,7 @@ export function MobileOrb({ state, onTap, size = 240, orbStyle = "classico" }: M
           position: "relative",
           width: innerSize, height: innerSize,
           background: c.inner,
-          borderRadius: state === "thinking" ? "50%" : "58% 42% 55% 45% / 52% 48% 52% 48%",
+          borderRadius: "58% 42% 55% 45% / 52% 48% 52% 48%",
           animation: anim,
           transition: "background .8s ease, border-radius .8s ease",
           boxShadow: [
