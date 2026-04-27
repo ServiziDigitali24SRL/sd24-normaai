@@ -1,5 +1,4 @@
 "use client";
-export const dynamic = "force-dynamic";
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -207,9 +206,9 @@ function ChatScreen({ onCTA }: { onCTA: () => void }) {
         <div style={{ flex: 1, overflow: 'auto', padding: '64px 48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ maxWidth: 540, textAlign: 'center' }}>
             <div style={{ fontFamily: T.serif, fontSize: 64, fontStyle: 'italic', color: T.ink4, lineHeight: 1, marginBottom: 14 }}>§</div>
-            <h2 style={{ fontFamily: T.serif, fontSize: 28, lineHeight: 1.2, margin: '0 0 12px', color: T.ink, letterSpacing: '-0.01em' }}>
+            <h1 style={{ fontFamily: T.serif, fontSize: 28, lineHeight: 1.2, margin: '0 0 12px', color: T.ink, letterSpacing: '-0.01em' }}>
               Ti posso aiutare per <em style={{ color: T.v }}>multe, sanzioni, citazioni, posto di blocco</em>
-            </h2>
+            </h1>
             <p style={{ fontSize: 14.5, color: T.ink3, lineHeight: 1.6, margin: '0 0 28px' }}>
               Per qualsiasi cosa, sono qui per te. Fai una domanda e rispondo con i riferimenti normativi.
             </p>

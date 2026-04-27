@@ -26,6 +26,8 @@ function ChatBubble({ msg }: { msg: Message }) {
           padding: "12px 16px",
           borderRadius: "18px 18px 4px 18px",
           fontSize: 14.5, lineHeight: 1.5,
+          wordBreak: "break-word",
+          overflowWrap: "break-word",
         }}>
           {msg.text}
         </div>
@@ -305,6 +307,7 @@ export default function MobileChatPage() {
             <button
               onClick={() => sendMessage(input)}
               disabled={!input.trim() || streaming}
+              aria-label="Invia messaggio"
               style={{
                 width: 36, height: 36, borderRadius: "50%",
                 background: input.trim() && !streaming ? "var(--vermiglio)" : "var(--paper-3)",

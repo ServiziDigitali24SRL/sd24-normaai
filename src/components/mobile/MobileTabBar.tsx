@@ -39,7 +39,7 @@ export function MobileTabBar({ isAvvocato: _isAvvocato = false }: MobileTabBarPr
       borderTop: "1px solid var(--paper-line)",
       display: "flex",
       alignItems: "stretch",
-      zIndex: 100,
+      zIndex: 400,
       paddingBottom: "env(safe-area-inset-bottom)",
     }}>
       {visibleTabs.map((tab) => {

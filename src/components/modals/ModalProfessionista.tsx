@@ -305,10 +305,10 @@ export default function ModalProfessionista({ open, onClose }: Props) {
 
             {tab === 0 ? (
               <div>
-                <FormLabel>Email professionale</FormLabel>
-                <FormInput type="email" placeholder="studio@email.it" value={email} onChange={setEmail} />
-                <FormLabel>Password</FormLabel>
-                <FormInput type="password" placeholder="••••••••" value={password} onChange={setPassword} />
+                <FormLabel htmlFor="prof-login-email">Email professionale</FormLabel>
+                <FormInput id="prof-login-email" name="email" type="email" placeholder="studio@email.it" value={email} onChange={setEmail} />
+                <FormLabel htmlFor="prof-login-password">Password</FormLabel>
+                <FormInput id="prof-login-password" name="password" type="password" placeholder="••••••••" value={password} onChange={setPassword} />
                 {resetSent ? (
                   <div className="text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mt-3">
                     Email inviata! Controlla la tua casella e segui il link per reimpostare la password.
@@ -331,14 +331,14 @@ export default function ModalProfessionista({ open, onClose }: Props) {
               </div>
             ) : (
               <div>
-                <FormLabel>Nome e Cognome</FormLabel>
-                <FormInput placeholder="Mario Rossi" value={name} onChange={setName} />
-                <FormLabel>Email professionale</FormLabel>
-                <FormInput type="email" placeholder="studio@email.it" value={email} onChange={setEmail} />
-                <FormLabel>Ordine / Albo (opzionale)</FormLabel>
-                <FormInput placeholder="es. Ordine Avvocati Milano" value={ordine} onChange={setOrdine} />
-                <FormLabel>Password</FormLabel>
-                <FormInput type="password" placeholder="Crea una password sicura" value={password} onChange={setPassword} />
+                <FormLabel htmlFor="prof-reg-name">Nome e Cognome</FormLabel>
+                <FormInput id="prof-reg-name" name="name" placeholder="Mario Rossi" value={name} onChange={setName} />
+                <FormLabel htmlFor="prof-reg-email">Email professionale</FormLabel>
+                <FormInput id="prof-reg-email" name="email" type="email" placeholder="studio@email.it" value={email} onChange={setEmail} />
+                <FormLabel htmlFor="prof-reg-ordine">Ordine / Albo (opzionale)</FormLabel>
+                <FormInput id="prof-reg-ordine" name="ordine" placeholder="es. Ordine Avvocati Milano" value={ordine} onChange={setOrdine} />
+                <FormLabel htmlFor="prof-reg-password">Password</FormLabel>
+                <FormInput id="prof-reg-password" name="password" type="password" placeholder="Crea una password sicura" value={password} onChange={setPassword} />
 
                 {/* GDPR Consents */}
                 <div className="mt-4 space-y-3">

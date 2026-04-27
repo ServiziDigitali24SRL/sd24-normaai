@@ -312,6 +312,7 @@ export default function MobilePage() {
           {callActive && (
             <button
               onClick={tapOrb}
+              aria-label="Termina chiamata"
               style={{
                 width: 38, height: 38, borderRadius: "50%",
                 border: "none",
@@ -327,6 +328,7 @@ export default function MobilePage() {
 
           <button
             onClick={() => setShowMenu(true)}
+            aria-label="Apri menu"
             style={{
               width: 38, height: 38, borderRadius: "50%",
               border: "1px solid var(--paper-line)",

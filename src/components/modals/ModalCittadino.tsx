@@ -156,10 +156,10 @@ export default function ModalCittadino({ open, onClose }: Props) {
 
         {tab === 0 ? (
           <div>
-            <FormLabel>Email</FormLabel>
-            <FormInput type="email" placeholder="nome@email.it" value={email} onChange={setEmail} />
-            <FormLabel>Password</FormLabel>
-            <FormInput type="password" placeholder="••••••••" value={password} onChange={setPassword} />
+            <FormLabel htmlFor="cittadino-login-email">Email</FormLabel>
+            <FormInput id="cittadino-login-email" name="email" type="email" placeholder="nome@email.it" value={email} onChange={setEmail} />
+            <FormLabel htmlFor="cittadino-login-password">Password</FormLabel>
+            <FormInput id="cittadino-login-password" name="password" type="password" placeholder="••••••••" value={password} onChange={setPassword} />
             {resetSent ? (
               <div className="text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mt-3">
                 Email inviata! Controlla la tua casella e segui il link per reimpostare la password.
@@ -182,12 +182,12 @@ export default function ModalCittadino({ open, onClose }: Props) {
           </div>
         ) : (
           <div>
-            <FormLabel>Nome e Cognome</FormLabel>
-            <FormInput placeholder="Mario Rossi" value={name} onChange={setName} />
-            <FormLabel>Email</FormLabel>
-            <FormInput type="email" placeholder="nome@email.it" value={email} onChange={setEmail} />
-            <FormLabel>Password</FormLabel>
-            <FormInput type="password" placeholder="Crea una password" value={password} onChange={setPassword} />
+            <FormLabel htmlFor="cittadino-reg-name">Nome e Cognome</FormLabel>
+            <FormInput id="cittadino-reg-name" name="name" placeholder="Mario Rossi" value={name} onChange={setName} />
+            <FormLabel htmlFor="cittadino-reg-email">Email</FormLabel>
+            <FormInput id="cittadino-reg-email" name="email" type="email" placeholder="nome@email.it" value={email} onChange={setEmail} />
+            <FormLabel htmlFor="cittadino-reg-password">Password</FormLabel>
+            <FormInput id="cittadino-reg-password" name="password" type="password" placeholder="Crea una password" value={password} onChange={setPassword} />
 
             {/* GDPR Consents */}
             <div className="mt-4 space-y-3">

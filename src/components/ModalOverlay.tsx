@@ -78,9 +78,9 @@ export function ModalSub({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function FormLabel({ children }: { children: React.ReactNode }) {
+export function FormLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label className="block text-[11px] text-[#6B6763] mb-[5px] mt-[14px] uppercase tracking-[0.5px]">
+    <label htmlFor={htmlFor} className="block text-[11px] text-[#6B6763] mb-[5px] mt-[14px] uppercase tracking-[0.5px]">
       {children}
     </label>
   );
@@ -91,15 +91,21 @@ export function FormInput({
   placeholder,
   value,
   onChange,
+  id,
+  name,
 }: {
   type?: string;
   placeholder?: string;
   value?: string;
   onChange?: (v: string) => void;
+  id?: string;
+  name?: string;
 }) {
   return (
     <input
       type={type}
+      id={id}
+      name={name ?? id}
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange?.(e.target.value)}

@@ -152,10 +152,10 @@ export default function ModalImpresa({ open, onClose }: Props) {
 
         {tab === 0 ? (
           <div>
-            <FormLabel>Email aziendale</FormLabel>
-            <FormInput type="email" placeholder="azienda@email.it" value={email} onChange={setEmail} />
-            <FormLabel>Password</FormLabel>
-            <FormInput type="password" placeholder="••••••••" value={password} onChange={setPassword} />
+            <FormLabel htmlFor="impresa-login-email">Email aziendale</FormLabel>
+            <FormInput id="impresa-login-email" name="email" type="email" placeholder="azienda@email.it" value={email} onChange={setEmail} />
+            <FormLabel htmlFor="impresa-login-password">Password</FormLabel>
+            <FormInput id="impresa-login-password" name="password" type="password" placeholder="••••••••" value={password} onChange={setPassword} />
             <BtnPrimary onClick={handleLogin}>
               {loading ? "Accesso..." : "Accedi"}
             </BtnPrimary>
@@ -163,14 +163,14 @@ export default function ModalImpresa({ open, onClose }: Props) {
           </div>
         ) : (
           <div>
-            <FormLabel>Ragione Sociale</FormLabel>
-            <FormInput placeholder="Azienda S.r.l." value={ragioneSociale} onChange={setRagioneSociale} />
-            <FormLabel>P.IVA</FormLabel>
-            <FormInput placeholder="IT00000000000" value={piva} onChange={setPiva} />
-            <FormLabel>Email aziendale</FormLabel>
-            <FormInput type="email" placeholder="admin@azienda.it" value={email} onChange={setEmail} />
-            <FormLabel>Password</FormLabel>
-            <FormInput type="password" placeholder="Crea una password (min. 8 caratteri)" value={password} onChange={setPassword} />
+            <FormLabel htmlFor="impresa-reg-ragione">Ragione Sociale</FormLabel>
+            <FormInput id="impresa-reg-ragione" name="ragione_sociale" placeholder="Azienda S.r.l." value={ragioneSociale} onChange={setRagioneSociale} />
+            <FormLabel htmlFor="impresa-reg-piva">P.IVA</FormLabel>
+            <FormInput id="impresa-reg-piva" name="piva" placeholder="IT00000000000" value={piva} onChange={setPiva} />
+            <FormLabel htmlFor="impresa-reg-email">Email aziendale</FormLabel>
+            <FormInput id="impresa-reg-email" name="email" type="email" placeholder="admin@azienda.it" value={email} onChange={setEmail} />
+            <FormLabel htmlFor="impresa-reg-password">Password</FormLabel>
+            <FormInput id="impresa-reg-password" name="password" type="password" placeholder="Crea una password (min. 8 caratteri)" value={password} onChange={setPassword} />
 
             <div className="mt-4 space-y-3">
               <label className="flex items-start gap-2 cursor-pointer">
