@@ -24,7 +24,7 @@ export function encryptToken(plaintext: string | null | undefined): string | nul
   try {
     const key = getKey();
     const iv = crypto.randomBytes(IV_LENGTH);
-    const cipher = crypto.createCipheriv(ALGORITHM, key, iv) as crypto.CipherGCM;
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv, { authTagLength: 16 }) as crypto.CipherGCM;
     const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
     const tag = cipher.getAuthTag();
     return `${PREFIX}${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`;
@@ -45,7 +45,8 @@ export function decryptToken(value: string | null | undefined): string | null {
     const iv = Buffer.from(ivHex, "hex");
     const tag = Buffer.from(tagHex, "hex");
     const encrypted = Buffer.from(encHex, "hex");
-    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv) as crypto.DecipherGCM;
+    if (tag.length !== 16) throw new Error("Invalid auth tag length");
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv, { authTagLength: 16 }) as crypto.DecipherGCM;
     decipher.setAuthTag(tag);
     return decipher.update(encrypted).toString("utf8") + decipher.final("utf8");
   } catch {

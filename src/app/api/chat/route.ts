@@ -23,6 +23,12 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const EMBED_VPS_URL = process.env.EMBED_VPS_URL || "http://89.167.123.25:8765";
 
+// CVE-06 fix: escape wildcard chars per prevenire enumerazione via ILIKE
+function sanitizeLike(v: string | null): string | null {
+  if (!v) return null;
+  return v.replace(/[%_\\]/g, "\\$&").slice(0, 100);
+}
+
 // ── FEATURE 2: User Profiling ─────────────────────────────────────────────────
 
 interface UserProfile {
@@ -644,6 +650,30 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Budget cap LLM (solo query anonime) ──────────────────────────────────
+  // Protegge da costi LLM inattesi: incrementa contatore mensile e blocca a soglia.
+  // Skippa silenziosamente se Upstash non è configurato.
+  if (!userId && !isSmokeTest) {
+    const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+    const maxMonthlyCostEur = parseFloat(process.env.MAX_MONTHLY_ANON_COST_EUR ?? "500");
+    if (upstashUrl && upstashToken) {
+      try {
+        const now = new Date();
+        const budgetKey = `budget:anon:${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+        const incr = await fetch(`${upstashUrl}/incrbyfloat/${budgetKey}/0.03`, {
+          headers: { Authorization: `Bearer ${upstashToken}` },
+        });
+        if (incr.ok) {
+          const body = await incr.json() as { result: number };
+          if (body.result > maxMonthlyCostEur) {
+            return new Response(JSON.stringify({ error: "Servizio temporaneamente non disponibile" }), { status: 503, headers: { "Content-Type": "application/json" } });
+          }
+        }
+      } catch { /* skip silently */ }
+    }
+  }
+
   if (!question?.trim()) {
     return new Response(JSON.stringify({ error: "question is required" }), { status: 400, headers: { "Content-Type": "application/json" } });
   }
@@ -880,7 +910,8 @@ export async function POST(req: NextRequest) {
             const scoring = scoreLeadQuality({ question, vertical: vertical || "generico", city: (profile as unknown as Record<string, string>)?.citta, hasAttachment: !!attachment, sessionLength: (conversationHistory?.length ?? 0) + 1 });
             if (scoring.score >= 35 || !!attachment) {
               const summary = question.trim().slice(0, 150) + (question.length > 150 ? "…" : "");
-              const verticaleNorm = vertical?.toLowerCase().replace(/[\s/]+/g, "-") ?? "generico";
+              const verticaleNormRaw = vertical?.toLowerCase().replace(/[\s/]+/g, "-") ?? "generico";
+              const verticaleNorm = sanitizeLike(verticaleNormRaw) ?? "generico";
               // B-05 fix: inserisce e recupera lead id per notificare professionisti
               const leadInsertRes = await fetch(`${SUPABASE_URL}/rest/v1/marketplace_leads`, {
                 method: "POST",

@@ -19,7 +19,8 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/developer-waitlist" ||
     pathname === "/api/invest-lead" ||
     pathname === "/api/leads/preview" ||               // lead preview pubblica
-    pathname.startsWith("/api/mobile/")               // mobile API (pay-professional, etc.)
+    pathname === "/api/mobile/buy-lead" ||              // mobile: acquisto lead
+    pathname === "/api/mobile/pay-professional"         // mobile: pagamento professionista
   );
 }
 
