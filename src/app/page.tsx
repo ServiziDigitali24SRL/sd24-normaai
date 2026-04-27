@@ -173,45 +173,24 @@ function ChatScreen() {
         <div style={{ padding: '18px 14px 8px' }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4, paddingLeft: 12, marginBottom: 6 }}>Area personale</div>
           <NavItem icon={<Icon name="chat" />} label="Chat legale" active />
-          <NavItem icon={<Icon name="archive" />} label="Archivio documenti" badge="12" />
+          <NavItem icon={<Icon name="archive" />} label="Archivio documenti" />
           <NavItem icon={<Icon name="doc" />} label="Analisi PDF" />
-          <NavItem icon={<Icon name="clock" />} label="Scadenze" badge="3" />
+          <NavItem icon={<Icon name="clock" />} label="Scadenze" />
           <NavItem icon={<Icon name="users" />} label="Trova professionista" />
         </div>
         <div style={{ padding: '8px 14px' }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4, paddingLeft: 12, marginBottom: 6 }}>Conversazioni recenti</div>
-          {[
-            { t: 'Contratto locazione — cedolare secca', d: '2h fa' },
-            { t: 'Licenziamento giusta causa', d: 'Ieri' },
-            { t: 'TFR e trattamento di fine rapporto', d: '3 giorni' },
-            { t: 'Art. 2043 c.c. responsabilità', d: '1 sett.' },
-          ].map((c, i) => (
-            <button key={i} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-              onMouseEnter={e => e.currentTarget.style.background = T.paper2}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <div style={{ fontSize: 13, color: T.ink2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.t}</div>
-              <div style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4, marginTop: 2 }}>{c.d}</div>
-            </button>
-          ))}
+          <div style={{ padding: '8px 12px', fontSize: 12.5, color: T.ink4, fontFamily: T.sans, fontStyle: 'italic' }}>
+            Nessuna conversazione ancora.
+          </div>
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ margin: 14, padding: 16, border: `1px solid ${T.paperL}`, borderRadius: 8, background: 'white' }}>
           <Stamp>Piano Gratuito</Stamp>
-          <div style={{ fontSize: 13, color: T.ink2, margin: '10px 0 12px', lineHeight: 1.45 }}>3 di 10 consultazioni mensili utilizzate</div>
-          <div style={{ height: 4, background: T.paper2, borderRadius: 2, marginBottom: 12, overflow: 'hidden' }}>
-            <div style={{ width: '30%', height: '100%', background: T.v }} />
-          </div>
+          <div style={{ fontSize: 13, color: T.ink2, margin: '10px 0 12px', lineHeight: 1.45 }}>10 consultazioni mensili gratuite</div>
           <button style={{ width: '100%', padding: '9px 12px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             Passa a PRO <Icon name="arrow" size={12} />
           </button>
-        </div>
-        <div style={{ padding: '12px 20px', borderTop: `1px solid ${T.paperL}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: T.ink, color: T.paper, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500 }}>MR</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>Marco Rossi</div>
-            <div style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4 }}>CITTADINO</div>
-          </div>
-          <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: T.ink4 }}><Icon name="settings" size={16} /></button>
         </div>
       </aside>
 
@@ -219,56 +198,41 @@ function ChatScreen() {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header style={{ display: 'flex', alignItems: 'center', padding: '14px 28px', borderBottom: `1px solid ${T.paperL}`, gap: 16 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: T.ink4 }}>Consultazione · Diritto Civile</div>
-            <div style={{ fontFamily: T.serif, fontSize: 20, marginTop: 2 }}>Contratto di locazione — cedolare secca</div>
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: T.ink4 }}>Nuova consultazione</div>
+            <div style={{ fontFamily: T.serif, fontSize: 20, marginTop: 2 }}>Chiedi a Norma</div>
           </div>
-          <Badge tone="ok"><Icon name="check" size={11} /> Fonti verificate</Badge>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 13, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}><Icon name="download" size={14} /> Esporta</button>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 13, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}><Icon name="paperclip" size={14} /> Allega</button>
         </header>
 
-        <div style={{ flex: 1, overflow: 'auto', padding: '36px 48px' }}>
-          <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <div style={{ marginBottom: 32, textAlign: 'center' }}>
-              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.18em', color: T.ink5, textTransform: 'uppercase' }}>— · — · — &nbsp; 20 aprile 2026, 14:32 &nbsp; — · — · —</div>
+        {/* Empty state — VIRGIN chat. No demo conversation. */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '64px 48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 540, textAlign: 'center' }}>
+            <div style={{ fontFamily: T.serif, fontSize: 64, fontStyle: 'italic', color: T.ink4, lineHeight: 1, marginBottom: 14 }}>§</div>
+            <h2 style={{ fontFamily: T.serif, fontSize: 28, lineHeight: 1.2, margin: '0 0 12px', color: T.ink, letterSpacing: '-0.01em' }}>
+              Ti posso aiutare per <em style={{ color: T.v }}>multe, sanzioni, citazioni, posto di blocco</em>
+            </h2>
+            <p style={{ fontSize: 14.5, color: T.ink3, lineHeight: 1.6, margin: '0 0 28px' }}>
+              Per qualsiasi cosa, sono qui per te. Fai una domanda e rispondo con i riferimenti normativi.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 420, margin: '0 auto' }}>
+              {[
+                'Mi hanno fatto una multa, posso fare ricorso?',
+                'Cosa devo dire a un posto di blocco?',
+                'Mi è arrivata una citazione: cosa fare?',
+              ].map((q) => (
+                <button key={q} style={{
+                  padding: '11px 14px', background: 'white',
+                  border: `1px solid ${T.paperL}`, borderRadius: 8,
+                  fontSize: 13.5, color: T.ink2, fontFamily: T.sans,
+                  cursor: 'pointer', textAlign: 'left',
+                  transition: 'all 0.15s',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = T.ink5; e.currentTarget.style.background = T.paperT; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = T.paperL; e.currentTarget.style.background = 'white'; }}
+                >
+                  {q}
+                </button>
+              ))}
             </div>
-            <ChatMsg role="user">Sto per affittare un appartamento a Milano. Il proprietario mi propone un contratto 4+4 con cedolare secca al 21%. Mi conviene rispetto al regime ordinario? Cosa rischio se l'inquilino non paga?</ChatMsg>
-            <ChatMsg role="assistant">
-              <div style={{ fontSize: 14.5, lineHeight: 1.65, color: T.ink2 }}>
-                <p style={{ margin: '0 0 14px' }}>La <strong>cedolare secca al 21%</strong> è generalmente conveniente per un contratto 4+4 a uso abitativo, ma dipende dalla Sua aliquota IRPEF marginale.</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, margin: '18px 0', background: T.paperT, border: `1px solid ${T.paperL}`, borderRadius: 6, padding: 14 }}>
-                  <div>
-                    <div style={{ fontFamily: T.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4 }}>Cedolare secca</div>
-                    <div style={{ fontFamily: T.serif, fontSize: 26, marginTop: 2 }}>21<span style={{ fontSize: 16 }}>%</span></div>
-                    <div style={{ fontSize: 12, color: T.ink3 }}>Fissa, su canone lordo</div>
-                  </div>
-                  <div style={{ borderLeft: `1px solid ${T.paperL}`, paddingLeft: 14 }}>
-                    <div style={{ fontFamily: T.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4 }}>IRPEF ordinario</div>
-                    <div style={{ fontFamily: T.serif, fontSize: 26, marginTop: 2 }}>23–43<span style={{ fontSize: 16 }}>%</span></div>
-                    <div style={{ fontSize: 12, color: T.ink3 }}>Su 95% canone + addizionali</div>
-                  </div>
-                </div>
-                <p style={{ margin: '14px 0' }}><strong>Sulla morosità</strong>, il regime di cedolare secca le impone di <em>rinunciare all'aggiornamento ISTAT</em> del canone per tutta la durata (art. 3, co. 11, D.Lgs. 23/2011). In caso di mancato pagamento:</p>
-                <ol style={{ margin: '0 0 14px 0', paddingLeft: 20, color: T.ink2 }}>
-                  <li style={{ margin: '6px 0' }}>Dopo <strong>20 giorni</strong> dalla scadenza, può avviare intimazione di sfratto per morosità</li>
-                  <li style={{ margin: '6px 0' }}>La Legge 392/1978 consente la risoluzione dopo <strong>2 canoni non pagati</strong></li>
-                  <li style={{ margin: '6px 0' }}>Il giudice può concedere un <em>termine di grazia</em> fino a 90 giorni</li>
-                </ol>
-                <SectionLabel>Riferimenti normativi</SectionLabel>
-                <CitationCard code="D.Lgs. 23/2011 · art. 3" title="Cedolare secca sugli affitti" snippet="Il canone di locazione relativo ai contratti aventi ad oggetto immobili ad uso abitativo…" />
-                <CitationCard code="L. 431/1998 · art. 2" title="Contratti di locazione 4+4" snippet="Le parti possono stipulare contratti di locazione di durata non inferiore a quattro anni…" />
-                <CitationCard code="L. 392/1978 · art. 5" title="Inadempimento del conduttore" snippet="Il mancato pagamento del canone decorsi venti giorni dalla scadenza costituisce motivo di risoluzione…" />
-                <div style={{ marginTop: 24, padding: 14, background: T.ambraS, borderRadius: 6, display: 'flex', gap: 12 }}>
-                  <Icon name="alert" size={18} />
-                  <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.5 }}><strong>Nota importante.</strong> Per una valutazione completa del Suo caso specifico Le consigliamo una consulenza con un commercialista o avvocato civilista.</div>
-                </div>
-                <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {['Approfondisci le tasse', 'Modello di contratto', "Cosa succede se vendo l'immobile?", 'Genera checklist'].map(s => (
-                    <button key={s} style={{ padding: '7px 12px', background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 20, fontSize: 12.5, color: T.ink2, cursor: 'pointer', fontFamily: T.sans }}>↳ {s}</button>
-                  ))}
-                </div>
-              </div>
-            </ChatMsg>
           </div>
         </div>
 
