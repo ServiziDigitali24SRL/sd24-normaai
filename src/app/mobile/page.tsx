@@ -478,7 +478,7 @@ export default function MobilePage() {
               position: "absolute", bottom: 0, left: 0, right: 0,
               background: "var(--paper)",
               borderRadius: "20px 20px 0 0",
-              maxHeight: "88dvh",
+              maxHeight: "92dvh",
               display: "flex", flexDirection: "column",
               overflow: "hidden",
             }}
@@ -509,10 +509,10 @@ export default function MobilePage() {
             <div style={{ flex: 1, overflowY: "auto" }}>
 
               {/* ── Carosello personalità ── */}
-              <div style={{ paddingTop: 18 }}>
+              <div style={{ paddingTop: 10 }}>
                 <div className="mono" style={{
                   fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
-                  textTransform: "uppercase", paddingLeft: 20, marginBottom: 14,
+                  textTransform: "uppercase", paddingLeft: 20, marginBottom: 10,
                 }}>
                   Personalità
                 </div>
@@ -539,18 +539,18 @@ export default function MobilePage() {
                           flexShrink: 0, width: "100%",
                           scrollSnapAlign: "center",
                           display: "flex", flexDirection: "column",
-                          alignItems: "center", padding: "10px 28px 20px",
+                          alignItems: "center", padding: "6px 28px 12px",
                         }}
                       >
                         {/* Pallina grande */}
                         <div
                           onClick={() => handlePersonalityChange(p.id)}
                           style={{
-                            width: 118, height: 118, borderRadius: "50%",
+                            width: 100, height: 100, borderRadius: "50%",
                             background: p.preview,
                             boxShadow: active
-                              ? "0 0 0 4px var(--ink), 0 12px 40px rgba(0,0,0,0.22)"
-                              : "0 8px 28px rgba(0,0,0,0.18)",
+                              ? "0 0 0 4px var(--ink), 0 10px 32px rgba(0,0,0,0.22)"
+                              : "0 6px 22px rgba(0,0,0,0.18)",
                             cursor: "pointer",
                             transition: "box-shadow 0.2s",
                             flexShrink: 0,
@@ -558,15 +558,15 @@ export default function MobilePage() {
                         />
                         {/* Nome + descrizione */}
                         <div className="serif" style={{
-                          fontSize: 22, marginTop: 18, marginBottom: 5,
+                          fontSize: 20, marginTop: 12, marginBottom: 4,
                           color: "var(--ink)",
                         }}>
                           {p.label}
                         </div>
                         <div style={{
-                          fontSize: 13.5, color: "var(--ink-3)",
+                          fontSize: 13, color: "var(--ink-3)",
                           fontFamily: "var(--sans)", textAlign: "center",
-                          lineHeight: 1.5, maxWidth: 240,
+                          lineHeight: 1.45, maxWidth: 240,
                         }}>
                           {p.description}
                         </div>
@@ -578,7 +578,7 @@ export default function MobilePage() {
                 {/* Dots */}
                 <div style={{
                   display: "flex", justifyContent: "center",
-                  gap: 7, paddingBottom: 6,
+                  gap: 7, paddingBottom: 4,
                 }}>
                   {ORB_PERSONALITIES.map((p, i) => (
                     <div
@@ -605,7 +605,7 @@ export default function MobilePage() {
               </div>
 
               {/* ── Carosello lingua ── */}
-              <div style={{ paddingTop: 16, paddingBottom: 4 }}>
+              <div style={{ paddingTop: 10, paddingBottom: 4 }}>
                 <div className="mono" style={{
                   fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
                   textTransform: "uppercase", paddingLeft: 20,
@@ -648,7 +648,7 @@ export default function MobilePage() {
                                 flexShrink: 0, width: "100%",
                                 scrollSnapAlign: "center",
                                 display: "flex", flexDirection: "column",
-                                alignItems: "center", padding: "8px 28px 16px",
+                                alignItems: "center", padding: "4px 28px 8px",
                               }}
                             >
                               {/* Palla piccola */}
@@ -720,7 +720,7 @@ export default function MobilePage() {
 
                       <div style={{
                         fontSize: 11, color: "var(--ink-4)", lineHeight: 1.4,
-                        textAlign: "center", padding: "0 20px 16px",
+                        textAlign: "center", padding: "0 20px 10px",
                         fontFamily: "var(--sans)",
                       }}>
                         Norma parla in{" "}
@@ -737,8 +737,8 @@ export default function MobilePage() {
             {/* Footer account — fisso in basso */}
             <div style={{
               borderTop: "1px solid var(--paper-line)",
-              padding: "12px 20px",
-              paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+              padding: "8px 20px",
+              paddingBottom: "calc(8px + env(safe-area-inset-bottom))",
               flexShrink: 0,
             }}>
               {authedUser ? (
@@ -755,7 +755,7 @@ export default function MobilePage() {
                   </div>
                   <button
                     onClick={() => { setShowMenu(false); router.push("/privacy"); }}
-                    style={{ width: "100%", textAlign: "left", padding: "11px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
+                    style={{ width: "100%", textAlign: "left", padding: "9px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
                   >
                     Privacy & Cookie
                   </button>
@@ -766,7 +766,7 @@ export default function MobilePage() {
                       await supabase.auth.signOut();
                       setAuthedUser(null);
                     }}
-                    style={{ width: "100%", textAlign: "left", padding: "11px 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, display: "flex", alignItems: "center", gap: 8, color: "var(--vermiglio-ink)", marginTop: 2 }}
+                    style={{ width: "100%", textAlign: "left", padding: "9px 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, display: "flex", alignItems: "center", gap: 8, color: "var(--vermiglio-ink)", marginTop: 2 }}
                   >
                     <LogOut size={14} /> Esci dall&apos;account
                   </button>
@@ -781,7 +781,7 @@ export default function MobilePage() {
                     <button
                       key={item.label}
                       onClick={() => { setShowMenu(false); item.action(); }}
-                      style={{ width: "100%", textAlign: "left", padding: "11px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
+                      style={{ width: "100%", textAlign: "left", padding: "9px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
                     >
                       {item.label}
                     </button>
