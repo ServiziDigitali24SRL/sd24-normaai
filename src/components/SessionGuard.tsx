@@ -22,6 +22,14 @@ export default function SessionGuard() {
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event) => {
       if (event === "TOKEN_REFRESHED") return; // sessione rinnovata, tutto ok
       if (event === "SIGNED_OUT") {
+        // Le route /mobile gestiscono auth internamente (MobileAuthSheet) —
+        // non redirezionare, altrimenti utenti non loggati non possono mai
+        // accedere a /mobile, /mobile/chat, /mobile/archivio, /mobile/leads.
+        // Anche le route pubbliche (privacy, termini, reset) non devono redir.
+        const path = window.location.pathname;
+        const publicPaths = ["/mobile", "/privacy", "/termini", "/reset-password"];
+        if (publicPaths.some((p) => path === p || path.startsWith(p + "/"))) return;
+
         // Logout avvenuto altrove (altra tab) — sincronizza
         window.location.href = "/";
       }

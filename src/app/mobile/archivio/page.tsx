@@ -71,7 +71,7 @@ function SubscriptionGate() {
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "cittadino_pro" }),
+        body: JSON.stringify({ plan: "cittadino_pro", returnPath: "/mobile/archivio" }),
       });
       const data = await res.json();
       if (data.url) {
@@ -203,9 +203,9 @@ export default function MobileArchivioPage() {
   }, []);
 
   const tabs = [
-    { id: "chat" as Tab, label: "Chat", icon: <MessageSquare size={16} /> },
-    { id: "articoli" as Tab, label: "Articoli", icon: <FileText size={16} /> },
-    { id: "documenti" as Tab, label: "Documenti", icon: <File size={16} /> },
+    { id: "chat" as Tab, label: "Chat", icon: <MessageSquare size={16} />, soon: false },
+    { id: "articoli" as Tab, label: "Articoli", icon: <FileText size={16} />, soon: true },
+    { id: "documenti" as Tab, label: "Documenti", icon: <File size={16} />, soon: true },
   ];
 
   return (
@@ -244,6 +244,14 @@ export default function MobileArchivioPage() {
             >
               {t.icon}
               {t.label}
+              {t.soon && (
+                <span style={{
+                  fontSize: 8.5, padding: "1px 5px", borderRadius: 3,
+                  background: "var(--paper-3)", color: "var(--ink-4)",
+                  fontFamily: "var(--mono)", letterSpacing: "0.06em",
+                  textTransform: "uppercase", fontWeight: 500,
+                }}>presto</span>
+              )}
             </button>
           ))}
         </div>

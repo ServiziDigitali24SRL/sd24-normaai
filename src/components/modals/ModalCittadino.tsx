@@ -133,7 +133,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
             Gratis
           </div>
           <div className="text-[11.5px] text-gold mt-[3px]">
-            &#10022; Sempre gratuito &middot; Nessun limite di query
+            &#10022; Sempre gratuito &middot; 10 consultazioni al giorno
           </div>
           <div className="mt-3 flex flex-col gap-[7px]">
             {feats.map((f) => (

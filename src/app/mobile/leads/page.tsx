@@ -216,7 +216,7 @@ export default function MobileLeadsPage() {
         const res = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ plan: "professionista" }),
+          body: JSON.stringify({ plan: "professionista", returnPath: "/mobile/leads" }),
         });
         const data = await res.json();
         if (data.url) {

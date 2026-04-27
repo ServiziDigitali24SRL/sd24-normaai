@@ -36,7 +36,7 @@ const ONE_TIME_PLANS = new Set(["lead_privato", "lead_impresa"]);
 
 export async function POST(req: NextRequest) {
   try {
-    const { plan } = await req.json();
+    const { plan, returnPath } = await req.json();
 
     // B-11 fix: ignora userId/email dal body; prendi SEMPRE dall'utente autenticato
     const supabase = await createClient();
@@ -72,8 +72,18 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       line_items: [{ price: stripePriceId, quantity: 1 }],
       metadata: { userId, plan },
-      success_url: `${origin}/?checkout=success`,
-      cancel_url: `${origin}/?checkout=cancel`,
+      // Se viene passato returnPath (es. /mobile/archivio), Stripe redirige lì.
+      // Whitelist: solo path interni che iniziano con /, no protocolli esterni.
+      success_url: `${origin}${
+        typeof returnPath === "string" && returnPath.startsWith("/") && !returnPath.startsWith("//")
+          ? `${returnPath}${returnPath.includes("?") ? "&" : "?"}payment=success`
+          : "/?checkout=success"
+      }`,
+      cancel_url: `${origin}${
+        typeof returnPath === "string" && returnPath.startsWith("/") && !returnPath.startsWith("//")
+          ? `${returnPath}${returnPath.includes("?") ? "&" : "?"}payment=cancelled`
+          : "/?checkout=cancel"
+      }`,
     };
     if (existingCustomerId) {
       sessionParams.customer = existingCustomerId;

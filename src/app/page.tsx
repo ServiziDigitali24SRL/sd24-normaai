@@ -159,24 +159,24 @@ function ChatMsg({ role, children }: { role: 'user' | 'assistant'; children: Rea
   );
 }
 
-function ChatScreen() {
+function ChatScreen({ onCTA }: { onCTA: () => void }) {
   return (
     <div style={{ display: 'flex', height: '100%', background: T.paper }}>
       {/* Sidebar */}
       <aside style={{ width: 260, flexShrink: 0, background: T.paperT, borderRight: `1px solid ${T.paperL}`, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '20px 20px 14px' }}><Logo /></div>
         <div style={{ padding: '0 14px' }}>
-          <button style={{ width: '100%', padding: '10px 12px', background: T.ink, color: T.paper, border: 'none', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
+          <button onClick={onCTA} style={{ width: '100%', padding: '10px 12px', background: T.ink, color: T.paper, border: 'none', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
             <Icon name="plus" size={14} /> Nuova consultazione
           </button>
         </div>
         <div style={{ padding: '18px 14px 8px' }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4, paddingLeft: 12, marginBottom: 6 }}>Area personale</div>
-          <NavItem icon={<Icon name="chat" />} label="Chat legale" active />
-          <NavItem icon={<Icon name="archive" />} label="Archivio documenti" />
-          <NavItem icon={<Icon name="doc" />} label="Analisi PDF" />
-          <NavItem icon={<Icon name="clock" />} label="Scadenze" />
-          <NavItem icon={<Icon name="users" />} label="Trova professionista" />
+          <NavItem icon={<Icon name="chat" />} label="Chat legale" active onClick={onCTA} />
+          <NavItem icon={<Icon name="archive" />} label="Archivio documenti" onClick={onCTA} />
+          <NavItem icon={<Icon name="doc" />} label="Analisi PDF" onClick={onCTA} />
+          <NavItem icon={<Icon name="clock" />} label="Scadenze" onClick={onCTA} />
+          <NavItem icon={<Icon name="users" />} label="Trova professionista" onClick={onCTA} />
         </div>
         <div style={{ padding: '8px 14px' }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4, paddingLeft: 12, marginBottom: 6 }}>Conversazioni recenti</div>
@@ -187,8 +187,8 @@ function ChatScreen() {
         <div style={{ flex: 1 }} />
         <div style={{ margin: 14, padding: 16, border: `1px solid ${T.paperL}`, borderRadius: 8, background: 'white' }}>
           <Stamp>Piano Gratuito</Stamp>
-          <div style={{ fontSize: 13, color: T.ink2, margin: '10px 0 12px', lineHeight: 1.45 }}>10 consultazioni mensili gratuite</div>
-          <button style={{ width: '100%', padding: '9px 12px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <div style={{ fontSize: 13, color: T.ink2, margin: '10px 0 12px', lineHeight: 1.45 }}>10 consultazioni gratuite al giorno</div>
+          <button onClick={onCTA} style={{ width: '100%', padding: '9px 12px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             Passa a PRO <Icon name="arrow" size={12} />
           </button>
         </div>
@@ -219,7 +219,7 @@ function ChatScreen() {
                 'Cosa devo dire a un posto di blocco?',
                 'Mi è arrivata una citazione: cosa fare?',
               ].map((q) => (
-                <button key={q} style={{
+                <button key={q} onClick={onCTA} style={{
                   padding: '11px 14px', background: 'white',
                   border: `1px solid ${T.paperL}`, borderRadius: 8,
                   fontSize: 13.5, color: T.ink2, fontFamily: T.sans,
@@ -238,17 +238,17 @@ function ChatScreen() {
 
         <div style={{ padding: '0 48px 28px' }}>
           <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <div style={{ background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 12, padding: 14, boxShadow: T.sh2 }}>
-              <textarea placeholder="Domanda di follow-up, allega un PDF, o cerca una norma…" style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, fontFamily: T.sans, color: T.ink, minHeight: 40, background: 'transparent', lineHeight: 1.5 }} />
+            <div onClick={onCTA} style={{ background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 12, padding: 14, boxShadow: T.sh2, cursor: 'pointer' }}>
+              <textarea placeholder="Domanda di follow-up, allega un PDF, o cerca una norma…" readOnly onClick={onCTA} style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, fontFamily: T.sans, color: T.ink, minHeight: 40, background: 'transparent', lineHeight: 1.5, cursor: 'pointer' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                 {[['paperclip','Allega PDF'],['book','Materia'],['spark','Ricerca giurisprudenza']].map(([ic,lb]) => (
-                  <button key={lb} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 12, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}>
+                  <button key={lb} onClick={(e) => { e.stopPropagation(); onCTA(); }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 12, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}>
                     <Icon name={ic} size={13} /> {lb}
                   </button>
                 ))}
                 <div style={{ flex: 1 }} />
-                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4 }}>7/10 consultazioni</span>
-                <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
+                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4 }}>10 consultazioni gratis/giorno</span>
+                <button onClick={(e) => { e.stopPropagation(); onCTA(); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
                   <Icon name="send" size={13} /> Invia
                 </button>
               </div>
@@ -305,7 +305,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const handleSkip = () => { if (step < totalSteps) setStep(step + 1); else onComplete(); };
 
   const tiers = [
-    { id: 'cittadino', tag: 'Per iniziare', name: 'Cittadino', price: 'Gratis', priceSub: '10 consult./mese', icon: 'users', features: ['10 consultazioni/mese', 'Riferimenti normativi', 'Archivio base'] },
+    { id: 'cittadino', tag: 'Per iniziare', name: 'Cittadino', price: 'Gratis', priceSub: '10 consult./giorno', icon: 'users', features: ['10 consultazioni al giorno', 'Riferimenti normativi', 'Archivio base'] },
     { id: 'cittadino-pro', tag: 'Più popolare', name: 'Cittadino PRO', price: '€9', priceSub: '/mese', highlight: true, icon: 'star', features: ['Consultazioni illimitate', 'Analisi PDF & contratti', 'Firma digitale'] },
     { id: 'avvocato', tag: 'Foro · Albo', name: 'Avvocato', price: '€29', priceSub: '/mese', icon: 'scale', features: ['Marketplace lead €75/€150', 'Profilo directory pubblico', 'Redazione atti AI'] },
     { id: 'professionista', tag: 'Commercialisti & altri', name: 'Professionista', price: '€29', priceSub: '/mese', icon: 'briefcase', features: ['Profilo pubblico', 'Parcelle & progetti', 'Business plan AI'] },
@@ -996,7 +996,10 @@ export default function PreviewPage() {
         {tabs.map(t => {
           const active = tab === t.id;
           return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
+            <button key={t.id} onClick={() => {
+              if (t.locked) { setAuthModal('cittadino'); return; }
+              setTab(t.id);
+            }} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '6px 14px', background: active ? 'rgba(246,242,234,0.08)' : 'transparent',
               border: `1px solid ${active ? 'rgba(212,74,42,0.5)' : 'transparent'}`,
@@ -1049,7 +1052,7 @@ export default function PreviewPage() {
 
       {/* ── Content ── */}
       <div style={{ flex: 1, overflow: 'hidden', background: T.paper }}>
-        {tab === '01' && <ChatScreen />}
+        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('cittadino')} />}
         {tab === '02' && <OnboardingScreen onComplete={() => setTab('03')} />}
         {tab === '03' && <DashboardTab role="cittadino" demoUser={{ name: 'Marco Rossi', initials: 'MR', subtitle: 'CITTADINO · PIANO GRATUITO' }} />}
         {tab === '04' && <DashboardTab role="prof" demoUser={{ name: 'Avv. Giulia Mancini', initials: 'GM', subtitle: 'AVVOCATO · FORO DI ROMA' }} />}
