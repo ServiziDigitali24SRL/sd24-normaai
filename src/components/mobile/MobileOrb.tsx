@@ -20,7 +20,7 @@ export type OrbStyle = "classico" | "notte" | "natura" | "aurora" | "globo";
 
 interface MobileOrbProps {
   state: OrbState;
-  onTap: () => void;
+  onTap?: () => void;
   size?: number;   // overall button container size (default 240)
   orbStyle?: OrbStyle;
 }
