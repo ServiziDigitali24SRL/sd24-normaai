@@ -1,5 +1,4 @@
 {
-  "framework": "nextjs",
   "functions": {
     "src/app/api/chat/route.ts": {
       "maxDuration": 120
@@ -13,6 +12,6 @@
     {
       "path": "/api/impresa/report-compliance?cron=1",
       "schedule": "0 9 1 * *"
-    },
+    }
   ]
 }

@@ -260,12 +260,12 @@ export function MobileOrb({ state, onTap, size = 240, orbStyle = "classico" }: M
           <>
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
-              border: `1.5px solid ${c.ring ?? "oklch(0.58 0.19 35 / 0.7)"}`,
+              border: `1.5px solid ${c.ring ?? "rgba(180,100,50,0.7)"}`,
               animation: ringAnim, pointerEvents: "none",
             }} />
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
-              border: `1.5px solid ${c.ring ?? "oklch(0.58 0.19 35 / 0.5)"}`,
+              border: `1.5px solid ${c.ring ?? "rgba(180,100,50,0.5)"}`,
               animation: ringAnim, animationDelay: "0.7s",
               opacity: 0.7, pointerEvents: "none",
             }} />
