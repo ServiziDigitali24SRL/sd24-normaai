@@ -132,7 +132,7 @@ export default function MobileChatPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: fullText,
+          question: text.trim(),
           vertical: null,
           userId: null,
           conversationHistory: history,
