@@ -124,7 +124,9 @@ export function MobileAuthSheet({
     if (!email.trim()) { setError("Inserisci la tua email per reset."); return; }
     setLoading(true);
     const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      // ?desktop=1 bypasses the mobile-UA middleware redirect so the user
+      // lands on the reset-password form page instead of being bounced to /mobile.
+      redirectTo: `${window.location.origin}/reset-password?desktop=1`,
     });
     setLoading(false);
     if (err) setError("Errore invio email. Riprova.");

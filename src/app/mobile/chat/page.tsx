@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Plus, X, Paperclip, Image as ImageIcon, Camera, FileText } from "lucide-react";
+import { ArrowUp, X } from "lucide-react";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 import ReactMarkdown from "react-markdown";
@@ -106,52 +106,19 @@ export default function MobileChatPage() {
   const [currentText, setCurrentText] = useState("");
   const [showGate, setShowGate] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
-  const [showAttachMenu, setShowAttachMenu] = useState(false);
-  const [attachments, setAttachments] = useState<File[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-
-  const handleAttach = (kind: "file" | "photo" | "camera") => {
-    setShowAttachMenu(false);
-    const ref =
-      kind === "file"   ? fileInputRef.current  :
-      kind === "photo"  ? photoInputRef.current :
-      /* camera */        cameraInputRef.current;
-    ref?.click();
-  };
-
-  const onFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length) setAttachments((prev) => [...prev, ...files].slice(0, 5));
-    // Reset so picking the same file twice still triggers onChange
-    e.target.value = "";
-  };
-
-  const removeAttachment = (idx: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== idx));
-  };
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, currentText]);
 
   const sendMessage = async (text: string) => {
-    if ((!text.trim() && attachments.length === 0) || streaming) return;
+    if (!text.trim() || streaming) return;
     setInput("");
-    // TODO: wire attachments to /api/upload + include refs in payload.
-    // For now we surface them in the user message so it's visible they were
-    // attached, then clear the picker.
-    const attachmentSuffix = attachments.length
-      ? `\n\n📎 ${attachments.map((f) => f.name).join(", ")}`
-      : "";
-    const fullText = (text + attachmentSuffix).trim() || "Allegati";
-    setAttachments([]);
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text: fullText, ts: Date.now() };
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text: text.trim(), ts: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setStreaming(true);
     setCurrentText("");
@@ -273,37 +240,14 @@ export default function MobileChatPage() {
           paddingBottom: 0,
         }}>
           {messages.length === 0 && (
-            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+            <div style={{ textAlign: "center", padding: "60px 24px 20px" }}>
               <div className="serif" style={{
-                fontSize: 28, fontStyle: "italic", color: "var(--ink-4)",
-                marginBottom: 8,
+                fontSize: 32, fontStyle: "italic", color: "var(--ink-4)",
+                marginBottom: 12,
               }}>{'\u00A7'}</div>
-              <p style={{ fontSize: 14.5, color: "var(--ink-2)", lineHeight: 1.55, padding: "0 8px" }}>
-                Ti posso aiutare per <strong>multe</strong>, <strong>sanzioni</strong>, <strong>citazioni</strong>, <strong>posto di blocco</strong>,<br />
-                per qualsiasi cosa, sono qui per te.
+              <p style={{ fontSize: 14.5, color: "var(--ink-3)", lineHeight: 1.6, padding: "0 8px", fontFamily: "var(--sans)" }}>
+                Chiedimi qualsiasi cosa di legge, norme o diritti.
               </p>
-              <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-                {[
-                  "Mi hanno fatto una multa, posso fare ricorso?",
-                  "Cosa devo dire ad un posto di blocco?",
-                  "Mi è arrivata una citazione: cosa fare?",
-                ].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => sendMessage(q)}
-                    style={{
-                      padding: "10px 14px",
-                      background: "var(--paper-2)",
-                      border: "1px solid var(--paper-line)",
-                      borderRadius: 8, cursor: "pointer",
-                      fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink-2)",
-                      textAlign: "left",
-                    }}
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -333,66 +277,12 @@ export default function MobileChatPage() {
           background: "var(--paper)",
           flexShrink: 0,
         }}>
-          {/* Attachment chips */}
-          {attachments.length > 0 && (
-            <div style={{
-              display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8,
-              padding: "0 4px",
-            }}>
-              {attachments.map((f, i) => {
-                const isImg = f.type.startsWith("image/");
-                return (
-                  <div key={`${f.name}-${i}`} style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    background: "var(--paper-2)",
-                    border: "1px solid var(--paper-line)",
-                    borderRadius: 8, padding: "5px 8px 5px 8px",
-                    fontSize: 12, fontFamily: "var(--sans)", color: "var(--ink-2)",
-                    maxWidth: 200,
-                  }}>
-                    {isImg ? <ImageIcon size={13} color="var(--vermiglio)" /> : <FileText size={13} color="var(--vermiglio)" />}
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {f.name}
-                    </span>
-                    <button
-                      onClick={() => removeAttachment(i)}
-                      aria-label="Rimuovi"
-                      style={{
-                        border: "none", background: "transparent",
-                        padding: 0, marginLeft: 2, cursor: "pointer",
-                        display: "inline-flex", alignItems: "center",
-                      }}
-                    >
-                      <X size={13} color="var(--ink-3)" />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
           <div style={{
             display: "flex", alignItems: "flex-end", gap: 6,
             background: "var(--paper-2)",
             border: "1px solid var(--paper-line)",
-            borderRadius: 22, padding: "6px 6px 6px 6px",
+            borderRadius: 22, padding: "6px 6px 6px 12px",
           }}>
-            {/* Attach button (left) */}
-            <button
-              onClick={() => setShowAttachMenu(true)}
-              aria-label="Allega"
-              style={{
-                width: 36, height: 36, borderRadius: "50%",
-                background: "transparent",
-                border: "1px solid var(--paper-line)",
-                cursor: "pointer", flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                WebkitTapHighlightColor: "transparent",
-              }}
-            >
-              <Plus size={18} color="var(--ink-2)" />
-            </button>
-
             <textarea
               ref={inputRef}
               value={input}
@@ -409,49 +299,23 @@ export default function MobileChatPage() {
                 fontFamily: "var(--sans)", fontSize: 14.5, color: "var(--ink)",
                 outline: "none", resize: "none", lineHeight: 1.45,
                 maxHeight: 120, overflowY: "auto",
-                paddingTop: 6, paddingBottom: 6, paddingLeft: 4,
+                paddingTop: 6, paddingBottom: 6,
               }}
             />
             <button
               onClick={() => sendMessage(input)}
-              disabled={(!input.trim() && attachments.length === 0) || streaming}
+              disabled={!input.trim() || streaming}
               style={{
                 width: 36, height: 36, borderRadius: "50%",
-                background: (input.trim() || attachments.length > 0) && !streaming ? "var(--vermiglio)" : "var(--paper-3)",
-                border: "none", cursor: (input.trim() || attachments.length > 0) && !streaming ? "pointer" : "default",
+                background: input.trim() && !streaming ? "var(--vermiglio)" : "var(--paper-3)",
+                border: "none", cursor: input.trim() && !streaming ? "pointer" : "default",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, transition: "background 0.15s",
               }}
             >
-              <ArrowUp size={16} color={(input.trim() || attachments.length > 0) && !streaming ? "white" : "var(--ink-4)"} />
+              <ArrowUp size={16} color={input.trim() && !streaming ? "white" : "var(--ink-4)"} />
             </button>
           </div>
-
-          {/* Hidden file inputs */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf,.doc,.docx,.txt,.rtf,.odt,.csv,.xls,.xlsx"
-            onChange={onFilePicked}
-            multiple
-            style={{ display: "none" }}
-          />
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            onChange={onFilePicked}
-            multiple
-            style={{ display: "none" }}
-          />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={onFilePicked}
-            style={{ display: "none" }}
-          />
         </div>
 
         <MobileTabBar />
@@ -465,85 +329,6 @@ export default function MobileChatPage() {
         />
 
         {/* Attachment menu (bottom sheet) */}
-        {showAttachMenu && (
-          <div
-            onClick={() => setShowAttachMenu(false)}
-            style={{
-              position: "fixed", inset: 0, zIndex: 250,
-              background: "rgba(26,24,20,0.5)",
-              backdropFilter: "blur(2px)",
-            }}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                position: "absolute", bottom: 0, left: 0, right: 0,
-                background: "var(--paper)",
-                borderRadius: "20px 20px 0 0",
-                padding: "20px 20px",
-                paddingBottom: "calc(20px + env(safe-area-inset-bottom))",
-                boxShadow: "0 -10px 40px rgba(0,0,0,0.15)",
-              }}
-            >
-              <div style={{
-                width: 36, height: 4, background: "var(--paper-3)",
-                borderRadius: 2, margin: "0 auto 16px",
-              }} />
-              <div className="serif" style={{ fontSize: 18, marginBottom: 14, textAlign: "center" }}>
-                Allega
-              </div>
-              {[
-                { kind: "camera" as const, label: "Scatta foto",  icon: Camera,    desc: "Usa la fotocamera" },
-                { kind: "photo"  as const, label: "Foto da galleria", icon: ImageIcon, desc: "Scegli dalle tue foto" },
-                { kind: "file"   as const, label: "Carica file",  icon: Paperclip, desc: "PDF, Word, Excel, testo" },
-              ].map(({ kind, label, icon: Icon, desc }) => (
-                <button
-                  key={kind}
-                  onClick={() => handleAttach(kind)}
-                  style={{
-                    width: "100%", display: "flex", alignItems: "center", gap: 14,
-                    padding: "14px 12px",
-                    background: "transparent",
-                    border: "none",
-                    borderBottom: "1px solid var(--paper-line)",
-                    cursor: "pointer", textAlign: "left",
-                    WebkitTapHighlightColor: "transparent",
-                  }}
-                >
-                  <div style={{
-                    width: 40, height: 40, borderRadius: "50%",
-                    background: "var(--paper-2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    flexShrink: 0,
-                  }}>
-                    <Icon size={18} color="var(--vermiglio)" strokeWidth={1.6} />
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink)", fontWeight: 500 }}>
-                      {label}
-                    </div>
-                    <div style={{ fontFamily: "var(--sans)", fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>
-                      {desc}
-                    </div>
-                  </div>
-                </button>
-              ))}
-              <button
-                onClick={() => setShowAttachMenu(false)}
-                style={{
-                  width: "100%", marginTop: 14, padding: "13px",
-                  borderRadius: 10,
-                  background: "var(--paper-2)", border: "1px solid var(--paper-line)",
-                  fontFamily: "var(--sans)", fontSize: 14, color: "var(--ink-2)",
-                  cursor: "pointer",
-                }}
-              >
-                Annulla
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Onboarding gate */}
         {showGate && (
           <div style={{

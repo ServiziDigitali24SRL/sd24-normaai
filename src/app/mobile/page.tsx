@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { X, Menu, PhoneOff, Check, Globe } from "lucide-react";
+import { X, Menu, PhoneOff, Check, Globe, LogOut } from "lucide-react";
 import { MobileOrb, ListeningDots } from "@/components/mobile/MobileOrb";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 import { useMobileVoice } from "@/hooks/useMobileVoice";
+import { createClient } from "@/lib/supabase-browser";
 import {
   ORB_PERSONALITIES,
   type OrbPersonalityId,
@@ -21,47 +22,74 @@ import {
 /* ── Pro query button (9€) ──────────────────────────────────────────────── */
 function ProQueryButton({ question }: { question: string }) {
   const [loading, setLoading] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const handlePay = async () => {
     setLoading(true);
+    setPayError(null);
     try {
       const res = await fetch("/api/mobile/pay-professional", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
+      const data = await res.json();
+      if (!res.ok) {
+        setPayError(data.error ?? "Errore. Riprova tra qualche secondo.");
+        setLoading(false);
+        return;
+      }
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setPayError("Pagamento non disponibile al momento. Riprova.");
+        setLoading(false);
+      }
     } catch {
+      setPayError("Connessione persa. Controlla la rete e riprova.");
       setLoading(false);
     }
   };
 
   return (
-    <button
-      onClick={handlePay}
-      disabled={loading}
-      style={{
-        width: "100%",
-        padding: "14px",
-        borderRadius: 10,
-        border: "none",
-        background: loading ? "var(--paper-2)" : "var(--ink)",
-        color: loading ? "var(--ink-3)" : "var(--paper)",
-        fontFamily: "var(--sans)",
-        fontSize: 14,
-        fontWeight: 500,
-        cursor: loading ? "default" : "pointer",
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-      }}
-    >
-      {loading ? "Apertura pagamento..." : (
-        <>
-          <span className="mono" style={{ fontSize: 13, color: "var(--vermiglio)", background: "rgba(212,74,42,0.15)", padding: "2px 6px", borderRadius: 4 }}>9€</span>
-          Chiedi a un Professionista
-        </>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <button
+        onClick={handlePay}
+        disabled={loading}
+        style={{
+          width: "100%",
+          padding: "14px",
+          borderRadius: 10,
+          border: "none",
+          background: loading ? "var(--paper-2)" : "var(--ink)",
+          color: loading ? "var(--ink-3)" : "var(--paper)",
+          fontFamily: "var(--sans)",
+          fontSize: 14,
+          fontWeight: 500,
+          cursor: loading ? "default" : "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+        }}
+      >
+        {loading ? "Apertura pagamento..." : (
+          <>
+            <span className="mono" style={{ fontSize: 13, color: "var(--vermiglio)", background: "rgba(212,74,42,0.15)", padding: "2px 6px", borderRadius: 4 }}>9€</span>
+            Chiedi a un Professionista
+          </>
+        )}
+      </button>
+      {payError && (
+        <div style={{
+          padding: "10px 12px",
+          background: "rgba(212,74,42,0.08)",
+          border: "1px solid rgba(212,74,42,0.25)",
+          borderRadius: 8,
+          fontSize: 12.5, color: "var(--vermiglio-ink)",
+          fontFamily: "var(--sans)", lineHeight: 1.4,
+        }}>
+          {payError}
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -87,24 +115,46 @@ export default function MobilePage() {
   const [showMenu, setShowMenu] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  // null = loading, undefined-ish handled via separate flag
+  const [authedUser, setAuthedUser] = useState<{ email: string | null; name: string } | null>(null);
+  const [paymentToast, setPaymentToast] = useState<string | null>(null);
   const router = useRouter();
 
-  // Restore picked personality + lang override from localStorage on mount.
+  // Auth state + payment toast + personality restore on mount.
   useEffect(() => {
+    // 1. Restore personality + lang
     try {
       const saved = localStorage.getItem(ORB_PERSONALITY_KEY) as OrbPersonalityId | null;
-      // Legacy key migration: old "norma_orb_style" had the same values.
       const legacy = localStorage.getItem("norma_orb_style") as OrbPersonalityId | null;
       const pick = saved || legacy;
-      if (pick && ORB_PERSONALITIES.some((p) => p.id === pick)) {
-        setPersonality(pick);
-      }
+      if (pick && ORB_PERSONALITIES.some((p) => p.id === pick)) setPersonality(pick);
       const lang = localStorage.getItem(LANG_OVERRIDE_KEY) as SupportedLang | null;
-      if (lang && (SUPPORTED_LANGS as readonly string[]).includes(lang)) {
-        setLangOverride(lang);
-      }
+      if (lang && (SUPPORTED_LANGS as readonly string[]).includes(lang)) setLangOverride(lang);
       setDetectedLang(detectLanguage());
     } catch { /* localStorage may be blocked */ }
+
+    // 2. Check auth
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setAuthedUser({
+          email: data.user.email ?? null,
+          name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.nome ?? data.user.email?.split("@")[0] ?? "",
+        });
+      }
+    });
+
+    // 3. Payment success/cancel toast
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
+    if (payment === "success") {
+      setPaymentToast("✓ Richiesta inviata! Un professionista ti risponderà a breve.");
+      // Clean URL without reload
+      window.history.replaceState({}, "", "/mobile");
+    } else if (payment === "cancelled") {
+      setPaymentToast("Pagamento annullato.");
+      window.history.replaceState({}, "", "/mobile");
+    }
   }, []);
 
   const handlePersonalityChange = (id: OrbPersonalityId) => {
@@ -284,7 +334,38 @@ export default function MobilePage() {
         open={showAuth}
         initialMode={authMode}
         onClose={() => setShowAuth(false)}
+        onSuccess={() => {
+          const supabase = createClient();
+          supabase.auth.getUser().then(({ data }) => {
+            if (data.user) {
+              setAuthedUser({
+                email: data.user.email ?? null,
+                name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.nome ?? data.user.email?.split("@")[0] ?? "",
+              });
+            }
+          });
+        }}
       />
+
+      {/* ── Payment result toast ── */}
+      {paymentToast && (
+        <div style={{
+          position: "fixed", top: "calc(env(safe-area-inset-top, 44px) + 8px)",
+          left: 16, right: 16, zIndex: 500,
+          background: paymentToast.startsWith("✓") ? "var(--alloro)" : "var(--ink-3)",
+          color: "white",
+          padding: "12px 16px",
+          borderRadius: 12,
+          fontSize: 13.5, fontFamily: "var(--sans)", lineHeight: 1.4,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.18)",
+        }}>
+          <span>{paymentToast}</span>
+          <button onClick={() => setPaymentToast(null)} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", flexShrink: 0 }}>
+            <X size={14} color="rgba(255,255,255,0.8)" />
+          </button>
+        </div>
+      )}
 
       {/* ── Bottom tab bar ── */}
       <MobileTabBar />
@@ -422,31 +503,58 @@ export default function MobilePage() {
             </div>
 
             <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 16 }}>
-              {[
-                // Open the inline mobile auth sheet — never bounce out to /
-                // (the mobile UA middleware would just send the user back here).
-                { label: "Accedi al tuo account",  action: () => { setAuthMode("login");  setShowAuth(true); } },
-                { label: "Crea account gratuito",  action: () => { setAuthMode("signup"); setShowAuth(true); } },
-                // ?desktop=1 bypasses the middleware mobile-UA redirect so the
-                // user actually lands on the desktop landing.
-                { label: "Versione desktop",       action: () => { window.location.href = "/?desktop=1"; } },
-                { label: "Privacy & Cookie",       action: () => router.push("/privacy") },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => { setShowMenu(false); item.action(); }}
-                  style={{
-                    width: "100%", textAlign: "left", padding: "14px 0",
-                    border: "none",
-                    borderBottom: "1px solid var(--paper-line)",
-                    background: "transparent", cursor: "pointer",
-                    fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)",
-                    display: "block",
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
+              {/* If authenticated: show user info + logout. If not: show login/signup. */}
+              {authedUser ? (
+                <>
+                  <div style={{ padding: "4px 0 14px", borderBottom: "1px solid var(--paper-line)" }}>
+                    <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
+                      {authedUser.name || authedUser.email}
+                    </div>
+                    {authedUser.name && (
+                      <div style={{ fontFamily: "var(--sans)", fontSize: 11.5, color: "var(--ink-4)", marginTop: 2 }}>
+                        {authedUser.email}
+                      </div>
+                    )}
+                  </div>
+                  {[
+                    { label: "Versione desktop", action: () => { window.location.href = "/?desktop=1"; } },
+                    { label: "Privacy & Cookie",  action: () => router.push("/privacy") },
+                  ].map((item) => (
+                    <button key={item.label} onClick={() => { setShowMenu(false); item.action(); }}
+                      style={{ width: "100%", textAlign: "left", padding: "14px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}>
+                      {item.label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={async () => {
+                      setShowMenu(false);
+                      const supabase = createClient();
+                      await supabase.auth.signOut();
+                      setAuthedUser(null);
+                    }}
+                    style={{ width: "100%", textAlign: "left", padding: "14px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, display: "flex", alignItems: "center", gap: 8, color: "var(--vermiglio-ink)" }}
+                  >
+                    <LogOut size={14} />
+                    Esci dall&apos;account
+                  </button>
+                </>
+              ) : (
+                <>
+                  {[
+                    // Open the inline mobile auth sheet — never bounce out to /
+                    { label: "Accedi al tuo account",  action: () => { setAuthMode("login");  setShowAuth(true); } },
+                    { label: "Crea account gratuito",  action: () => { setAuthMode("signup"); setShowAuth(true); } },
+                    // ?desktop=1 bypasses the middleware mobile-UA redirect
+                    { label: "Versione desktop",       action: () => { window.location.href = "/?desktop=1"; } },
+                    { label: "Privacy & Cookie",       action: () => router.push("/privacy") },
+                  ].map((item) => (
+                    <button key={item.label} onClick={() => { setShowMenu(false); item.action(); }}
+                      style={{ width: "100%", textAlign: "left", padding: "14px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}>
+                      {item.label}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
           </div>
         </div>

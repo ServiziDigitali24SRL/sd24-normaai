@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { User, Building2, Lock } from "lucide-react";
+import { User, Building2, Lock, X } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
@@ -101,9 +100,21 @@ export default function MobileLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [buyingId, setBuyingId] = useState<string | null>(null);
   const [showAuth, setShowAuth] = useState(false);
-  const router = useRouter();
+  const [upgradingPlan, setUpgradingPlan] = useState(false);
+  const [paymentToast, setPaymentToast] = useState<string | null>(null);
 
   useEffect(() => {
+    // Payment result toast
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get("payment");
+    if (payment === "success") {
+      setPaymentToast("✓ Lead acquistato! Trovi il contatto in questa lista.");
+      window.history.replaceState({}, "", "/mobile/leads");
+    } else if (payment === "cancelled") {
+      setPaymentToast("Acquisto annullato.");
+      window.history.replaceState({}, "", "/mobile/leads");
+    }
+
     const supabase = createSupabase();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setLoading(false); return; }
@@ -199,16 +210,41 @@ export default function MobileLeadsPage() {
   }
 
   if (!isProfessionista) {
+    const handleUpgrade = async () => {
+      setUpgradingPlan(true);
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: "professionista" }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          // Fallback: desktop landing with pricing
+          window.location.href = "/?desktop=1#pricing";
+        }
+      } catch {
+        window.location.href = "/?desktop=1#pricing";
+      }
+      setUpgradingPlan(false);
+    };
+
     return (
       <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: "var(--paper)" }}>
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px", textAlign: "center" }}>
           <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Piano Professionista</div>
           <p style={{ fontSize: 14, color: "var(--ink-3)", marginBottom: 24, lineHeight: 1.5 }}>
             Il marketplace lead è riservato ai professionisti iscritti a NormaAI.<br />
-            Ogni lead costa 9€.
+            €29/mese · 14 giorni gratis.
           </p>
-          <button onClick={() => router.push("/dashboard")} style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: "var(--vermiglio)", color: "white", fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
-            Scopri il piano
+          <button
+            onClick={handleUpgrade}
+            disabled={upgradingPlan}
+            style={{ padding: "14px 28px", borderRadius: 10, border: "none", background: upgradingPlan ? "var(--paper-3)" : "var(--vermiglio)", color: upgradingPlan ? "var(--ink-4)" : "white", fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600, cursor: upgradingPlan ? "default" : "pointer" }}
+          >
+            {upgradingPlan ? "Apertura pagamento..." : "Abbonati — 14gg gratis"}
           </button>
         </div>
         <MobileTabBar isAvvocato />
@@ -219,6 +255,23 @@ export default function MobileLeadsPage() {
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: "var(--paper)" }}>
       <div style={{ height: "env(safe-area-inset-top, 44px)", background: "var(--paper)", flexShrink: 0 }} />
+
+      {/* Payment toast */}
+      {paymentToast && (
+        <div style={{
+          margin: "8px 16px 0",
+          padding: "12px 14px",
+          background: paymentToast.startsWith("✓") ? "var(--alloro)" : "var(--paper-3)",
+          color: paymentToast.startsWith("✓") ? "white" : "var(--ink-2)",
+          borderRadius: 10, fontSize: 13.5, fontFamily: "var(--sans)",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+        }}>
+          <span>{paymentToast}</span>
+          <button onClick={() => setPaymentToast(null)} style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", flexShrink: 0 }}>
+            <X size={14} color={paymentToast?.startsWith("✓") ? "rgba(255,255,255,0.8)" : "var(--ink-3)"} />
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ padding: "10px 16px 14px", borderBottom: "1px solid var(--paper-line)", flexShrink: 0 }}>

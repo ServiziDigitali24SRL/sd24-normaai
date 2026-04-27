@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { MessageSquare, FileText, File, Lock } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { User } from "@supabase/supabase-js";
@@ -64,7 +63,28 @@ function AuthGate({ onRegister, onLogin }: { onRegister: () => void; onLogin: ()
 
 /* ── Paywall for free users ──────────────────────────────────────────────── */
 function SubscriptionGate() {
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleUpgrade = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "cittadino_pro" }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        window.location.href = "/?desktop=1#pricing";
+      }
+    } catch {
+      window.location.href = "/?desktop=1#pricing";
+    }
+    setLoading(false);
+  };
+
   return (
     <div style={{
       flex: 1, display: "flex", flexDirection: "column",
@@ -77,14 +97,17 @@ function SubscriptionGate() {
         e i documenti caricati. Disponibile con piano a pagamento.
       </p>
       <button
-        onClick={() => router.push("/dashboard")}
+        onClick={handleUpgrade}
+        disabled={loading}
         style={{
           padding: "14px 28px", borderRadius: 10, border: "none",
-          background: "var(--vermiglio)", color: "white",
-          fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600, cursor: "pointer",
+          background: loading ? "var(--paper-3)" : "var(--vermiglio)",
+          color: loading ? "var(--ink-4)" : "white",
+          fontFamily: "var(--sans)", fontSize: 15, fontWeight: 600,
+          cursor: loading ? "default" : "pointer",
         }}
       >
-        Vedi i piani
+        {loading ? "Apertura pagamento..." : "Abbonati — €9/mese"}
       </button>
     </div>
   );
