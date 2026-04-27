@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { X, Menu, PhoneOff, Check, Globe, LogOut } from "lucide-react";
+import { X, Menu, PhoneOff, Globe, LogOut } from "lucide-react";
 import { MobileOrb, ListeningDots } from "@/components/mobile/MobileOrb";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
+import { MobileOnboarding } from "@/components/mobile/MobileOnboarding";
 import { useMobileVoice } from "@/hooks/useMobileVoice";
 import { createClient } from "@/lib/supabase-browser";
 import {
@@ -18,6 +19,10 @@ import {
   ORB_PERSONALITY_KEY,
   LANG_OVERRIDE_KEY,
 } from "@/lib/orb-personalities";
+
+// localStorage key per marcare il primo accesso come completato
+const ONBOARDING_KEY = "norma_onboarded_v1";
+const USER_NAME_KEY  = "norma_user_name";
 
 /* ── Pro query button (9€) ──────────────────────────────────────────────── */
 function ProQueryButton({ question }: { question: string }) {
@@ -115,15 +120,20 @@ export default function MobilePage() {
   const [showMenu, setShowMenu] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  // null = loading, undefined-ish handled via separate flag
   const [authedUser, setAuthedUser] = useState<{ email: string | null; name: string } | null>(null);
   const [paymentToast, setPaymentToast] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Refs per i caroselli nel menu impostazioni
+  const personalityCarouselRef = useRef<HTMLDivElement>(null);
+  const langCarouselRef = useRef<HTMLDivElement>(null);
+
   const router = useRouter();
 
-  // Auth state + payment toast + personality restore on mount.
+  // Restore state + check onboarding + auth + payment toast.
   useEffect(() => {
-    // 1. Restore personality + lang
     try {
+      // 1. Restore personality + lang
       const saved = localStorage.getItem(ORB_PERSONALITY_KEY) as OrbPersonalityId | null;
       const legacy = localStorage.getItem("norma_orb_style") as OrbPersonalityId | null;
       const pick = saved || legacy;
@@ -131,25 +141,34 @@ export default function MobilePage() {
       const lang = localStorage.getItem(LANG_OVERRIDE_KEY) as SupportedLang | null;
       if (lang && (SUPPORTED_LANGS as readonly string[]).includes(lang)) setLangOverride(lang);
       setDetectedLang(detectLanguage());
-    } catch { /* localStorage may be blocked */ }
 
-    // 2. Check auth
+      // 2. Onboarding check — mostra il flow al primo accesso
+      const onboarded = localStorage.getItem(ONBOARDING_KEY);
+      if (!onboarded) setShowOnboarding(true);
+    } catch { /* localStorage può essere bloccato in private mode */ }
+
+    // 3. Auth
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
-        setAuthedUser({
-          email: data.user.email ?? null,
-          name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.nome ?? data.user.email?.split("@")[0] ?? "",
-        });
+        // Controlla anche il nome salvato in locale (onboarding)
+        let name = data.user.user_metadata?.full_name
+          ?? data.user.user_metadata?.nome
+          ?? data.user.email?.split("@")[0]
+          ?? "";
+        try {
+          const localName = localStorage.getItem(USER_NAME_KEY);
+          if (localName) name = localName;
+        } catch { /* noop */ }
+        setAuthedUser({ email: data.user.email ?? null, name });
       }
     });
 
-    // 3. Payment success/cancel toast
+    // 4. Payment toast
     const params = new URLSearchParams(window.location.search);
     const payment = params.get("payment");
     if (payment === "success") {
       setPaymentToast("✓ Richiesta inviata! Un professionista ti risponderà a breve.");
-      // Clean URL without reload
       window.history.replaceState({}, "", "/mobile");
     } else if (payment === "cancelled") {
       setPaymentToast("Pagamento annullato.");
@@ -157,9 +176,55 @@ export default function MobilePage() {
     }
   }, []);
 
+  // Quando il menu si apre: posiziona il carosello sulla personalità attiva.
+  useEffect(() => {
+    if (!showMenu) return;
+    const t = setTimeout(() => {
+      if (personalityCarouselRef.current) {
+        const idx = ORB_PERSONALITIES.findIndex((p) => p.id === personality);
+        personalityCarouselRef.current.scrollLeft =
+          idx * personalityCarouselRef.current.clientWidth;
+      }
+      if (langCarouselRef.current) {
+        const allLangs: (SupportedLang | "auto")[] = ["auto", ...SUPPORTED_LANGS];
+        const idx = langOverride === null ? 0 : allLangs.indexOf(langOverride);
+        if (idx > 0) {
+          langCarouselRef.current.scrollLeft =
+            Math.max(0, idx) * langCarouselRef.current.clientWidth;
+        }
+      }
+    }, 60);
+    return () => clearTimeout(t);
+  }, [showMenu, personality, langOverride]);
+
   const handlePersonalityChange = (id: OrbPersonalityId) => {
     setPersonality(id);
     try { localStorage.setItem(ORB_PERSONALITY_KEY, id); } catch { /* noop */ }
+  };
+
+  // Onboarding completato: salva nome + flag.
+  const handleOnboardingComplete = async (name: string) => {
+    try {
+      localStorage.setItem(USER_NAME_KEY, name);
+      localStorage.setItem(ONBOARDING_KEY, "1");
+    } catch { /* noop */ }
+    setShowOnboarding(false);
+
+    // Salva su Supabase se l'utente è già loggato
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("profiles").update({ full_name: name }).eq("id", user.id);
+        setAuthedUser((prev) => prev ? { ...prev, name } : null);
+      }
+    } catch { /* noop */ }
+  };
+
+  // Onboarding saltato: segna comunque come visto.
+  const handleOnboardingSkip = () => {
+    try { localStorage.setItem(ONBOARDING_KEY, "1"); } catch { /* noop */ }
+    setShowOnboarding(false);
   };
 
   const handleLangChange = (lang: SupportedLang | null) => {
@@ -169,6 +234,31 @@ export default function MobilePage() {
       else localStorage.removeItem(LANG_OVERRIDE_KEY);
     } catch { /* noop */ }
     setDetectedLang(detectLanguage());
+  };
+
+  // Scroll del carosello personalità → aggiorna stato.
+  const handlePersonalityScroll = () => {
+    const el = personalityCarouselRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    const p = ORB_PERSONALITIES[idx];
+    if (p && p.id !== personality) handlePersonalityChange(p.id);
+  };
+
+  // Scroll del carosello lingue → aggiorna stato.
+  const handleLangScroll = () => {
+    const el = langCarouselRef.current;
+    if (!el) return;
+    const allLangs: (SupportedLang | "auto")[] = ["auto", ...SUPPORTED_LANGS];
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    const code = allLangs[idx];
+    if (code === undefined) return;
+    const newLang = code === "auto" ? null : code;
+    if (newLang !== langOverride) {
+      handleLangChange(newLang);
+      // Selezionare una lingua specifica implica Globo
+      if (newLang !== null && personality !== "globo") handlePersonalityChange("globo");
+    }
   };
 
   const stateCopy: Record<string, string> = {
@@ -370,161 +460,303 @@ export default function MobilePage() {
       {/* ── Bottom tab bar ── */}
       <MobileTabBar />
 
-      {/* ── Menu slide-up ── */}
+      {/* ── Menu slide-up (impostazioni) ── */}
       {showMenu && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 200,
-          background: "rgba(26,24,20,0.5)",
-          backdropFilter: "blur(2px)",
-        }} onClick={() => setShowMenu(false)}>
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 200,
+            background: "rgba(26,24,20,0.5)",
+            backdropFilter: "blur(2px)",
+          }}
+          onClick={() => setShowMenu(false)}
+        >
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: "absolute", bottom: 0, left: 0, right: 0,
               background: "var(--paper)",
               borderRadius: "20px 20px 0 0",
-              padding: "24px 24px",
-              paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
+              maxHeight: "88dvh",
+              display: "flex", flexDirection: "column",
+              overflow: "hidden",
             }}
-            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            {/* Drag handle */}
+            <div style={{
+              width: 36, height: 4, background: "var(--paper-3)",
+              borderRadius: 2, margin: "14px auto 0", flexShrink: 0,
+            }} />
+
+            {/* Header sticky */}
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "12px 20px 10px", flexShrink: 0,
+              borderBottom: "1px solid var(--paper-line)",
+            }}>
               <span className="serif" style={{ fontSize: 20 }}>Impostazioni</span>
-              <button onClick={() => setShowMenu(false)} style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+              <button
+                onClick={() => setShowMenu(false)}
+                style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4 }}
+                aria-label="Chiudi"
+              >
                 <X size={20} color="var(--ink-2)" />
               </button>
             </div>
 
-            {/* ── Personality picker ── */}
-            <div style={{ marginBottom: 20, maxHeight: "55vh", overflowY: "auto" }}>
-              <div className="mono" style={{ fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)", marginBottom: 12 }}>
-                PERSONALITÀ
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {ORB_PERSONALITIES.map((p) => {
-                  const active = personality === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => handlePersonalityChange(p.id)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 12,
-                        padding: "11px 12px", borderRadius: 10,
-                        border: active ? "1.5px solid var(--ink)" : "1px solid var(--paper-line)",
-                        background: active ? "var(--paper-2)" : "transparent",
-                        cursor: "pointer", textAlign: "left",
-                        WebkitTapHighlightColor: "transparent",
-                      }}
-                    >
-                      <div style={{
-                        width: 36, height: 36, borderRadius: "50%",
-                        background: p.preview, flexShrink: 0,
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                      }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: "var(--sans)", fontSize: 14, color: "var(--ink)", fontWeight: 500 }}>
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflowY: "auto" }}>
+
+              {/* ── Carosello personalità ── */}
+              <div style={{ paddingTop: 18 }}>
+                <div className="mono" style={{
+                  fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
+                  textTransform: "uppercase", paddingLeft: 20, marginBottom: 14,
+                }}>
+                  Personalità
+                </div>
+
+                {/* Carosello — 1 palla grande, scroll-snap */}
+                <div
+                  ref={personalityCarouselRef}
+                  onScroll={handlePersonalityScroll}
+                  style={{
+                    display: "flex",
+                    overflowX: "scroll",
+                    scrollSnapType: "x mandatory",
+                    scrollbarWidth: "none",
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    WebkitOverflowScrolling: "touch" as any,
+                  }}
+                >
+                  {ORB_PERSONALITIES.map((p) => {
+                    const active = personality === p.id;
+                    return (
+                      <div
+                        key={p.id}
+                        style={{
+                          flexShrink: 0, width: "100%",
+                          scrollSnapAlign: "center",
+                          display: "flex", flexDirection: "column",
+                          alignItems: "center", padding: "10px 28px 20px",
+                        }}
+                      >
+                        {/* Pallina grande */}
+                        <div
+                          onClick={() => handlePersonalityChange(p.id)}
+                          style={{
+                            width: 118, height: 118, borderRadius: "50%",
+                            background: p.preview,
+                            boxShadow: active
+                              ? "0 0 0 4px var(--ink), 0 12px 40px rgba(0,0,0,0.22)"
+                              : "0 8px 28px rgba(0,0,0,0.18)",
+                            cursor: "pointer",
+                            transition: "box-shadow 0.2s",
+                            flexShrink: 0,
+                          }}
+                        />
+                        {/* Nome + descrizione */}
+                        <div className="serif" style={{
+                          fontSize: 22, marginTop: 18, marginBottom: 5,
+                          color: "var(--ink)",
+                        }}>
                           {p.label}
                         </div>
                         <div style={{
-                          fontFamily: "var(--sans)", fontSize: 11.5, color: "var(--ink-3)",
-                          marginTop: 2, lineHeight: 1.35,
-                          overflow: "hidden", textOverflow: "ellipsis",
+                          fontSize: 13.5, color: "var(--ink-3)",
+                          fontFamily: "var(--sans)", textAlign: "center",
+                          lineHeight: 1.5, maxWidth: 240,
                         }}>
                           {p.description}
                         </div>
                       </div>
-                      {active && (
-                        <Check size={14} color="var(--ink)" style={{ flexShrink: 0 }} />
-                      )}
-                    </button>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+
+                {/* Dots */}
+                <div style={{
+                  display: "flex", justifyContent: "center",
+                  gap: 7, paddingBottom: 6,
+                }}>
+                  {ORB_PERSONALITIES.map((p, i) => (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        handlePersonalityChange(p.id);
+                        if (personalityCarouselRef.current) {
+                          personalityCarouselRef.current.scrollTo({
+                            left: i * personalityCarouselRef.current.clientWidth,
+                            behavior: "smooth",
+                          });
+                        }
+                      }}
+                      style={{
+                        height: 6, borderRadius: 3,
+                        width: personality === p.id ? 20 : 6,
+                        background: personality === p.id ? "var(--ink)" : "var(--paper-3)",
+                        cursor: "pointer",
+                        transition: "all 0.22s ease",
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
 
-              {/* Lingua override (only meaningful for Globo) */}
-              {personality === "globo" && (
-                <div style={{ marginTop: 18 }}>
-                  <div className="mono" style={{
-                    fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-3)",
-                    marginBottom: 8, display: "flex", alignItems: "center", gap: 6,
-                  }}>
-                    <Globe size={11} /> LINGUA
-                    <span style={{
-                      marginLeft: "auto", fontSize: 10, color: "var(--ink-4)",
-                      letterSpacing: "0.04em", textTransform: "none",
-                    }}>
-                      Auto: {langLabel(detectedLang).flag} {langLabel(detectedLang).native}
-                    </span>
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    <button
-                      onClick={() => handleLangChange(null)}
-                      style={{
-                        padding: "6px 10px", borderRadius: 8,
-                        border: langOverride === null ? "1.5px solid var(--ink)" : "1px solid var(--paper-line)",
-                        background: langOverride === null ? "var(--paper-2)" : "transparent",
-                        fontFamily: "var(--sans)", fontSize: 12, color: "var(--ink)",
-                        cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                      }}
-                    >
-                      Auto
-                    </button>
-                    {SUPPORTED_LANGS.map((code) => {
-                      const isActive = langOverride === code;
-                      const isAutoMatch = langOverride === null && detectedLang === code;
-                      const l = langLabel(code);
-                      return (
-                        <button
-                          key={code}
-                          onClick={() => handleLangChange(code)}
-                          style={{
-                            padding: "6px 10px", borderRadius: 8,
-                            border: isActive ? "1.5px solid var(--ink)" :
-                                    isAutoMatch ? "1px dashed var(--ink-4)" :
-                                    "1px solid var(--paper-line)",
-                            background: isActive ? "var(--paper-2)" : "transparent",
-                            fontFamily: "var(--sans)", fontSize: 12, color: "var(--ink)",
-                            cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                            display: "inline-flex", alignItems: "center", gap: 5,
-                          }}
-                        >
-                          <span style={{ fontSize: 13 }}>{l.flag}</span>
-                          <span>{l.native}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 8, lineHeight: 1.4 }}>
-                    Norma parla in <strong>{langLabel(activeLang).native}</strong>{" "}
-                    {langLabel(activeLang).flag}.
-                    {langOverride === null && " Riconosciuta dalla lingua del telefono."}
-                  </div>
+              {/* ── Carosello lingua ── */}
+              <div style={{ paddingTop: 16, paddingBottom: 4 }}>
+                <div className="mono" style={{
+                  fontSize: 9, letterSpacing: "0.16em", color: "var(--ink-3)",
+                  textTransform: "uppercase", paddingLeft: 20,
+                  marginBottom: 14, display: "flex", alignItems: "center", gap: 6,
+                }}>
+                  <Globe size={10} /> Lingua
+                  <span style={{ marginLeft: "auto", paddingRight: 20, fontSize: 9.5, color: "var(--ink-4)", letterSpacing: "0.04em", textTransform: "none" }}>
+                    Auto: {langLabel(detectedLang).flag} {langLabel(detectedLang).native}
+                  </span>
                 </div>
-              )}
+
+                {/* Carosello lingue — palla più piccola */}
+                {(() => {
+                  const allLangs: (SupportedLang | "auto")[] = ["auto", ...SUPPORTED_LANGS];
+                  const activeIdx = langOverride === null ? 0 : allLangs.indexOf(langOverride);
+                  return (
+                    <>
+                      <div
+                        ref={langCarouselRef}
+                        onScroll={handleLangScroll}
+                        style={{
+                          display: "flex",
+                          overflowX: "scroll",
+                          scrollSnapType: "x mandatory",
+                          scrollbarWidth: "none",
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    WebkitOverflowScrolling: "touch" as any,
+                        }}
+                      >
+                        {allLangs.map((code) => {
+                          const isAuto = code === "auto";
+                          const label = isAuto
+                            ? { flag: "🌐", native: "Auto" }
+                            : langLabel(code as SupportedLang);
+                          const isActive = isAuto ? langOverride === null : langOverride === code;
+                          return (
+                            <div
+                              key={code}
+                              style={{
+                                flexShrink: 0, width: "100%",
+                                scrollSnapAlign: "center",
+                                display: "flex", flexDirection: "column",
+                                alignItems: "center", padding: "8px 28px 16px",
+                              }}
+                            >
+                              {/* Palla piccola */}
+                              <div
+                                onClick={() => {
+                                  const newLang = isAuto ? null : code as SupportedLang;
+                                  handleLangChange(newLang);
+                                  if (!isAuto && personality !== "globo") handlePersonalityChange("globo");
+                                }}
+                                style={{
+                                  width: 68, height: 68, borderRadius: "50%",
+                                  background: isAuto
+                                    ? "linear-gradient(135deg, var(--paper-2), var(--paper-3))"
+                                    : "linear-gradient(135deg, #B8D4F0, #4A90E2 40%, #1E5BA8)",
+                                  boxShadow: isActive
+                                    ? "0 0 0 3px var(--ink), 0 6px 20px rgba(0,0,0,0.2)"
+                                    : "0 4px 14px rgba(0,0,0,0.14)",
+                                  cursor: "pointer",
+                                  transition: "box-shadow 0.2s",
+                                  display: "flex", alignItems: "center", justifyContent: "center",
+                                  fontSize: isAuto ? 28 : 24,
+                                }}
+                              >
+                                {label.flag}
+                              </div>
+                              <div style={{
+                                fontFamily: "var(--sans)", fontSize: 15,
+                                color: "var(--ink)", marginTop: 10, marginBottom: 2,
+                              }}>
+                                {label.native}
+                              </div>
+                              {!isAuto && personality !== "globo" && (
+                                <div style={{
+                                  fontSize: 10.5, color: "var(--ink-4)",
+                                  fontFamily: "var(--sans)", textAlign: "center",
+                                  lineHeight: 1.4,
+                                }}>
+                                  Attiva Globo
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Dots lingua */}
+                      <div style={{ display: "flex", justifyContent: "center", gap: 5, paddingBottom: 8 }}>
+                        {allLangs.map((code, i) => (
+                          <div
+                            key={code}
+                            onClick={() => {
+                              if (langCarouselRef.current) {
+                                langCarouselRef.current.scrollTo({
+                                  left: i * langCarouselRef.current.clientWidth,
+                                  behavior: "smooth",
+                                });
+                              }
+                            }}
+                            style={{
+                              height: 5, borderRadius: 2.5,
+                              width: activeIdx === i ? 16 : 5,
+                              background: activeIdx === i ? "var(--ink)" : "var(--paper-3)",
+                              cursor: "pointer",
+                              transition: "all 0.22s ease",
+                            }}
+                          />
+                        ))}
+                      </div>
+
+                      <div style={{
+                        fontSize: 11, color: "var(--ink-4)", lineHeight: 1.4,
+                        textAlign: "center", padding: "0 20px 16px",
+                        fontFamily: "var(--sans)",
+                      }}>
+                        Norma parla in{" "}
+                        <strong>{langLabel(activeLang).native}</strong>{" "}
+                        {langLabel(activeLang).flag}
+                        {langOverride === null && " · Dalla lingua del telefono"}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
 
-            <div style={{ borderTop: "1px solid var(--paper-line)", paddingTop: 16 }}>
-              {/* If authenticated: show user info + logout. If not: show login/signup. */}
+            {/* Footer account — fisso in basso */}
+            <div style={{
+              borderTop: "1px solid var(--paper-line)",
+              padding: "12px 20px",
+              paddingBottom: "calc(12px + env(safe-area-inset-bottom))",
+              flexShrink: 0,
+            }}>
               {authedUser ? (
                 <>
-                  <div style={{ padding: "4px 0 14px", borderBottom: "1px solid var(--paper-line)" }}>
+                  <div style={{ paddingBottom: 10, borderBottom: "1px solid var(--paper-line)", marginBottom: 6 }}>
                     <div style={{ fontFamily: "var(--sans)", fontSize: 13, color: "var(--ink)", fontWeight: 500 }}>
                       {authedUser.name || authedUser.email}
                     </div>
                     {authedUser.name && (
-                      <div style={{ fontFamily: "var(--sans)", fontSize: 11.5, color: "var(--ink-4)", marginTop: 2 }}>
+                      <div style={{ fontFamily: "var(--sans)", fontSize: 11.5, color: "var(--ink-4)", marginTop: 1 }}>
                         {authedUser.email}
                       </div>
                     )}
                   </div>
-                  {[
-                    { label: "Versione desktop", action: () => { window.location.href = "/?desktop=1"; } },
-                    { label: "Privacy & Cookie",  action: () => router.push("/privacy") },
-                  ].map((item) => (
-                    <button key={item.label} onClick={() => { setShowMenu(false); item.action(); }}
-                      style={{ width: "100%", textAlign: "left", padding: "14px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}>
-                      {item.label}
-                    </button>
-                  ))}
+                  <button
+                    onClick={() => { setShowMenu(false); router.push("/privacy"); }}
+                    style={{ width: "100%", textAlign: "left", padding: "11px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
+                  >
+                    Privacy & Cookie
+                  </button>
                   <button
                     onClick={async () => {
                       setShowMenu(false);
@@ -532,24 +764,23 @@ export default function MobilePage() {
                       await supabase.auth.signOut();
                       setAuthedUser(null);
                     }}
-                    style={{ width: "100%", textAlign: "left", padding: "14px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, display: "flex", alignItems: "center", gap: 8, color: "var(--vermiglio-ink)" }}
+                    style={{ width: "100%", textAlign: "left", padding: "11px 0", border: "none", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, display: "flex", alignItems: "center", gap: 8, color: "var(--vermiglio-ink)", marginTop: 2 }}
                   >
-                    <LogOut size={14} />
-                    Esci dall&apos;account
+                    <LogOut size={14} /> Esci dall&apos;account
                   </button>
                 </>
               ) : (
                 <>
                   {[
-                    // Open the inline mobile auth sheet — never bounce out to /
-                    { label: "Accedi al tuo account",  action: () => { setAuthMode("login");  setShowAuth(true); } },
-                    { label: "Crea account gratuito",  action: () => { setAuthMode("signup"); setShowAuth(true); } },
-                    // ?desktop=1 bypasses the middleware mobile-UA redirect
-                    { label: "Versione desktop",       action: () => { window.location.href = "/?desktop=1"; } },
-                    { label: "Privacy & Cookie",       action: () => router.push("/privacy") },
+                    { label: "Accedi al tuo account", action: () => { setAuthMode("login");  setShowAuth(true); } },
+                    { label: "Crea account gratuito", action: () => { setAuthMode("signup"); setShowAuth(true); } },
+                    { label: "Privacy & Cookie",      action: () => router.push("/privacy") },
                   ].map((item) => (
-                    <button key={item.label} onClick={() => { setShowMenu(false); item.action(); }}
-                      style={{ width: "100%", textAlign: "left", padding: "14px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}>
+                    <button
+                      key={item.label}
+                      onClick={() => { setShowMenu(false); item.action(); }}
+                      style={{ width: "100%", textAlign: "left", padding: "11px 0", border: "none", borderBottom: "1px solid var(--paper-line)", background: "transparent", cursor: "pointer", fontFamily: "var(--sans)", fontSize: 15, color: "var(--ink-2)", display: "block" }}
+                    >
                       {item.label}
                     </button>
                   ))}
@@ -558,6 +789,14 @@ export default function MobilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Onboarding primo accesso ── */}
+      {showOnboarding && (
+        <MobileOnboarding
+          onComplete={handleOnboardingComplete}
+          onSkip={handleOnboardingSkip}
+        />
       )}
     </div>
   );
