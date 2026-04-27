@@ -17,13 +17,13 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { X, User, Briefcase, Building2 } from "lucide-react";
+import { X, User, Briefcase, Building2, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase-browser";
 
 type AuthMode = "login" | "signup";
 type RoleId = "privato" | "professionista" | "impresa";
 
-const ROLES: { id: RoleId; label: string; icon: React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>; sub: string }[] = [
+const ROLES: { id: RoleId; label: string; icon: LucideIcon; sub: string }[] = [
   { id: "privato",        label: "Cittadino",       icon: User,       sub: "Gratis · 10 query/giorno" },
   { id: "professionista", label: "Professionista",  icon: Briefcase,  sub: "€29/mese · 14gg trial" },
   { id: "impresa",        label: "Impresa",         icon: Building2,  sub: "Da €29/mese · 7gg trial" },
