@@ -148,30 +148,56 @@ Tabelle critiche: `profili_utenti`, `leads`, `connectors_tokens`, `conversations
 
 ## 5. Roadmap raccomandata (ordine consigliato)
 
-| Priorità | Azione | Sforzo |
-|---|---|---|
-| P0 | `npm audit fix` + bump `next`/`postcss`/`@anthropic-ai/sdk` | 1h |
-| P0 | Fix SEM-01 (`authTagLength: 16`) | 15min |
-| P1 | Sanitize `ilike` filter su query `profiles` in `/api/chat` (riga 895) | 15min |
-| P1 | Budget cap globale LLM + alert (Anthropic / OpenRouter dashboards) | 2h |
-| P1 | Verificare RLS su tabelle PII (script SQL audit) | 2h |
-| P2 | Fix SEM-02 (escape `</` in JSON-LD o `<Script>`) | 15min |
-| P2 | Whitelist puntuale `/api/mobile/*` invece di prefix | 30min |
-| P2 | CAPTCHA progressivo dopo N chat anonime | 4h |
-| P3 | Script re-encryption `OAUTH_ENC_KEY` per disaster recovery | 4h |
-| P3 | Test idempotency webhook Stripe con replay reale | 2h |
+| Priorità | Azione | Sforzo | Stato |
+|---|---|---|---|
+| P0 | `npm audit fix` + bump `next`/`postcss`/`@anthropic-ai/sdk` | 1h | ✅ commit `6de966c` |
+| P0 | Fix SEM-01 (`authTagLength: 16`) | 15min | ✅ commit `6de966c` |
+| P1 | Sanitize `ilike` filter su query `profiles` in `/api/chat` (riga 895) | 15min | ✅ commit `6de966c` |
+| P1 | Budget cap globale LLM in-code (`MAX_MONTHLY_ANON_COST_EUR`) | 2h | ✅ commit `6de966c` |
+| P1 | **RLS: 13 policy `{public}→{service_role}`** (leads, documents, chunks…) | 2h | ✅ migration `012` + applicato 2026-04-27 |
+| P1 | Budget alert OpenRouter + Anthropic dashboard | 30min | ⬜ vedi §7 |
+| P2 | Fix SEM-02 (escape `</` in JSON-LD) | 15min | ✅ commit `6de966c` |
+| P2 | Whitelist puntuale `/api/mobile/*` invece di prefix | 30min | ✅ commit `6de966c` |
+| P2 | CAPTCHA progressivo dopo N chat anonime | 4h | ⬜ backlog |
+| P3 | Script re-encryption `OAUTH_ENC_KEY` per disaster recovery | 4h | ✅ commit `6de966c` |
+| P3 | Test idempotency webhook Stripe con replay reale | 2h | ⬜ backlog |
 
 ## 6. CI in essere
 
-A questo PR è incluso `.github/workflows/security.yml` che esegue ad ogni push/PR e settimanalmente:
-- **Semgrep** con la stessa combinazione di ruleset di questo report → upload SARIF al Security tab.
+`.github/workflows/security.yml` esegue ad ogni push/PR e ogni lunedì 06:00 UTC:
+- **Semgrep** con ruleset OWASP/ToB-style → upload SARIF al Security tab.
 - **CodeQL** (JavaScript/TypeScript, query `security-and-quality`).
 - **npm audit** (fail su `high`/`critical`).
-- **Gitleaks** sull'intera history (con allowlist `.github/gitleaks.toml` per i 3 false positive noti).
+- **Gitleaks** sull'intera history (allowlist `.github/gitleaks.toml` per 3 false positive noti).
 - **Trivy** filesystem + IaC misconfig.
 
 I findings appaiono nel tab **Security → Code scanning alerts** del repo.
 
 ---
 
-*Per una review approfondita ToB-grade (incluso threat model formale, abuse-case fuzzing, privilege escalation testing) il prossimo step naturale è ingaggiare ToB o equivalente per un audit pagato — tempi tipici 2–3 settimane uomo.*
+## 7. Budget alert LLM — istruzioni setup
+
+Tre layer di protezione contro cost-abuse anonimo:
+
+### Layer 1 — In-code (già attivo)
+Env var su Vercel → **Settings → Environment Variables**:
+```
+MAX_MONTHLY_ANON_COST_EUR = 200
+```
+Il codice in `/api/chat/route.ts` conta le query anonime in Upstash Redis (`budget:anon:YYYY-MM`) e ritorna 503 al superamento della soglia.
+
+### Layer 2 — OpenRouter (provider primario)
+1. [openrouter.ai/settings/credits](https://openrouter.ai/settings/credits)
+2. **"Monthly budget limit"** → es. €300
+3. **"Monthly notification threshold"** → es. €150 (email al 50%)
+
+OpenRouter blocca automaticamente le richieste al superamento — zero costi oltre soglia.
+
+### Layer 3 — Anthropic (fallback diretto)
+1. [console.anthropic.com/settings/billing](https://console.anthropic.com/settings/billing)
+2. **"Monthly spend limit"** → es. €100
+3. **"Email notification"** → es. €50
+
+---
+
+*Per una review approfondita ToB-grade (threat model formale, abuse-case fuzzing, privilege escalation testing) il prossimo step naturale è ingaggiare ToB o equivalente per un audit pagato — tempi tipici 2–3 settimane uomo.*
