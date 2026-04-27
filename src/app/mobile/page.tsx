@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { X, Menu, PhoneOff, Globe, LogOut } from "lucide-react";
-import { MobileOrb, ListeningDots } from "@/components/mobile/MobileOrb";
+import { MobileOrb, OrbMini, ListeningDots } from "@/components/mobile/MobileOrb";
 import { MobileTabBar } from "@/components/mobile/MobileTabBar";
 import { MobileAuthSheet } from "@/components/mobile/MobileAuthSheet";
 import { MobileOnboarding } from "@/components/mobile/MobileOnboarding";
@@ -348,7 +348,7 @@ export default function MobilePage() {
         alignItems: "center", justifyContent: "center",
         padding: "0 20px", minHeight: 300,
       }}>
-        <MobileOrb state={orbState} onTap={tapOrb} size={190} orbStyle={personality} />
+        <MobileOrb state={orbState} onTap={tapOrb} size={230} orbStyle={personality} />
 
         {/* State label */}
         <div style={{ marginTop: 28, textAlign: "center" }}>
@@ -542,41 +542,9 @@ export default function MobilePage() {
                           alignItems: "center", padding: "6px 28px 12px",
                         }}
                       >
-                        {/* Pallina grande — sfera 3D */}
-                        <div
-                          onClick={() => handlePersonalityChange(p.id)}
-                          style={{
-                            position: "relative",
-                            width: 100, height: 100, borderRadius: "50%",
-                            background: p.preview,
-                            boxShadow: active
-                              ? "0 0 0 3.5px var(--ink), 0 12px 36px rgba(0,0,0,0.28), inset -6px -6px 16px rgba(0,0,0,0.32), inset 6px 6px 20px rgba(255,255,255,0.16)"
-                              : "0 8px 26px rgba(0,0,0,0.22), inset -6px -6px 16px rgba(0,0,0,0.32), inset 6px 6px 20px rgba(255,255,255,0.16)",
-                            cursor: "pointer",
-                            transition: "box-shadow 0.2s",
-                            flexShrink: 0,
-                            overflow: "hidden",
-                          }}
-                        >
-                          {/* Specular highlight */}
-                          <div style={{
-                            position: "absolute",
-                            top: "9%", left: "15%",
-                            width: "40%", height: "26%",
-                            background: "radial-gradient(ellipse, rgba(255,255,255,0.82) 0%, transparent 72%)",
-                            borderRadius: "50%",
-                            filter: "blur(5px)",
-                            pointerEvents: "none",
-                          }} />
-                          <div style={{
-                            position: "absolute",
-                            top: "17%", left: "22%",
-                            width: "12%", height: "7%",
-                            background: "rgba(255,255,255,0.95)",
-                            borderRadius: "50%",
-                            filter: "blur(2.5px)",
-                            pointerEvents: "none",
-                          }} />
+                        {/* OrbMini — sfera dal design handoff */}
+                        <div onClick={() => handlePersonalityChange(p.id)} style={{ cursor: "pointer" }}>
+                          <OrbMini orbStyle={p.id} size={100} active={active} />
                         </div>
                         {/* Nome + descrizione */}
                         <div className="serif" style={{

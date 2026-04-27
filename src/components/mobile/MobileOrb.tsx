@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * MobileOrb — ported 1:1 from NormaAI_Mobile-handoff design file (prefs.jsx → Orb).
+ * Colors are state-aware: idle / listening / thinking / speaking each have
+ * their own inner gradient, outer blob, glow and ring/orbit colors.
+ *
+ * Personality → design style mapping:
+ *   classico → classic  (carta & ambra)
+ *   notte    → fire     (vermiglio intenso — diretto/aggressivo)
+ *   natura   → forest   (verde alloro — dolce e calmo)
+ *   aurora   → ocean    (blu fresco — giovani)
+ *   globo    → minimal  (inchiostro neutro — universale)
+ */
+
 import React from "react";
 import type { OrbState } from "@/hooks/useMobileVoice";
 
@@ -8,199 +21,204 @@ export type OrbStyle = "classico" | "notte" | "natura" | "aurora" | "globo";
 interface MobileOrbProps {
   state: OrbState;
   onTap: () => void;
-  size?: number;
+  size?: number;   // overall button container size (default 240)
   orbStyle?: OrbStyle;
 }
 
-// ── Keyframes ────────────────────────────────────────────────────────────────
+// ── Keyframes — copied verbatim from design file ─────────────────────────────
 const ORB_KEYFRAMES = `
-  @keyframes orb-breathe {
-    0%, 100% { transform: scale(1);     filter: brightness(1); }
-    50%       { transform: scale(1.046); filter: brightness(1.07); }
+  @keyframes orb-breathe      { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+  @keyframes orb-listen-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+  @keyframes orb-rotate       { to{transform:rotate(360deg)} }
+  @keyframes orb-speak        { 0%,100%{transform:scale(1)} 25%{transform:scale(1.05)} 60%{transform:scale(0.98)} }
+  @keyframes orb-ring         { 0%{transform:scale(0.9);opacity:0.55} 100%{transform:scale(1.45);opacity:0} }
+  @keyframes orb-ring-fast    { 0%{transform:scale(0.9);opacity:0.6}  100%{transform:scale(1.35);opacity:0} }
+  @keyframes blob-morph-a {
+    0%,100%{border-radius:58% 42% 55% 45% / 52% 48% 52% 48%}
+    33%    {border-radius:45% 55% 42% 58% / 48% 55% 45% 52%}
+    66%    {border-radius:52% 48% 58% 42% / 45% 52% 48% 55%}
   }
-  @keyframes orb-glow-breathe {
-    0%, 100% { opacity: 0.55; transform: scale(1); }
-    50%       { opacity: 1;   transform: scale(1.18); }
-  }
-  @keyframes orb-speak {
-    0%   { transform: scale(1); }
-    12%  { transform: scale(1.075); }
-    28%  { transform: scale(1.02); }
-    48%  { transform: scale(1.09); }
-    68%  { transform: scale(0.975); }
-    84%  { transform: scale(1.055); }
-    100% { transform: scale(1); }
-  }
-  @keyframes orb-speak-glow {
-    0%   { opacity: 0.45; transform: scale(1); }
-    30%  { opacity: 1;    transform: scale(1.35); }
-    65%  { opacity: 0.65; transform: scale(1.15); }
-    100% { opacity: 0.45; transform: scale(1); }
-  }
-  @keyframes orb-listen {
-    0%, 100% { transform: scale(1);    }
-    35%      { transform: scale(1.065);}
-    65%      { transform: scale(0.972);}
-  }
-  @keyframes orb-think {
-    0%, 100% { transform: scale(1);    filter: brightness(1);    }
-    50%      { transform: scale(1.028); filter: brightness(1.12); }
-  }
-  @keyframes orb-ring {
-    0%   { transform: scale(1);   opacity: 0.75; }
-    100% { transform: scale(1.78); opacity: 0; }
-  }
-  @keyframes orb-ring-b {
-    0%   { transform: scale(1);   opacity: 0.5; }
-    100% { transform: scale(2.0);  opacity: 0; }
-  }
-  @keyframes blob-a {
-    0%, 100% { border-radius: 58% 42% 56% 44% / 52% 48% 53% 47%; }
-    20%      { border-radius: 44% 56% 47% 53% / 57% 43% 59% 41%; }
-    40%      { border-radius: 52% 48% 63% 37% / 40% 60% 44% 56%; }
-    60%      { border-radius: 38% 62% 51% 49% / 56% 44% 54% 46%; }
-    80%      { border-radius: 62% 38% 44% 56% / 46% 54% 48% 52%; }
-  }
-  @keyframes blob-b {
-    0%, 100% { border-radius: 53% 47% 44% 56% / 51% 57% 43% 49%; }
-    25%      { border-radius: 61% 39% 53% 47% / 44% 52% 59% 41%; }
-    50%      { border-radius: 45% 55% 61% 39% / 57% 43% 46% 54%; }
-    75%      { border-radius: 56% 44% 38% 62% / 48% 61% 39% 52%; }
-  }
-  @keyframes shimmer-sweep {
-    0%   { transform: translateX(-150%) rotate(-15deg); opacity: 0; }
-    10%  { opacity: 1; }
-    90%  { opacity: 1; }
-    100% { transform: translateX(250%) rotate(-15deg); opacity: 0; }
-  }
-  @keyframes think-dot {
-    0%   { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  @keyframes blob-morph-b {
+    0%,100%{border-radius:48% 52% 45% 55% / 55% 45% 52% 48%}
+    50%    {border-radius:55% 45% 52% 48% / 48% 55% 45% 52%}
   }
   @keyframes dots-bounce {
-    0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
-    40%           { opacity: 1;   transform: translateY(-3px); }
+    0%,80%,100%{opacity:0.3;transform:translateY(0)}
+    40%        {opacity:1;transform:translateY(-3px)}
   }
 `;
 
-// ── Color palettes — true 3D sphere gradients ────────────────────────────────
-type Palette = {
-  sphere: string;   // main radial gradient (light→mid→dark, 3D feel)
-  blob: string;     // outer blurry halo
-  glow: string;     // ambient glow rgba
-  ring: string;     // expanding ring color
-  hi1: string;      // primary specular highlight
-  hi2: string;      // micro specular dot
+// ── Per-state color palettes — ported from design file's PALLA_STYLES ────────
+type StateColors = {
+  inner: string;
+  outer: string;
+  glow:  string;
+  ring?: string;
+  orbit?: string;
 };
+type StylePalette = Record<OrbState, StateColors>;
 
-const PALETTES: Record<OrbStyle, Palette> = {
-  // ☀️ Warm amber-gold  — "Avvocato amico"
+const PALLA_STYLES: Record<OrbStyle, StylePalette> = {
+  // ── CLASSICO → classic (carta & ambra) ──────────────────────────────────
   classico: {
-    sphere: "radial-gradient(circle at 33% 28%, #FFFDE8 0%, #F7CA50 22%, #D98A1A 58%, #7C4210 100%)",
-    blob:   "radial-gradient(circle at 40% 40%, #F7CA50 0%, #C47018 55%, #7C4210 100%)",
-    glow:   "rgba(222, 148, 30, 0.55)",
-    ring:   "rgba(222, 148, 30, 0.72)",
-    hi1:    "rgba(255, 252, 220, 0.88)",
-    hi2:    "rgba(255, 255, 255, 0.96)",
+    idle: {
+      inner: "radial-gradient(circle at 30% 30%, #F6F2EA 0%, #E6DFCF 55%, #C9BFA8 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #EFE9DC 0%, #C9BFA8 70%)",
+      glow:  "oklch(0.58 0.18 35 / 0.12)",
+    },
+    listening: {
+      inner: "radial-gradient(circle at 30% 30%, oklch(0.82 0.14 45) 0%, oklch(0.65 0.19 35) 50%, oklch(0.48 0.18 30) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.7 0.18 40) 0%, oklch(0.5 0.17 30) 70%)",
+      glow:  "oklch(0.58 0.2 35 / 0.5)",
+      ring:  "oklch(0.58 0.19 35 / 0.7)",
+    },
+    thinking: {
+      inner: "conic-gradient(from 0deg, oklch(0.6 0.08 230), oklch(0.52 0.12 280), oklch(0.45 0.08 200), oklch(0.6 0.08 230))",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.55 0.1 240) 0%, oklch(0.35 0.1 240) 70%)",
+      glow:  "oklch(0.5 0.1 240 / 0.4)",
+      orbit: "oklch(0.85 0.1 230)",
+    },
+    speaking: {
+      inner: "radial-gradient(circle at 35% 35%, oklch(0.85 0.15 85) 0%, oklch(0.7 0.17 65) 40%, oklch(0.58 0.18 35) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.75 0.17 60) 0%, oklch(0.55 0.18 35) 70%)",
+      glow:  "oklch(0.7 0.17 65 / 0.55)",
+      ring:  "oklch(0.7 0.17 65 / 0.8)",
+    },
   },
-  // 🌌 Midnight cosmos  — "Diretto"
+
+  // ── NOTTE → fire (vermiglio intenso — diretto/aggressivo) ───────────────
   notte: {
-    sphere: "radial-gradient(circle at 33% 28%, #AAC8F0 0%, #2858B8 22%, #0D2270 58%, #040B22 100%)",
-    blob:   "radial-gradient(circle at 40% 40%, #2858B8 0%, #0A1A68 55%, #040B22 100%)",
-    glow:   "rgba(48, 105, 225, 0.55)",
-    ring:   "rgba(90, 150, 245, 0.72)",
-    hi1:    "rgba(185, 215, 255, 0.82)",
-    hi2:    "rgba(220, 238, 255, 0.96)",
+    idle: {
+      inner: "radial-gradient(circle at 30% 30%, oklch(0.86 0.14 55) 0%, oklch(0.68 0.19 40) 55%, oklch(0.48 0.19 28) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.72 0.2 45) 0%, oklch(0.48 0.19 28) 70%)",
+      glow:  "oklch(0.62 0.2 35 / 0.35)",
+    },
+    listening: {
+      inner: "radial-gradient(circle at 30% 30%, oklch(0.9 0.14 70) 0%, oklch(0.72 0.2 45) 45%, oklch(0.5 0.22 28) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.78 0.21 50) 0%, oklch(0.5 0.22 28) 70%)",
+      glow:  "oklch(0.62 0.22 35 / 0.65)",
+      ring:  "oklch(0.6 0.22 30 / 0.85)",
+    },
+    thinking: {
+      inner: "conic-gradient(from 0deg, oklch(0.88 0.14 70), oklch(0.65 0.2 40), oklch(0.45 0.2 25), oklch(0.88 0.14 70))",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.7 0.2 50) 0%, oklch(0.4 0.2 30) 70%)",
+      glow:  "oklch(0.58 0.2 35 / 0.55)",
+      orbit: "oklch(0.92 0.14 80)",
+    },
+    speaking: {
+      inner: "radial-gradient(circle at 35% 35%, oklch(0.92 0.15 85) 0%, oklch(0.75 0.2 55) 40%, oklch(0.55 0.22 30) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.8 0.2 55) 0%, oklch(0.5 0.22 30) 70%)",
+      glow:  "oklch(0.75 0.2 60 / 0.7)",
+      ring:  "oklch(0.7 0.2 50 / 0.85)",
+    },
   },
-  // 🌿 Living forest    — "Calmo e paziente"
+
+  // ── NATURA → forest (verde alloro — dolce e calmo) ──────────────────────
   natura: {
-    sphere: "radial-gradient(circle at 33% 28%, #CCEECC 0%, #3CAE62 22%, #186838 58%, #072A16 100%)",
-    blob:   "radial-gradient(circle at 40% 40%, #3CAE62 0%, #186838 55%, #072A16 100%)",
-    glow:   "rgba(38, 165, 85, 0.55)",
-    ring:   "rgba(62, 185, 98, 0.72)",
-    hi1:    "rgba(200, 242, 212, 0.82)",
-    hi2:    "rgba(230, 255, 238, 0.96)",
+    idle: {
+      inner: "radial-gradient(circle at 30% 30%, oklch(0.82 0.08 140) 0%, oklch(0.6 0.11 145) 55%, oklch(0.38 0.1 150) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.68 0.1 145) 0%, oklch(0.4 0.1 150) 70%)",
+      glow:  "oklch(0.5 0.1 145 / 0.3)",
+    },
+    listening: {
+      inner: "radial-gradient(circle at 30% 30%, oklch(0.86 0.1 135) 0%, oklch(0.62 0.14 145) 45%, oklch(0.4 0.12 155) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.7 0.12 140) 0%, oklch(0.42 0.12 155) 70%)",
+      glow:  "oklch(0.55 0.13 145 / 0.55)",
+      ring:  "oklch(0.52 0.13 145 / 0.85)",
+    },
+    thinking: {
+      inner: "conic-gradient(from 0deg, oklch(0.72 0.08 135), oklch(0.5 0.12 155), oklch(0.4 0.1 130), oklch(0.72 0.08 135))",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.55 0.1 140) 0%, oklch(0.34 0.1 150) 70%)",
+      glow:  "oklch(0.48 0.1 145 / 0.5)",
+      orbit: "oklch(0.9 0.09 130)",
+    },
+    speaking: {
+      inner: "radial-gradient(circle at 35% 35%, oklch(0.9 0.1 130) 0%, oklch(0.7 0.14 140) 40%, oklch(0.48 0.12 150) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.75 0.13 140) 0%, oklch(0.48 0.12 150) 70%)",
+      glow:  "oklch(0.62 0.13 140 / 0.6)",
+      ring:  "oklch(0.55 0.13 140 / 0.8)",
+    },
   },
-  // 🌸 Aurora violet    — "Linguaggio semplice"
+
+  // ── AURORA → ocean (blu profondo — giovani/fresco) ──────────────────────
   aurora: {
-    sphere: "radial-gradient(circle at 33% 28%, #FAE8FF 0%, #C455EC 22%, #7218B0 58%, #320870 100%)",
-    blob:   "radial-gradient(circle at 40% 40%, #C455EC 0%, #7218B0 55%, #320870 100%)",
-    glow:   "rgba(182, 52, 228, 0.55)",
-    ring:   "rgba(202, 88, 245, 0.72)",
-    hi1:    "rgba(252, 225, 255, 0.86)",
-    hi2:    "rgba(255, 245, 255, 0.97)",
+    idle: {
+      inner: "radial-gradient(circle at 30% 30%, oklch(0.86 0.08 220) 0%, oklch(0.62 0.13 230) 55%, oklch(0.38 0.13 235) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.68 0.13 225) 0%, oklch(0.4 0.13 235) 70%)",
+      glow:  "oklch(0.55 0.13 230 / 0.3)",
+    },
+    listening: {
+      inner: "conic-gradient(from 0deg, oklch(0.82 0.11 210), oklch(0.58 0.16 235), oklch(0.42 0.16 250), oklch(0.82 0.11 210))",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.65 0.15 225) 0%, oklch(0.38 0.15 240) 70%)",
+      glow:  "oklch(0.55 0.16 230 / 0.6)",
+      ring:  "oklch(0.55 0.16 230 / 0.85)",
+    },
+    thinking: {
+      inner: "conic-gradient(from 0deg, oklch(0.7 0.1 200), oklch(0.5 0.14 260), oklch(0.4 0.1 220), oklch(0.7 0.1 200))",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.58 0.13 230) 0%, oklch(0.35 0.13 240) 70%)",
+      glow:  "oklch(0.5 0.13 235 / 0.5)",
+      orbit: "oklch(0.88 0.1 215)",
+    },
+    speaking: {
+      inner: "radial-gradient(circle at 35% 35%, oklch(0.88 0.1 210) 0%, oklch(0.65 0.15 225) 40%, oklch(0.45 0.15 240) 100%)",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.72 0.14 220) 0%, oklch(0.45 0.15 240) 70%)",
+      glow:  "oklch(0.62 0.15 225 / 0.6)",
+      ring:  "oklch(0.62 0.15 225 / 0.8)",
+    },
   },
-  // 🌍 Ocean earth      — "Multilingue"
+
+  // ── GLOBO → minimal (inchiostro grigio — universale/neutro) ─────────────
   globo: {
-    sphere: "radial-gradient(circle at 33% 28%, #B0DCFA 0%, #2A88DE 22%, #0C52B0 58%, #041E40 100%)",
-    blob:   "radial-gradient(circle at 40% 40%, #2A88DE 0%, #0C52B0 55%, #041E40 100%)",
-    glow:   "rgba(38, 125, 225, 0.55)",
-    ring:   "rgba(82, 162, 245, 0.72)",
-    hi1:    "rgba(185, 225, 255, 0.82)",
-    hi2:    "rgba(220, 242, 255, 0.96)",
+    idle: {
+      inner: "radial-gradient(circle at 30% 30%, #3E3A35 0%, #272420 55%, #13110F 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #2E2A25 0%, #13110F 70%)",
+      glow:  "rgba(19,17,15,0.35)",
+    },
+    listening: {
+      inner: "radial-gradient(circle at 30% 30%, #5A5048 0%, #2E2A25 50%, #13110F 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #423C35 0%, #1C1915 70%)",
+      glow:  "rgba(19,17,15,0.55)",
+      ring:  "rgba(246,242,234,0.6)",
+    },
+    thinking: {
+      inner: "conic-gradient(from 0deg, #4E4840, #2A2622, #15130F, #4E4840)",
+      outer: "radial-gradient(circle at 30% 30%, #35302B 0%, #15130F 70%)",
+      glow:  "rgba(19,17,15,0.5)",
+      orbit: "#F6F2EA",
+    },
+    speaking: {
+      inner: "radial-gradient(circle at 35% 35%, #6A5F55 0%, #3A342C 40%, #13110F 100%)",
+      outer: "radial-gradient(circle at 30% 30%, #4A4239 0%, #1A1814 70%)",
+      glow:  "rgba(19,17,15,0.55)",
+      ring:  "rgba(246,242,234,0.55)",
+    },
   },
 };
 
-// ── Per-state animation config ───────────────────────────────────────────────
-type StateCfg = {
-  orb:      string;
-  blob:     string;
-  glow:     string;
-  rings:    boolean;
-  ring1:    string;
-  ring2:    string;
-  shimmer:  boolean;
-  thinkDot: boolean;
-};
+// ── Component ─────────────────────────────────────────────────────────────────
+export function MobileOrb({ state, onTap, size = 240, orbStyle = "classico" }: MobileOrbProps) {
+  const palette = PALLA_STYLES[orbStyle];
+  const c = palette[state] ?? palette.idle;
 
-const STATES: Record<OrbState, StateCfg> = {
-  idle: {
-    orb:      "orb-breathe 4.8s ease-in-out infinite, blob-a 15s ease-in-out infinite",
-    blob:     "orb-breathe 4.8s ease-in-out infinite, blob-b 15s ease-in-out infinite",
-    glow:     "orb-glow-breathe 4.8s ease-in-out infinite",
-    rings:    false,
-    ring1:    "none",
-    ring2:    "none",
-    shimmer:  false,
-    thinkDot: false,
-  },
-  listening: {
-    orb:      "orb-listen 0.88s ease-in-out infinite, blob-a 5s ease-in-out infinite",
-    blob:     "orb-listen 0.88s ease-in-out infinite, blob-b 5s ease-in-out infinite",
-    glow:     "orb-glow-breathe 0.88s ease-in-out infinite",
-    rings:    true,
-    ring1:    "orb-ring 1.85s ease-out infinite",
-    ring2:    "orb-ring-b 1.85s ease-out infinite 0.65s",
-    shimmer:  false,
-    thinkDot: false,
-  },
-  thinking: {
-    orb:      "orb-think 2.4s ease-in-out infinite, blob-b 8s ease-in-out infinite",
-    blob:     "orb-think 2.4s ease-in-out infinite, blob-a 8s ease-in-out infinite",
-    glow:     "orb-glow-breathe 2.4s ease-in-out infinite",
-    rings:    false,
-    ring1:    "none",
-    ring2:    "none",
-    shimmer:  true,
-    thinkDot: true,
-  },
-  speaking: {
-    orb:      "orb-speak 1.45s ease-in-out infinite, blob-a 4.2s ease-in-out infinite",
-    blob:     "orb-speak 1.45s ease-in-out infinite 0.22s, blob-b 4.2s ease-in-out infinite",
-    glow:     "orb-speak-glow 1.45s ease-in-out infinite",
-    rings:    true,
-    ring1:    "orb-ring 2.5s ease-out infinite",
-    ring2:    "orb-ring-b 2.5s ease-out infinite 0.95s",
-    shimmer:  false,
-    thinkDot: false,
-  },
-};
+  const scale     = size / 240;
+  const innerSize = Math.round(176 * scale);
+  const outerSize = Math.round(200 * scale);
+  const shineW    = Math.round(60 * scale);
+  const shineH    = Math.round(40 * scale);
+  const orbitDot  = Math.round(8 * scale);
 
-// ── Component ────────────────────────────────────────────────────────────────
-export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: MobileOrbProps) {
-  const p   = PALETTES[orbStyle];
-  const cfg = STATES[state];
-  const s   = size;
+  const anim = {
+    idle:      "orb-breathe 4.5s ease-in-out infinite, blob-morph-a 12s ease-in-out infinite",
+    listening: "orb-listen-pulse 0.7s ease-in-out infinite, blob-morph-a 5s ease-in-out infinite",
+    thinking:  "orb-rotate 4s linear infinite, blob-morph-b 8s ease-in-out infinite",
+    speaking:  "orb-speak 1.2s ease-in-out infinite, blob-morph-a 6s ease-in-out infinite",
+  }[state];
+
+  const ringAnim = state === "listening"
+    ? "orb-ring-fast 1.4s ease-out infinite"
+    : state === "speaking"
+      ? "orb-ring 2.2s ease-out infinite"
+      : "none";
 
   return (
     <>
@@ -208,165 +226,100 @@ export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: M
       <button
         onClick={onTap}
         style={{
-          width:  s + 80,
-          height: s + 80,
+          width: size, height: size,
           position: "relative",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "transparent", border: "none",
+          cursor: onTap ? "pointer" : "default",
           WebkitTapHighlightColor: "transparent",
           outline: "none",
           flexShrink: 0,
+          transition: "transform .12s",
         }}
         aria-label={`Norma — ${state}`}
       >
-        {/* ── Deep ambient glow ── */}
+        {/* Glow halo */}
         <div style={{
           position: "absolute",
-          inset: -32,
+          inset: -30 * scale,
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${p.glow} 0%, transparent 68%)`,
-          animation: cfg.glow,
-          filter: "blur(26px)",
+          background: `radial-gradient(circle, ${c.glow}, transparent 70%)`,
+          filter: `blur(${20 * scale}px)`,
           pointerEvents: "none",
-          transition: "background 1.1s ease",
+          transition: "background .6s ease",
         }} />
 
-        {/* ── Outer blurry blob ── */}
-        <div style={{
-          position: "absolute",
-          width:  s + 48,
-          height: s + 48,
-          background: p.blob,
-          borderRadius: "58% 42% 56% 44% / 52% 48% 53% 47%",
-          animation: cfg.blob,
-          opacity: 0.38,
-          filter: "blur(20px)",
-          transition: "background 1.1s ease",
-          pointerEvents: "none",
-        }} />
-
-        {/* ── Expanding rings ── */}
-        {cfg.rings && (
+        {/* Animated expanding rings */}
+        {ringAnim !== "none" && (
           <>
             <div style={{
-              position: "absolute",
-              width: s, height: s,
-              borderRadius: "50%",
-              border: `2px solid ${p.ring}`,
-              animation: cfg.ring1,
-              pointerEvents: "none",
+              position: "absolute", inset: 0, borderRadius: "50%",
+              border: `1.5px solid ${c.ring ?? "oklch(0.58 0.19 35 / 0.7)"}`,
+              animation: ringAnim, pointerEvents: "none",
             }} />
             <div style={{
-              position: "absolute",
-              width: s, height: s,
-              borderRadius: "50%",
-              border: `1.5px solid ${p.ring}`,
-              animation: cfg.ring2,
-              pointerEvents: "none",
+              position: "absolute", inset: 0, borderRadius: "50%",
+              border: `1.5px solid ${c.ring ?? "oklch(0.58 0.19 35 / 0.5)"}`,
+              animation: ringAnim, animationDelay: "0.7s",
+              opacity: 0.7, pointerEvents: "none",
             }} />
           </>
         )}
 
-        {/* ── Main sphere ── */}
+        {/* Outer blob */}
+        <div style={{
+          position: "absolute",
+          width: outerSize, height: outerSize,
+          background: c.outer,
+          borderRadius: "58% 42% 55% 45% / 52% 48% 52% 48%",
+          animation: anim,
+          transition: "background .8s ease",
+          opacity: 0.55,
+          filter: `blur(${8 * scale}px)`,
+          pointerEvents: "none",
+        }} />
+
+        {/* Main orb */}
         <div style={{
           position: "relative",
-          width:  s,
-          height: s,
-          background: p.sphere,
-          borderRadius: "58% 42% 56% 44% / 52% 48% 53% 47%",
-          animation: cfg.orb,
-          transition: "background 1.1s ease, border-radius 0.8s ease",
+          width: innerSize, height: innerSize,
+          background: c.inner,
+          borderRadius: state === "thinking" ? "50%" : "58% 42% 55% 45% / 52% 48% 52% 48%",
+          animation: anim,
+          transition: "background .8s ease, border-radius .8s ease",
           boxShadow: [
-            `inset -${s * 0.065}px -${s * 0.065}px ${s * 0.18}px rgba(0,0,0,0.38)`,
-            `inset  ${s * 0.065}px  ${s * 0.065}px ${s * 0.22}px rgba(255,255,255,0.18)`,
-            `0 ${s * 0.09}px ${s * 0.32}px rgba(0,0,0,0.28)`,
+            `inset -${8 * scale}px -${8 * scale}px ${24 * scale}px rgba(19,17,15,0.2)`,
+            `inset  ${8 * scale}px  ${8 * scale}px ${32 * scale}px rgba(255,255,255,0.35)`,
+            `0 ${10 * scale}px ${40 * scale}px rgba(19,17,15,0.14)`,
           ].join(", "),
-          overflow: "hidden",
           flexShrink: 0,
         }}>
-
-          {/* Primary specular highlight */}
+          {/* Specular shine */}
           <div style={{
             position: "absolute",
-            top:  "9%",
-            left: "15%",
-            width:  s * 0.40,
-            height: s * 0.26,
-            background: `radial-gradient(ellipse, ${p.hi1} 0%, transparent 72%)`,
+            top: "12%", left: "18%",
+            width: shineW, height: shineH,
+            background: "radial-gradient(ellipse, rgba(255,255,255,0.55), transparent 60%)",
             borderRadius: "50%",
-            filter: "blur(7px)",
+            filter: `blur(${4 * scale}px)`,
             pointerEvents: "none",
           }} />
-
-          {/* Micro specular dot */}
-          <div style={{
-            position: "absolute",
-            top:  "16%",
-            left: "22%",
-            width:  s * 0.12,
-            height: s * 0.07,
-            background: p.hi2,
-            borderRadius: "50%",
-            filter: "blur(3.5px)",
-            pointerEvents: "none",
-          }} />
-
-          {/* Bottom rim light */}
-          <div style={{
-            position: "absolute",
-            bottom: "6%",
-            right:  "10%",
-            width:  s * 0.28,
-            height: s * 0.12,
-            background: "rgba(255,255,255,0.08)",
-            borderRadius: "50%",
-            filter: "blur(8px)",
-            pointerEvents: "none",
-          }} />
-
-          {/* Thinking shimmer sweep */}
-          {cfg.shimmer && (
-            <div style={{
-              position: "absolute",
-              inset: 0,
-              overflow: "hidden",
-              borderRadius: "inherit",
-              pointerEvents: "none",
-            }}>
-              <div style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "55%",
-                height: "100%",
-                background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%)",
-                animation: "shimmer-sweep 2.2s ease-in-out infinite",
-              }} />
-            </div>
-          )}
 
           {/* Thinking orbit dot */}
-          {cfg.thinkDot && (
+          {state === "thinking" && (
             <div style={{
-              position: "absolute",
-              inset: 0,
-              animation: "think-dot 2.8s linear infinite",
+              position: "absolute", inset: 0,
+              animation: "orb-rotate 2s linear infinite reverse",
               pointerEvents: "none",
             }}>
               <div style={{
                 position: "absolute",
-                top: s * 0.06,
-                left: "50%",
+                top: orbitDot, left: "50%",
                 transform: "translateX(-50%)",
-                width: 7,
-                height: 7,
+                width: orbitDot, height: orbitDot,
                 borderRadius: "50%",
-                background: p.hi2,
-                boxShadow: `0 0 10px ${p.glow}, 0 0 20px ${p.glow}`,
+                background: c.orbit ?? "oklch(0.85 0.1 230)",
+                boxShadow: `0 0 ${12 * scale}px ${c.orbit ?? "oklch(0.85 0.1 230)"}`,
               }} />
             </div>
           )}
@@ -376,15 +329,67 @@ export function MobileOrb({ state, onTap, size = 200, orbStyle = "classico" }: M
   );
 }
 
-// ── Listening dots ────────────────────────────────────────────────────────────
+// ── OrbMini — static preview for settings carousel ───────────────────────────
+// Matches the design file's OrbMini component exactly.
+interface OrbMiniProps {
+  orbStyle: OrbStyle;
+  size?: number;
+  active?: boolean;
+}
+export function OrbMini({ orbStyle, size = 100, active = false }: OrbMiniProps) {
+  const c = PALLA_STYLES[orbStyle].idle;
+  const s = size;
+  return (
+    <div style={{
+      width: s, height: s,
+      position: "relative", flexShrink: 0,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      {/* Glow */}
+      <div style={{
+        position: "absolute", inset: -8,
+        borderRadius: "50%",
+        background: `radial-gradient(circle, ${c.glow}, transparent 70%)`,
+        filter: "blur(10px)",
+        pointerEvents: "none",
+      }} />
+      {/* Sphere */}
+      <div style={{
+        width: s * 0.88, height: s * 0.88,
+        background: c.inner,
+        borderRadius: "58% 42% 55% 45% / 52% 48% 52% 48%",
+        boxShadow: [
+          "inset -2px -2px 6px rgba(19,17,15,0.2)",
+          "inset 2px 2px 8px rgba(255,255,255,0.35)",
+          "0 2px 8px rgba(19,17,15,0.12)",
+          active ? "0 0 0 3.5px var(--ink)" : "",
+        ].filter(Boolean).join(", "),
+        position: "relative",
+        transition: "box-shadow 0.2s",
+        overflow: "hidden",
+      }}>
+        {/* Shine */}
+        <div style={{
+          position: "absolute",
+          top: "12%", left: "18%",
+          width: "32%", height: "22%",
+          background: "radial-gradient(ellipse, rgba(255,255,255,0.55), transparent 60%)",
+          borderRadius: "50%",
+          filter: "blur(3px)",
+          pointerEvents: "none",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ── Listening dots indicator ──────────────────────────────────────────────────
 export function ListeningDots() {
   return (
     <span style={{ display: "flex", gap: 3, alignItems: "center" }}>
       {[0, 0.15, 0.3].map((delay, i) => (
         <span key={i} style={{
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
+          width: 4, height: 4, borderRadius: "50%",
           background: "var(--vermiglio)",
           display: "inline-block",
           animation: `dots-bounce 1s ${delay}s infinite ease`,
@@ -393,3 +398,6 @@ export function ListeningDots() {
     </span>
   );
 }
+
+// Export idle colors for preview use (orb-personalities.ts preview field)
+export { PALLA_STYLES };
