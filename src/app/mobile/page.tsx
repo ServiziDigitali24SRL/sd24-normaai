@@ -262,10 +262,13 @@ export default function MobilePage() {
     }
   };
 
+  // "thinking" ha due fasi distinte:
+  //  1. callActive=false → connessione WebRTC (non RAG)
+  //  2. callActive=true  → LLM elabora, RAG in corso
   const stateCopy: Record<string, string> = {
     idle: "Tocca per parlare con Norma",
     listening: "Sto ascoltando...",
-    thinking: "Cerco nelle fonti...",
+    thinking: callActive ? "Cerco nelle fonti..." : "Connessione in corso...",
     speaking: "Norma risponde",
   };
 
