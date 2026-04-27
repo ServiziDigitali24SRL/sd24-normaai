@@ -400,6 +400,10 @@ export default function MobileChatPage() {
               onKeyDown={handleKeyDown}
               placeholder="Chiedi a NormaAI..."
               rows={1}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              data-form-type="other"
               style={{
                 flex: 1, border: "none", background: "transparent",
                 fontFamily: "var(--sans)", fontSize: 14.5, color: "var(--ink)",
