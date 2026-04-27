@@ -278,15 +278,15 @@ export default function MobileChatPage() {
                 fontSize: 28, fontStyle: "italic", color: "var(--ink-4)",
                 marginBottom: 8,
               }}>{'\u00A7'}</div>
-              <p style={{ fontSize: 14, color: "var(--ink-3)", lineHeight: 1.5 }}>
-                Fai una domanda normativa.<br />
-                Rispondo con fonti di legge.
+              <p style={{ fontSize: 14.5, color: "var(--ink-2)", lineHeight: 1.55, padding: "0 8px" }}>
+                Ti posso aiutare per <strong>multe</strong>, <strong>sanzioni</strong>, <strong>citazioni</strong>, <strong>posto di blocco</strong>,<br />
+                per qualsiasi cosa, sono qui per te.
               </p>
               <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
                 {[
-                  "Come si redige una diffida formale?",
-                  "Regime forfettario: limiti 2024",
-                  "Obblighi DVR sicurezza D.Lgs 81/2008",
+                  "Mi hanno fatto una multa, posso fare ricorso?",
+                  "Cosa devo dire ad un posto di blocco?",
+                  "Mi è arrivata una citazione: cosa fare?",
                 ].map((q) => (
                   <button
                     key={q}
