@@ -4,14 +4,15 @@
  * MobileOnboarding — primo accesso mobile.
  *
  * Flusso:
- *  1. "intro"      → utente vede palla + tasto "Inizia"
+ *  1. "intro"      → utente vede palla + tasto "Parla con Norma →"
  *  2. "connecting" → Vapi si connette
  *  3. "speaking"   → Norma si presenta, la palla cambia colore per ogni personalità
- *  4. "name-input" → Vapi smette → input testuale "Come ti chiami?"
+ *  4. "name-input" → after full welcome speech → input testuale "Come ti chiami?"
  *  5. "done"       → nome salvato → onComplete(name) dopo 1.2s
  *
- * Il nome viene salvato in localStorage ("norma_user_name") e, se l'utente
- * è loggato, anche in Supabase profiles.full_name.
+ * Transizione speaking → name-input:
+ *   - speech-end con guard 14s (evita falsi trigger su pause mid-speech)
+ *   - auto-advance timer al termine dell'ultima animazione colore (21s)
  */
 
 import { useState, useRef, useEffect } from "react";
@@ -26,8 +27,6 @@ import {
 const VAPI_PK = "1fe0aa87-b7a0-4394-b877-d846fa06035d";
 
 // ── Welcome script ───────────────────────────────────────────────────────────
-// Norma si presenta e descrive le 5 personalità — la palla cambia colore
-// in sincrono tramite setTimeout calibrati sul ritmo di lettura (~150 p/m).
 const WELCOME_FIRST_MESSAGE =
   "Ciao, sono Norma! Posso aiutarti in qualsiasi momento della giornata " +
   "con qualsiasi domanda di legge. " +
@@ -38,15 +37,22 @@ const WELCOME_FIRST_MESSAGE =
   "O posso parlare la tua lingua, ovunque tu sia nel mondo. " +
   "Iniziamo subito — dimmi solo come ti chiami.";
 
-// ── Color sequence (ritmo ~150 parole/minuto) ────────────────────────────────
-// Ogni delay corrisponde approssimativamente alla parola-chiave nel testo.
+// ── Color sequence (~150 parole/minuto) ─────────────────────────────────────
 const COLOR_SEQ: { delay: number; style: OrbPersonalityId }[] = [
-  { delay: 4_200, style: "notte" },    // "diretto"
-  { delay: 7_800, style: "natura" },   // "calmo"
-  { delay: 10_800, style: "aurora" },  // "semplice"
-  { delay: 14_000, style: "globo" },   // "lingua"
+  { delay: 4_200,  style: "notte" },    // "diretto"
+  { delay: 7_800,  style: "natura" },   // "calmo"
+  { delay: 10_800, style: "aurora" },   // "semplice"
+  { delay: 14_000, style: "globo" },    // "lingua"
   { delay: 17_500, style: "classico" }, // fine — torna al default
 ];
+
+// Auto-advance: dopo l'ultima animazione + 3.5s di buffer → name-input
+// anche se speech-end non arriva (failsafe).
+const AUTO_ADVANCE_MS = 17_500 + 3_500; // 21s
+
+// Minimo tempo dall'inizio speech prima di accettare speech-end come "finita".
+// Evita che pause mid-speech triggino il name-input troppo presto.
+const MIN_SPEECH_BEFORE_NAME_MS = 14_000;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type Phase = "intro" | "connecting" | "speaking" | "name-input" | "done";
@@ -75,6 +81,7 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
   const vapiRef = useRef<{ stop: () => void } | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const speechDone = useRef(false);
+  const callStartMsRef = useRef(0);
 
   useEffect(() => {
     mounted.current = true;
@@ -85,25 +92,40 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
     };
   }, []);
 
-  // Avvia la sequenza di cambio colore.
-  const startColors = () => {
+  // Transizione sicura a name-input (idempotente).
+  const goToNameInput = (vapi: { stop: () => void } | null) => {
+    if (!mounted.current || speechDone.current) return;
+    speechDone.current = true;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    try { vapi?.stop(); } catch { /* noop */ }
+    setOrbStyle("classico");
+    setPhase("name-input");
+  };
+
+  // Avvia la sequenza di cambio colore + auto-advance timer.
+  const startColors = (vapi: { stop: () => void }) => {
     COLOR_SEQ.forEach(({ delay, style }) => {
       const t = setTimeout(() => {
         if (mounted.current) setOrbStyle(style);
       }, delay);
       timers.current.push(t);
     });
+
+    // Failsafe: se speech-end non arriva entro AUTO_ADVANCE_MS, avanziamo comunque.
+    const t = setTimeout(() => goToNameInput(vapi), AUTO_ADVANCE_MS);
+    timers.current.push(t);
   };
 
-  // Tap sull'orb: parte la chiamata Vapi.
+  // Avvia la chiamata Vapi.
   const handleOrbTap = async () => {
     if (phase !== "intro") return;
     setPhase("connecting");
     setError(null);
     speechDone.current = false;
+    callStartMsRef.current = 0;
 
     try {
-      // Importazione dinamica — evita SSR e riduce bundle iniziale
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { default: Vapi } = await import("@vapi-ai/web") as any;
       const vapi = new Vapi(VAPI_PK);
@@ -111,28 +133,26 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
 
       vapi.on("call-start", () => {
         if (!mounted.current) return;
+        callStartMsRef.current = Date.now();
         setPhase("speaking");
-        startColors();
+        startColors(vapi);
       });
 
-      // Norma ha finito di parlare → stop call, mostra input nome
+      // speech-end: solo se >= 14s dall'inizio (evita falsi trigger su pause).
       vapi.on("speech-end", () => {
         if (!mounted.current || speechDone.current) return;
-        speechDone.current = true;
-        timers.current.forEach(clearTimeout);
-        try { vapi.stop(); } catch { /* noop */ }
-        setOrbStyle("classico");
-        setPhase("name-input");
+        const elapsed = Date.now() - callStartMsRef.current;
+        if (elapsed < MIN_SPEECH_BEFORE_NAME_MS) return; // ancora a metà speech
+        goToNameInput(vapi);
       });
 
       vapi.on("error", () => {
         if (!mounted.current) return;
+        timers.current.forEach(clearTimeout);
         setPhase("intro");
         setError("Connessione non riuscita. Riprova o tocca Salta.");
       });
 
-      // Avvia con il messaggio di benvenuto come firstMessage override.
-      // NOTA: firstMessage va dentro assistantOverrides, non top-level.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (vapi as any).start(VAPI_ASSISTANT_IDS.classico, {
         assistantOverrides: {
@@ -142,14 +162,11 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
     } catch {
       if (mounted.current) {
         setPhase("intro");
-        setError(
-          "Microfono non disponibile. Tocca Salta e abilita il microfono nelle impostazioni iOS."
-        );
+        setError("Microfono non disponibile. Tocca Salta e abilita il microfono nelle impostazioni iOS.");
       }
     }
   };
 
-  // Conferma nome.
   const submitName = () => {
     const n = name.trim();
     if (!n) return;
@@ -167,8 +184,7 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
       alignItems: "center", justifyContent: "center",
       padding: "0 28px",
     }}>
-
-      {/* Salta — sempre visibile */}
+      {/* Salta */}
       <button
         onClick={onSkip}
         style={{
@@ -182,10 +198,10 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
         Salta
       </button>
 
-      {/* Orb */}
+      {/* Orb — cambia colore con la personalità durante il welcome */}
       <MobileOrb
         state={ORB_STATES[phase]}
-        onTap={handleOrbTap}
+        onTap={phase === "intro" ? handleOrbTap : undefined}
         size={180}
         orbStyle={orbStyle}
       />
@@ -209,39 +225,28 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
               style={{
                 width: "100%", padding: "15px",
                 borderRadius: 12, border: "none",
-                background: "var(--vermiglio)",
-                color: "white",
+                background: "var(--vermiglio)", color: "white",
                 fontFamily: "var(--sans)", fontSize: 16, fontWeight: 600,
-                cursor: "pointer",
-                WebkitTapHighlightColor: "transparent",
+                cursor: "pointer", WebkitTapHighlightColor: "transparent",
                 marginBottom: 12,
               }}
             >
               Parla con Norma →
             </button>
-            <div className="mono" style={{
-              fontSize: 9, letterSpacing: "0.14em",
-              color: "var(--ink-4)", textTransform: "uppercase",
-            }}>
+            <div className="mono" style={{ fontSize: 9, letterSpacing: "0.14em", color: "var(--ink-4)", textTransform: "uppercase" }}>
               abilita microfono quando richiesto
             </div>
           </>
         )}
 
         {phase === "connecting" && (
-          <p className="mono" style={{
-            fontSize: 10, letterSpacing: "0.14em",
-            color: "var(--ink-3)", textTransform: "uppercase",
-          }}>
+          <p className="mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--ink-3)", textTransform: "uppercase" }}>
             Connessione…
           </p>
         )}
 
         {phase === "speaking" && (
-          <p className="mono" style={{
-            fontSize: 10, letterSpacing: "0.14em",
-            color: "var(--ink-3)", textTransform: "uppercase",
-          }}>
+          <p className="mono" style={{ fontSize: 10, letterSpacing: "0.14em", color: "var(--ink-3)", textTransform: "uppercase" }}>
             Norma si presenta…
           </p>
         )}
@@ -297,7 +302,6 @@ export function MobileOnboarding({ onComplete, onSkip }: Props) {
         )}
       </div>
 
-      {/* Errore */}
       {error && (
         <div style={{
           marginTop: 20, padding: "10px 14px",

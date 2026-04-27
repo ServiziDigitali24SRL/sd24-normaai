@@ -73,10 +73,11 @@ const PALLA_STYLES: Record<OrbStyle, StylePalette> = {
       ring:  "oklch(0.58 0.19 35 / 0.7)",
     },
     thinking: {
-      inner: "conic-gradient(from 0deg, oklch(0.6 0.08 230), oklch(0.52 0.12 280), oklch(0.45 0.08 200), oklch(0.6 0.08 230))",
-      outer: "radial-gradient(circle at 30% 30%, oklch(0.55 0.1 240) 0%, oklch(0.35 0.1 240) 70%)",
-      glow:  "oklch(0.5 0.1 240 / 0.4)",
-      orbit: "oklch(0.85 0.1 230)",
+      // Warm amber rotation — stays on-brand with classico (no blue!)
+      inner: "conic-gradient(from 0deg, oklch(0.75 0.15 55), oklch(0.58 0.18 35), oklch(0.45 0.15 28), oklch(0.75 0.15 55))",
+      outer: "radial-gradient(circle at 30% 30%, oklch(0.62 0.17 42) 0%, oklch(0.42 0.16 28) 70%)",
+      glow:  "oklch(0.58 0.18 35 / 0.45)",
+      orbit: "oklch(0.9 0.13 72)",
     },
     speaking: {
       inner: "radial-gradient(circle at 35% 35%, oklch(0.85 0.15 85) 0%, oklch(0.7 0.17 65) 40%, oklch(0.58 0.18 35) 100%)",
