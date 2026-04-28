@@ -103,3 +103,35 @@ export async function rateLimitUser(
   const result = await rateLimit(`user:${userId}`, maxPerMinute, 60_000);
   return result.allowed;
 }
+
+/**
+ * Tier di abbonamento riconosciuti.
+ */
+export type RateLimitTier = 'anon' | 'gratis' | 'cittadino_pro' | 'impresa' | 'professionista';
+
+const TIER_LIMITS: Record<RateLimitTier, { perMinute: number; perDay: number | null }> = {
+  anon:           { perMinute: 5,  perDay: 10 },
+  gratis:         { perMinute: 5,  perDay: 10 },
+  cittadino_pro:  { perMinute: 20, perDay: 100 },
+  impresa:        { perMinute: 60, perDay: null },
+  professionista: { perMinute: 60, perDay: null },
+};
+
+/**
+ * Rate limit per tier di abbonamento.
+ * Applica limite al minuto (anti-flood) + limite giornaliero se presente.
+ */
+export async function rateLimitByTier(
+  key: string,
+  tier: RateLimitTier
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
+  const limits = TIER_LIMITS[tier];
+  const minuteResult = await rateLimit(`${key}:min`, limits.perMinute, 60_000);
+  if (!minuteResult.allowed) return { allowed: false, remaining: 0, resetAt: minuteResult.resetAt };
+  if (limits.perDay !== null) {
+    const dayResult = await rateLimit(`${key}:day`, limits.perDay, 86_400_000);
+    if (!dayResult.allowed) return { allowed: false, remaining: 0, resetAt: dayResult.resetAt };
+    return { allowed: true, remaining: Math.min(minuteResult.remaining, dayResult.remaining), resetAt: minuteResult.resetAt };
+  }
+  return minuteResult;
+}

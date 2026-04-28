@@ -1021,22 +1021,15 @@ export default function PreviewPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const tabs: { id: TabId; label: string; locked?: boolean }[] = [
+  const tabs: { id: TabId; label: string }[] = [
     { id: '01', label: 'Chat' },
     { id: '02', label: 'Onboarding' },
-    { id: '03', label: 'Dash · Cittadino', locked: true },
-    { id: '04', label: 'Dash · Professionista', locked: true },
-    { id: '05', label: 'Dash · Impresa', locked: true },
-    { id: '06', label: 'API', locked: true },
-    { id: '07', label: 'Su Misura', locked: true },
+    { id: '03', label: 'Dash · Cittadino' },
+    { id: '04', label: 'Dash · Professionista' },
+    { id: '05', label: 'Dash · Impresa' },
+    { id: '06', label: 'API' },
+    { id: '07', label: 'Su Misura' },
   ];
-
-  const LockIcon = () => (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <rect x="5" y="11" width="14" height="10" rx="1"/>
-      <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-    </svg>
-  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#13110F' }}>
@@ -1045,10 +1038,7 @@ export default function PreviewPage() {
         {tabs.map(t => {
           const active = tab === t.id;
           return (
-            <button key={t.id} onClick={() => {
-              if (t.locked) { setAuthModal(getRoleForTab(t.id)); return; }
-              setTab(t.id);
-            }} style={{
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '6px 14px', background: active ? 'rgba(246,242,234,0.08)' : 'transparent',
               border: `1px solid ${active ? 'rgba(212,74,42,0.5)' : 'transparent'}`,
@@ -1063,7 +1053,6 @@ export default function PreviewPage() {
             >
               <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.08em', color: active ? T.v : '#5a5248', fontWeight: 500 }}>{t.id}</span>
               <span>{t.label}</span>
-              {t.locked && <span style={{ color: '#5a5248', opacity: 0.7 }}><LockIcon /></span>}
             </button>
           );
         })}

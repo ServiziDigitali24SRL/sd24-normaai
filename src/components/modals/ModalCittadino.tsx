@@ -132,6 +132,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
         // Piano Privato è gratuito — nessun checkout Stripe
         onClose();
         router.refresh();
+        router.push("/dashboard-cittadino");
       }
     } finally {
       setLoading(false);

@@ -330,10 +330,10 @@ export default function ModalProfessionista({ open, onClose }: Props) {
               &larr; Torna al piano
             </button>
 
-            <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={setTab} />
+            <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={(t) => { setTab(t); setResetSent(false); setError(""); }} />
 
             {error && (
-              <div className="text-accent text-[12px] mb-2">{error}</div>
+              <div className="text-accent text-[12px] mb-2 mt-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">{error}</div>
             )}
 
             {tab === 0 ? (
