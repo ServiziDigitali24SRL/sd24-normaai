@@ -41,11 +41,11 @@ export default function ModalCittadino({ open, onClose }: Props) {
     setLoading(true);
     setError("");
     try {
-      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) {
-        if (err.message.includes("Email not confirmed")) {
+      const { error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (authErr) {
+        if (authErr.message.includes("Email not confirmed")) {
           setError("Email non ancora confermata. Controlla la tua casella.");
-        } else if (err.message.toLowerCase().includes("rate")) {
+        } else if (authErr.message.toLowerCase().includes("rate")) {
           setError("Troppi tentativi. Riprova tra qualche minuto.");
         } else {
           setError("Email o password non corretti.");
@@ -53,6 +53,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
       } else {
         onClose();
         router.refresh();
+        router.push("/dashboard-cittadino");
       }
     } finally {
       setLoading(false);
@@ -67,10 +68,10 @@ export default function ModalCittadino({ open, onClose }: Props) {
     setLoading(true);
     setError("");
     try {
-      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (err) setError("Errore nell'invio dell'email. Riprova.");
+      if (resetErr) setError("Errore nell'invio dell'email. Riprova.");
       else setResetSent(true);
     } finally {
       setLoading(false);
