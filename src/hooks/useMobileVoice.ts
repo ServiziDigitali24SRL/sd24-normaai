@@ -17,36 +17,40 @@ const VAPI_PUBLIC_KEY = "1fe0aa87-b7a0-4394-b877-d846fa06035d";
 // so 20s is a safe ceiling without producing false alarms.
 const THINKING_WATCHDOG_MS = 20_000;
 
-// Vapi errors come in MANY shapes (Error, plain object, nested .error, raw
-// websocket frame). String(obj) returns "[object Object]" — useless to the
-// user. Dig through the common keys, fall back to JSON, and finally to
-// the constructor name + key list so we always show SOMETHING actionable.
+// Convert any Vapi error shape into a short Italian user-facing string.
+// We intentionally never show raw JSON to the user — Vapi error objects are
+// deeply nested and change shape across SDK versions.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function formatVapiError(err: any): string {
-  if (err == null) return "errore sconosciuto";
-  if (typeof err === "string") return err;
+function friendlyVapiError(err: any): string {
+  if (err == null) return "Errore sconosciuto. Tocca per riprovare.";
 
-  const candidates = [
-    err.errorMsg,
-    err.message,
-    err.error?.message,
-    err.error?.errorMsg,
-    err.errorReason,
-    err.endedReason,
-    err.error?.error,
-    err.cause?.message,
-    err.action,
-  ].filter((v) => typeof v === "string" && v.length > 0);
-  if (candidates.length) return String(candidates[0]).slice(0, 200);
+  // Collect candidate strings from known Vapi error shapes
+  const candidates: string[] = [
+    err?.errorMsg,
+    err?.message,
+    err?.error?.message,
+    err?.error?.errorMsg,
+    // SDK 2.5 wraps: event.error.error.message / event.error.error.error
+    err?.error?.error?.message,
+    err?.error?.error?.error,
+    err?.errorReason,
+    err?.endedReason,
+    err?.cause?.message,
+  ].filter((v): v is string => typeof v === "string" && v.length > 0);
 
-  try {
-    const j = JSON.stringify(err, Object.getOwnPropertyNames(err));
-    if (j && j !== "{}") return j.slice(0, 200);
-  } catch { /* circular or unserializable */ }
+  const raw = candidates[0]?.toLowerCase() ?? "";
 
-  const name = err.constructor?.name || typeof err;
-  const keys = Object.keys(err).join(",") || "no keys";
-  return `${name} (${keys})`;
+  if (raw.includes("permission") || raw.includes("denied") || raw.includes("notallowed")) {
+    return "Microfono bloccato. Vai in Impostazioni › Safari › Microfono e abilita normaai.it.";
+  }
+  if (raw.includes("couldn't get assistant") || raw.includes("assistant")) {
+    return "Servizio voce non disponibile. Tocca per riprovare.";
+  }
+  if (raw.includes("network") || raw.includes("offline")) {
+    return "Connessione assente. Controlla la rete e riprova.";
+  }
+  // Generic Vapi start failure (Bad Request, server error, Daily.co join fail…)
+  return "Voce non disponibile in questo momento. Tocca per riprovare.";
 }
 
 export interface UseMobileVoiceReturn {
@@ -184,19 +188,21 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vapi.on("error", (err: any) => {
       console.error("[NormaAI] vapi:error", err);
-      // Dump every key we can find so the Safari Web Inspector shows
-      // structure even when the object isn't a real Error.
-      try {
-        console.error("[NormaAI] vapi:error keys:", Object.keys(err ?? {}));
-        console.error("[NormaAI] vapi:error JSON:", JSON.stringify(err, Object.getOwnPropertyNames(err ?? {})));
-      } catch { /* noop */ }
       disarmWatchdog();
+
+      // CRITICAL: reset the Vapi instance so the next tap creates a fresh one.
+      // After any error the SDK may leave Daily.co/WebRTC in dirty state.
+      // Keeping vapiRef alive means subsequent start() calls reuse broken state
+      // and always fail with the same Bad Request / connection error.
+      try { vapiRef.current?.stop(); } catch { /* noop */ }
+      vapiRef.current = null;
+
       if (!mountedRef.current) return;
       setCallActive(false);
       setOrbState("idle");
       setUserTranscript("");
       setAssistantText("");
-      setVoiceError(`Errore voce: ${formatVapiError(err)}`);
+      setVoiceError(friendlyVapiError(err));
     });
 
     return vapi;
@@ -252,16 +258,13 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
     } catch (err) {
       console.error("[NormaAI] vapi.start threw", err);
       disarmWatchdog();
+      // Reset instance so next tap starts clean
+      try { vapiRef.current?.stop(); } catch { /* noop */ }
+      vapiRef.current = null;
       if (mountedRef.current) {
         setOrbState("idle");
         setCallActive(false);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const msg = (err as any)?.message || String(err);
-        setVoiceError(
-          msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("denied")
-            ? "Microfono bloccato. Vai in Impostazioni iOS › Safari › Microfono e abilita normaai.it."
-            : `Impossibile avviare la voce: ${msg.slice(0, 140)}`
-        );
+        setVoiceError(friendlyVapiError(err));
       }
     }
   }, [callActive, orbState, getVapi, armWatchdog, disarmWatchdog, personality]);
