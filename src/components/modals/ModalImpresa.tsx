@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import ModalOverlay, {
   ModalClose,
@@ -38,6 +39,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
   const [consentPrivacy, setConsentPrivacy] = useState(false);
   const [consentMarketing, setConsentMarketing] = useState(false);
   const supabase = createClient();
+  const router = useRouter();
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -46,10 +48,24 @@ export default function ModalImpresa({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError("Email o password non corretti.");
-    else onClose();
-    setLoading(false);
+    try {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) {
+        if (err.message.includes("Email not confirmed")) {
+          setError("Email non ancora confermata. Controlla la tua casella.");
+        } else if (err.message.toLowerCase().includes("rate")) {
+          setError("Troppi tentativi. Riprova tra qualche minuto.");
+        } else {
+          setError("Email o password non corretti.");
+        }
+      } else {
+        onClose();
+        router.refresh();
+        router.push("/dashboard-impresa");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleRegister() {
@@ -67,35 +83,52 @@ export default function ModalImpresa({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const consentTimestamp = new Date().toISOString();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          ragione_sociale: ragioneSociale,
-          p_iva: piva,
-          role: "impresa",
-          consent_privacy_policy: true,
-          consent_terms: true,
-          consent_marketing: consentMarketing,
-          consent_timestamp: consentTimestamp,
+    try {
+      const consentTimestamp = new Date().toISOString();
+      const { data, error: err } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            ragione_sociale: ragioneSociale,
+            p_iva: piva,
+            role: "impresa",
+            consent_privacy_policy: true,
+            consent_terms: true,
+            consent_marketing: consentMarketing,
+            consent_timestamp: consentTimestamp,
+          },
         },
-      },
-    });
-    if (error) {
-      setError(error.message);
-    } else if (data.user) {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: piano, userId: data.user.id, email }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-      else onClose();
+      if (err) {
+        if (err.message.toLowerCase().includes("rate")) {
+          setError("Troppi tentativi. Riprova tra qualche minuto.");
+        } else {
+          setError(err.message);
+        }
+      } else if (data.user) {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: piano, userId: data.user.id, email }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setError(body.error ?? "Errore avviando il checkout. Riprova.");
+          return;
+        }
+        const { url } = await res.json();
+        if (url) {
+          window.location.href = url;
+        } else {
+          onClose();
+          router.refresh();
+          router.push("/dashboard-impresa");
+        }
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const feats = [
@@ -148,7 +181,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
           <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={(t) => { setTab(t); setError(""); }} />
         </div>
 
-        {error && <div className="text-accent text-[12px] mb-2">{error}</div>}
+        {error && <div className="text-accent text-[12px] mb-2 mt-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">{error}</div>}
 
         {tab === 0 ? (
           <div>
@@ -156,7 +189,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
             <FormInput id="impresa-login-email" name="email" type="email" placeholder="azienda@email.it" value={email} onChange={setEmail} />
             <FormLabel htmlFor="impresa-login-password">Password</FormLabel>
             <FormInput id="impresa-login-password" name="password" type="password" placeholder="••••••••" value={password} onChange={setPassword} />
-            <BtnPrimary onClick={handleLogin}>
+            <BtnPrimary onClick={handleLogin} disabled={loading}>
               {loading ? "Accesso..." : "Accedi"}
             </BtnPrimary>
             <BtnOutline onClick={() => setTab(1)}>Registra la tua azienda</BtnOutline>
@@ -190,7 +223,7 @@ export default function ModalImpresa({ open, onClose }: Props) {
               </label>
             </div>
 
-            <BtnPrimary onClick={handleRegister}>
+            <BtnPrimary onClick={handleRegister} disabled={loading}>
               {loading ? "Registrazione..." : `Inizia 7 giorni gratis — Piano ${pianoSelezionato.label}`}
             </BtnPrimary>
             <p className="text-[11px] text-[#7A766F] text-center mt-[10px]">

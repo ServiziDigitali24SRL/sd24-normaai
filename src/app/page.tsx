@@ -14,6 +14,13 @@ const ModalImpresa        = dynamicImport(() => import("@/components/modals/Moda
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TabId = '01' | '02' | '03' | '04' | '05' | '06' | '07';
+type AuthModalRole = 'cittadino' | 'professionista' | 'impresa';
+
+function getRoleForTab(tabId: TabId): AuthModalRole {
+  if (tabId === '04') return 'professionista';
+  if (tabId === '05') return 'impresa';
+  return 'cittadino';
+}
 interface Sel { macro: string; macroLabel: string; item: string | null }
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
@@ -158,7 +165,7 @@ function ChatMsg({ role, children }: { role: 'user' | 'assistant'; children: Rea
   );
 }
 
-function ChatScreen({ onCTA }: { onCTA: () => void }) {
+function ChatScreen({ onCTA, onTrovaProfessionista }: { onCTA: () => void; onTrovaProfessionista?: () => void }) {
   return (
     <div style={{ display: 'flex', height: '100%', background: T.paper }}>
       {/* Sidebar */}
@@ -175,7 +182,7 @@ function ChatScreen({ onCTA }: { onCTA: () => void }) {
           <NavItem icon={<Icon name="archive" />} label="Archivio documenti" onClick={onCTA} />
           <NavItem icon={<Icon name="doc" />} label="Analisi PDF" onClick={onCTA} />
           <NavItem icon={<Icon name="clock" />} label="Scadenze" onClick={onCTA} />
-          <NavItem icon={<Icon name="users" />} label="Trova professionista" onClick={onCTA} />
+          <NavItem icon={<Icon name="users" />} label="Trova professionista" onClick={onTrovaProfessionista ?? onCTA} />
         </div>
         <div style={{ padding: '8px 14px' }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4, paddingLeft: 12, marginBottom: 6 }}>Conversazioni recenti</div>
@@ -267,6 +274,9 @@ type OnbRole = 'cittadino' | 'cittadino-pro' | 'avvocato' | 'professionista' | '
 function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<OnbRole>(null);
+  const [dimensione, setDimensione] = useState<string | null>(null);
+  const [impresaForm, setImpresaForm] = useState({ ragione: '', piva: '', email: '', dipendenti: '', referenteNome: '', referenteEmail: '', referenteRuolo: '' });
+  const [stepError, setStepError] = useState('');
   const [profile, setProfile] = useState({ nome: '', email: '', cellulare: '', cap: '', citta: '', regione: '', situazione: '', problemi: [] as string[] });
   const [goal, setGoal] = useState<string | null>(null);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -298,8 +308,15 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   };
 
   const handleNext = () => {
+    setStepError('');
+    if (step === 1 && !role) { setStepError('Scelga un piano per continuare.'); return; }
+    if (isImp && step === 2 && !dimensione) { setStepError('Scelga la dimensione aziendale.'); return; }
+    if (isImp && step === 3) {
+      if (!impresaForm.ragione || impresaForm.ragione.length < 3) { setStepError('Ragione sociale obbligatoria (min. 3 caratteri).'); return; }
+      if (!/^\d{11}$/.test(impresaForm.piva)) { setStepError('P.IVA non valida: inserire 11 cifre.'); return; }
+    }
     if (step < totalSteps) setStep(step + 1);
-    else { try { localStorage.setItem('norma.user', JSON.stringify({ role, registered: true })); } catch {} onComplete(); }
+    else { try { localStorage.setItem('norma.user', JSON.stringify({ role, registered: true })); } catch (e) { console.warn('localStorage error', e); } onComplete(); }
   };
   const handleSkip = () => { if (step < totalSteps) setStep(step + 1); else onComplete(); };
 
@@ -363,7 +380,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
               {tiers.map(t => {
                 const active = role === t.id;
                 return (
-                  <div key={t.id} onClick={() => setRole(t.id as OnbRole)} style={{ background: active ? 'white' : T.paperT, border: active ? `2px solid ${T.ink}` : `1px solid ${T.paperL}`, margin: active ? 0 : 1, borderRadius: 10, padding: '20px 18px', cursor: 'pointer', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', transform: active ? 'translateY(-4px)' : 'none', boxShadow: active ? T.sh3 : 'none' }}>
+                  <div key={t.id} onClick={() => setRole(prev => prev === t.id ? null : t.id as OnbRole)} style={{ background: active ? 'white' : T.paperT, border: active ? `2px solid ${T.ink}` : `1px solid ${T.paperL}`, margin: active ? 0 : 1, borderRadius: 10, padding: '20px 18px', cursor: 'pointer', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', transform: active ? 'translateY(-4px)' : 'none', boxShadow: active ? T.sh3 : 'none' }}>
                     {'highlight' in t && t.highlight && <div style={{ position: 'absolute', top: -10, right: 14 }}><Stamp color={T.v} rotate={2}>Consigliato</Stamp></div>}
                     <div style={{ color: active ? T.v : T.ink3, marginBottom: 8 }}><Icon name={t.icon} size={22} /></div>
                     <div style={{ fontFamily: T.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: active ? T.vi : T.ink4 }}>{t.tag}</div>
@@ -502,8 +519,8 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                 { id: 'piccola', label: 'PICCOLA', range: '10–49 dipendenti', price: '€79', features: ['GDPR + Sicurezza lavoro', 'Analisi contratti AI', '5 seat inclusi'] },
                 { id: 'media', label: 'MEDIA', range: '50–249 dipendenti', price: '€199', features: ['GDPR + 231 + DPO', 'Audit checklist complete', '15 seat inclusi'] },
               ].map(s => (
-                <div key={s.id} style={{ padding: 24, border: `1px solid ${T.paperL}`, borderRadius: 10, background: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: T.vi, marginBottom: 6 }}>{s.label}</div>
+                <div key={s.id} onClick={() => setDimensione(prev => prev === s.id ? null : s.id)} style={{ padding: 24, border: dimensione === s.id ? `2px solid ${T.ink}` : `1px solid ${T.paperL}`, margin: dimensione === s.id ? 0 : 1, borderRadius: 10, background: dimensione === s.id ? T.paperT : 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', boxShadow: dimensione === s.id ? T.sh2 : 'none', transition: 'all 0.15s ease' }}>
+                  <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: dimensione === s.id ? T.ink : T.vi, marginBottom: 6 }}>{s.label} {dimensione === s.id ? '✓' : ''}</div>
                   <div style={{ fontFamily: T.serif, fontSize: 26, lineHeight: 1.1, marginBottom: 10 }}>{s.range}</div>
                   <div style={{ fontFamily: T.serif, fontSize: 38, lineHeight: 1, marginBottom: 4 }}>{s.price}<span style={{ fontFamily: T.sans, fontSize: 13, color: T.ink4 }}>/mese</span></div>
                   <hr style={{ height: 1, background: T.paperL, border: 0, margin: '12px 0' }} />
@@ -573,27 +590,60 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
               {step === 3 ? <>I dati <em style={{ color: T.v }}>della Sua azienda.</em></> : <>Chi gestirà <em style={{ color: T.v }}>la compliance?</em></>}
             </h1>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 32 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <OField label={step === 3 ? 'Ragione sociale' : 'Nome e Cognome'} val="" onChange={() => {}} placeholder={step === 3 ? 'Acme SRL' : 'Es. Laura Bianchi'} />
-                <OField label={step === 3 ? 'P.IVA' : 'Email'} val="" onChange={() => {}} placeholder={step === 3 ? '12345678901' : 'laura@acme.it'} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <OField label={step === 3 ? 'Email aziendale' : 'Ruolo'} val="" onChange={() => {}} placeholder={step === 3 ? 'info@acme.it' : 'Es. Responsabile Legal'} />
-                <OField label={step === 3 ? 'Numero dipendenti' : 'È il DPO?'} val="" onChange={() => {}} placeholder={step === 3 ? 'Es. 25' : ''} />
-              </div>
+              {step === 3 ? (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Ragione sociale" val={impresaForm.ragione} onChange={v => setImpresaForm(f => ({ ...f, ragione: v }))} placeholder="Acme SRL" />
+                    <div>
+                      <OLabel>P.IVA</OLabel>
+                      <div style={{ position: 'relative', marginTop: 8 }}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={11}
+                          value={impresaForm.piva}
+                          onChange={e => setImpresaForm(f => ({ ...f, piva: e.target.value.replace(/\D/g, '').slice(0, 11) }))}
+                          placeholder="12345678901"
+                          style={{ width: '100%', padding: '13px 16px', border: `1px solid ${impresaForm.piva.length === 11 ? T.alloro : impresaForm.piva ? T.ink : T.paperL}`, borderRadius: 6, fontSize: 14, fontFamily: T.sans, background: 'white', outline: 'none', color: T.ink }}
+                        />
+                        {impresaForm.piva.length === 11 && <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: T.alloro }}><Icon name="check" size={14} /></span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Email aziendale" val={impresaForm.email} onChange={v => setImpresaForm(f => ({ ...f, email: v }))} placeholder="info@acme.it" type="email" />
+                    <OField label="Numero dipendenti" val={impresaForm.dipendenti} onChange={v => setImpresaForm(f => ({ ...f, dipendenti: v }))} placeholder="Es. 25" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Nome e Cognome" val={impresaForm.referenteNome} onChange={v => setImpresaForm(f => ({ ...f, referenteNome: v }))} placeholder="Es. Laura Bianchi" />
+                    <OField label="Email" val={impresaForm.referenteEmail} onChange={v => setImpresaForm(f => ({ ...f, referenteEmail: v }))} placeholder="laura@acme.it" type="email" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Ruolo" val={impresaForm.referenteRuolo} onChange={v => setImpresaForm(f => ({ ...f, referenteRuolo: v }))} placeholder="Es. Responsabile Legal" />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
 
         {/* Navigation */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, paddingTop: 28, borderTop: `1px solid ${T.paperL}` }}>
-          <button onClick={() => step > 1 && setStep(step - 1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 14, cursor: step === 1 ? 'not-allowed' : 'pointer', color: T.ink2, fontFamily: T.sans, opacity: step === 1 ? 0 : 1, pointerEvents: step === 1 ? 'none' : 'auto' }}>
+        {stepError && (
+          <div style={{ marginTop: 16, padding: '10px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 6, color: '#B91C1C', fontSize: 13, fontFamily: T.sans }}>
+            {stepError}
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingTop: 28, borderTop: `1px solid ${T.paperL}` }}>
+          <button onClick={() => { setStepError(''); step > 1 && setStep(step - 1); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 14, cursor: step === 1 ? 'not-allowed' : 'pointer', color: T.ink2, fontFamily: T.sans, opacity: step === 1 ? 0 : 1, pointerEvents: step === 1 ? 'none' : 'auto' }}>
             ← Indietro
           </button>
           <div style={{ fontFamily: T.mono, fontSize: 10.5, letterSpacing: '0.12em', color: T.ink4, textTransform: 'uppercase' }}>
             {step === 1 ? 'Scelga il ruolo' : step === totalSteps ? 'Verifica email' : `Passo ${step}`}
           </div>
-          <button onClick={handleNext} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 22px', background: role || step > 1 ? T.v : T.paper2, color: role || step > 1 ? 'white' : T.ink4, border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans, opacity: role || step > 1 ? 1 : 0.5 }}>
+          <button onClick={handleNext} disabled={step === 1 && !role} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 22px', background: role || step > 1 ? T.v : T.paper2, color: role || step > 1 ? 'white' : T.ink4, border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: step === 1 && !role ? 'not-allowed' : 'pointer', fontFamily: T.sans, opacity: role || step > 1 ? 1 : 0.5 }}>
             {step === totalSteps ? 'Conferma e accedi' : 'Continua'} <Icon name="arrow" size={13} />
           </button>
         </div>
@@ -996,7 +1046,7 @@ export default function PreviewPage() {
           const active = tab === t.id;
           return (
             <button key={t.id} onClick={() => {
-              if (t.locked) { setAuthModal('cittadino'); return; }
+              if (t.locked) { setAuthModal(getRoleForTab(t.id)); return; }
               setTab(t.id);
             }} style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -1022,7 +1072,7 @@ export default function PreviewPage() {
             initial mode. Wired to Supabase signUp / signInWithPassword. */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
           <button
-            onClick={() => setAuthModal('cittadino')}
+            onClick={() => setAuthModal(getRoleForTab(tab))}
             style={{
               padding: '6px 12px', background: 'transparent',
               border: '1px solid rgba(246,242,234,0.18)', borderRadius: 6,
@@ -1036,7 +1086,7 @@ export default function PreviewPage() {
             Accedi
           </button>
           <button
-            onClick={() => setAuthModal('cittadino')}
+            onClick={() => setAuthModal(getRoleForTab(tab))}
             style={{
               padding: '6px 14px', background: T.v,
               border: 'none', borderRadius: 6,
@@ -1051,7 +1101,7 @@ export default function PreviewPage() {
 
       {/* ── Content ── */}
       <div style={{ flex: 1, overflow: 'hidden', background: T.paper }}>
-        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('cittadino')} />}
+        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('cittadino')} onTrovaProfessionista={() => setAuthModal('professionista')} />}
         {tab === '02' && <OnboardingScreen onComplete={() => setTab('03')} />}
         {tab === '03' && <DashboardTab role="cittadino" demoUser={{ name: 'Marco Rossi', initials: 'MR', subtitle: 'CITTADINO · PIANO GRATUITO' }} />}
         {tab === '04' && <DashboardTab role="prof" demoUser={{ name: 'Avv. Giulia Mancini', initials: 'GM', subtitle: 'AVVOCATO · FORO DI ROMA' }} />}

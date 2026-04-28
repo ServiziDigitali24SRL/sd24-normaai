@@ -21,7 +21,7 @@ export default function CorpusCard() {
         <p className="text-[32px] font-bold text-[#00FF88] leading-none tracking-tight">
           8,057,078
         </p>
-        <p className="text-[12px] text-[#4A4A6A] pb-1">chunks · pgvector 1536d</p>
+        <p className="text-[12px] text-[#4A4A6A] pb-1">chunks · pgvector 384d</p>
       </div>
 
       {/* Embedded progress bar */}

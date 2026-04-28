@@ -534,7 +534,7 @@ export default function InvestorDashboardPage() {
         <div>
           <SectionLabel>Corpus Normativo</SectionLabel>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <CorpusStatCard label="Chunks RAG" value="8.057.078" color="text-[#00FF88]" sub="pgvector 1536d" />
+            <CorpusStatCard label="Chunks RAG" value="8.057.078" color="text-[#00FF88]" sub="pgvector 384d" />
             <CorpusStatCard label="Sorgenti" value="7" color="text-[#4F6EF7]" sub="Normattiva · Cassazione · GU…" />
             <CorpusStatCard label="Embedding" value="100%" color="text-[#00FF88]" sub="completato" />
             <CorpusStatCard label="Copertura" value="88%" color="text-[#F7C94F]" sub="normativa italiana" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import ModalOverlay, {
   ModalClose,
@@ -30,6 +31,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
   const [consentMarketing, setConsentMarketing] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const supabase = createClient();
+  const router = useRouter();
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -38,10 +40,23 @@ export default function ModalCittadino({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError("Email o password non corretti.");
-    else onClose();
-    setLoading(false);
+    try {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) {
+        if (err.message.includes("Email not confirmed")) {
+          setError("Email non ancora confermata. Controlla la tua casella.");
+        } else if (err.message.toLowerCase().includes("rate")) {
+          setError("Troppi tentativi. Riprova tra qualche minuto.");
+        } else {
+          setError("Email o password non corretti.");
+        }
+      } else {
+        onClose();
+        router.refresh();
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleForgotPassword() {
@@ -51,12 +66,15 @@ export default function ModalCittadino({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) setError("Errore nell'invio dell'email. Riprova.");
-    else setResetSent(true);
-    setLoading(false);
+    try {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (err) setError("Errore nell'invio dell'email. Riprova.");
+      else setResetSent(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleRegister() {
@@ -87,28 +105,36 @@ export default function ModalCittadino({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const consentTimestamp = new Date().toISOString();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          role: "privato",
-          consent_privacy_policy: true,
-          consent_terms: true,
-          consent_marketing: consentMarketing,
-          consent_timestamp: consentTimestamp,
+    try {
+      const consentTimestamp = new Date().toISOString();
+      const { data, error: err } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            role: "privato",
+            consent_privacy_policy: true,
+            consent_terms: true,
+            consent_marketing: consentMarketing,
+            consent_timestamp: consentTimestamp,
+          },
         },
-      },
-    });
-    if (error) {
-      setError(error.message);
-    } else if (data.user) {
-      // Piano Privato è gratuito — nessun checkout Stripe
-      onClose();
+      });
+      if (err) {
+        if (err.message.toLowerCase().includes("rate")) {
+          setError("Troppi tentativi. Riprova tra qualche minuto.");
+        } else {
+          setError(err.message);
+        }
+      } else if (data.user) {
+        // Piano Privato è gratuito — nessun checkout Stripe
+        onClose();
+        router.refresh();
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const feats = [
@@ -147,11 +173,11 @@ export default function ModalCittadino({ open, onClose }: Props) {
 
         {/* Tabs */}
         <div className="mt-5">
-          <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={setTab} />
+          <Tabs tabs={["Accedi", "Registrati"]} active={tab} onSwitch={(t) => { setTab(t); setError(""); }} />
         </div>
 
         {error && (
-          <div className="text-accent text-[12px] mb-2">{error}</div>
+          <div className="text-accent text-[12px] mb-2 mt-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">{error}</div>
         )}
 
         {tab === 0 ? (
@@ -169,11 +195,12 @@ export default function ModalCittadino({ open, onClose }: Props) {
                 onClick={handleForgotPassword}
                 className="text-[11.5px] text-accent hover:underline mt-1 mb-1 block"
                 type="button"
+                disabled={loading}
               >
                 Hai dimenticato la password?
               </button>
             )}
-            <BtnPrimary onClick={handleLogin}>
+            <BtnPrimary onClick={handleLogin} disabled={loading}>
               {loading ? "Accesso..." : "Accedi"}
             </BtnPrimary>
             <BtnOutline onClick={() => setTab(1)}>
@@ -219,7 +246,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
               </label>
             </div>
 
-            <BtnPrimary onClick={handleRegister}>
+            <BtnPrimary onClick={handleRegister} disabled={loading}>
               {loading ? "Registrazione..." : "Crea account gratuito"}
             </BtnPrimary>
             <p className="text-[11px] text-[#7A766F] text-center mt-[10px]">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import ModalOverlay, {
   ModalClose,
@@ -40,6 +41,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
   const [consentLeadMarketplace, setConsentLeadMarketplace] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const supabase = createClient();
+  const router = useRouter();
 
   function reset() {
     setStep(1);
@@ -50,6 +52,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
     setName("");
     setOrdine("");
     setError("");
+    setResetSent(false);
     setConsentPrivacy(false);
     setConsentMarketing(false);
     setConsentLeadMarketplace(false);
@@ -67,10 +70,24 @@ export default function ModalProfessionista({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) setError("Email o password non corretti.");
-    else handleClose();
-    setLoading(false);
+    try {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) {
+        if (err.message.includes("Email not confirmed")) {
+          setError("Email non ancora confermata. Controlla la tua casella.");
+        } else if (err.message.toLowerCase().includes("rate")) {
+          setError("Troppi tentativi. Riprova tra qualche minuto.");
+        } else {
+          setError("Email o password non corretti.");
+        }
+      } else {
+        handleClose();
+        router.refresh();
+        router.push("/dashboard");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleForgotPassword() {
@@ -80,12 +97,15 @@ export default function ModalProfessionista({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) setError("Errore nell'invio dell'email. Riprova.");
-    else setResetSent(true);
-    setLoading(false);
+    try {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (err) setError("Errore nell'invio dell'email. Riprova.");
+      else setResetSent(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleRegister() {
@@ -107,41 +127,54 @@ export default function ModalProfessionista({ open, onClose }: Props) {
     }
     setLoading(true);
     setError("");
-    const consentTimestamp = new Date().toISOString();
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          role: "professionista",
-          categoria: selected,
-          ordine,
-          consent_privacy_policy: true,
-          consent_terms: true,
-          consent_marketing: consentMarketing,
-          consent_lead_marketplace: consentLeadMarketplace,
-          consent_timestamp: consentTimestamp,
+    try {
+      const consentTimestamp = new Date().toISOString();
+      const { data, error: err } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            role: "professionista",
+            categoria: selected,
+            ordine,
+            consent_privacy_policy: true,
+            consent_terms: true,
+            consent_marketing: consentMarketing,
+            consent_lead_marketplace: consentLeadMarketplace,
+            consent_timestamp: consentTimestamp,
+          },
         },
-      },
-    });
-    if (error) {
-      setError(error.message);
-    } else if (data.user) {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: "professionista",
-          userId: data.user.id,
-          email,
-        }),
       });
-      const { url } = await res.json();
-      if (url) window.location.href = url;
-      else handleClose();
+      if (err) {
+        if (err.message.toLowerCase().includes("rate")) {
+          setError("Troppi tentativi. Riprova tra qualche minuto.");
+        } else {
+          setError(err.message);
+        }
+      } else if (data.user) {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: "professionista", userId: data.user.id, email }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          setError(body.error ?? "Errore avviando il checkout. Riprova.");
+          return;
+        }
+        const { url } = await res.json();
+        if (url) {
+          window.location.href = url;
+        } else {
+          handleClose();
+          router.refresh();
+          router.push("/dashboard");
+        }
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   const prof = selected ? PROFS[selected] : null;
@@ -322,7 +355,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                     Hai dimenticato la password?
                   </button>
                 )}
-                <BtnPrimary onClick={handleLogin}>
+                <BtnPrimary onClick={handleLogin} disabled={loading}>
                   {loading ? "Accesso..." : "Accedi"}
                 </BtnPrimary>
                 <BtnOutline onClick={() => setTab(1)}>
@@ -381,7 +414,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
                   </label>
                 </div>
 
-                <BtnPrimary onClick={handleRegister}>
+                <BtnPrimary onClick={handleRegister} disabled={loading}>
                   {loading ? "Registrazione..." : "Inizia 14 giorni gratis"}
                 </BtnPrimary>
                 <p className="text-[11px] text-[#7A766F] text-center mt-[10px]">

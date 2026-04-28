@@ -117,17 +117,20 @@ export function FormInput({
 export function BtnPrimary({
   children,
   onClick,
+  disabled,
   className = "",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
+  disabled?: boolean;
   className?: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full py-[11px] rounded-[9px] text-[13.5px] font-medium mt-4 border-none cursor-pointer transition-all duration-150 bg-accent text-white hover:bg-accent-hover shadow-[0_2px_8px_rgba(232,52,10,0.20)] ${className}`}
+      disabled={disabled}
+      className={`w-full py-[11px] rounded-[9px] text-[13.5px] font-medium mt-4 border-none transition-all duration-150 bg-accent text-white hover:bg-accent-hover shadow-[0_2px_8px_rgba(232,52,10,0.20)] disabled:opacity-60 disabled:cursor-not-allowed ${className}`}
     >
       {children}
     </button>
