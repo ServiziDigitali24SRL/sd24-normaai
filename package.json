@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sec:audit": "bash scripts/sec-audit/check-bundle-secrets.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
