@@ -251,10 +251,8 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
       //   so VAD doesn't clip the user's first word (was 0.4s, halved)
       // - backgroundSound off: skips background audio mixing → saves ~100ms
       await vapi.start(assistantId, {
-        assistantOverrides: {
-          startSpeakingPlan: { waitSeconds: 0.2 },
-          backgroundSound: "off",
-        },
+        startSpeakingPlan: { waitSeconds: 0.2 },
+        backgroundSound: "off",
       });
     } catch (err) {
       console.error("[NormaAI] vapi.start threw", err);
