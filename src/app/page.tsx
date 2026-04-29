@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamicImport from "next/dynamic";
 import DualSidebar from "@/components/dashboard/DualSidebar";
+import type { ProfVariant } from "@/lib/taxonomy";
 import MainDashboard from "@/components/dashboard/MainDashboard";
 
 // Real Supabase signup/login modals (lazy-loaded). The on-page Onboarding
@@ -13,12 +14,12 @@ const ModalProfessionista = dynamicImport(() => import("@/components/modals/Moda
 const ModalImpresa        = dynamicImport(() => import("@/components/modals/ModalImpresa"),        { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type TabId = '01' | '02' | '03' | '04' | '05' | '06' | '07';
+type TabId = '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08';
 type AuthModalRole = 'cittadino' | 'professionista' | 'impresa';
 
 function getRoleForTab(tabId: TabId): AuthModalRole {
-  if (tabId === '04') return 'professionista';
-  if (tabId === '05') return 'impresa';
+  if (tabId === '04' || tabId === '05') return 'professionista';
+  if (tabId === '06') return 'impresa';
   return 'cittadino';
 }
 interface Sel { macro: string; macroLabel: string; item: string | null }
@@ -946,7 +947,7 @@ function EnterpriseScreen() {
 }
 
 // ─── Dashboard wrapper (for tabs 03-05) ───────────────────────────────────────
-function DashboardTab({ role, demoUser }: { role: 'cittadino' | 'prof' | 'impresa'; demoUser: { name: string; initials: string; subtitle: string } }) {
+function DashboardTab({ role, variant, demoUser }: { role: 'cittadino' | 'prof' | 'impresa'; variant?: ProfVariant; demoUser: { name: string; initials: string; subtitle: string } }) {
   const [selection, setSelection] = useState<Sel | null>(null);
   const router = useRouter();
 
@@ -965,7 +966,7 @@ function DashboardTab({ role, demoUser }: { role: 'cittadino' | 'prof' | 'impres
     <div style={{ display: 'flex', height: '100%', background: 'var(--paper)', overflow: 'hidden' }}>
       <DualSidebar
         role={role}
-        variant={role === 'prof' ? 'avvocato' : undefined}
+        variant={variant ?? (role === 'prof' ? 'avvocato' : undefined)}
         user={demoUser}
         locked={false}
         active={selection ? { macro: selection.macro, item: selection.item } : null}
@@ -1025,10 +1026,11 @@ export default function PreviewPage() {
     { id: '01', label: 'Chat' },
     { id: '02', label: 'Onboarding' },
     { id: '03', label: 'Dash · Cittadino' },
-    { id: '04', label: 'Dash · Professionista' },
-    { id: '05', label: 'Dash · Impresa' },
-    { id: '06', label: 'API' },
-    { id: '07', label: 'Su Misura' },
+    { id: '04', label: 'Dash · Avvocato' },
+    { id: '05', label: 'Dash · Libero Prof.' },
+    { id: '06', label: 'Dash · Impresa' },
+    { id: '07', label: 'API' },
+    { id: '08', label: 'Su Misura' },
   ];
 
   return (
@@ -1093,10 +1095,11 @@ export default function PreviewPage() {
         {tab === '01' && <ChatScreen onCTA={() => setAuthModal('cittadino')} onTrovaProfessionista={() => setAuthModal('professionista')} />}
         {tab === '02' && <OnboardingScreen onComplete={() => setTab('03')} />}
         {tab === '03' && <DashboardTab role="cittadino" demoUser={{ name: 'Marco Rossi', initials: 'MR', subtitle: 'CITTADINO · PIANO GRATUITO' }} />}
-        {tab === '04' && <DashboardTab role="prof" demoUser={{ name: 'Avv. Giulia Mancini', initials: 'GM', subtitle: 'AVVOCATO · FORO DI ROMA' }} />}
-        {tab === '05' && <DashboardTab role="impresa" demoUser={{ name: 'Acme SRL', initials: 'AC', subtitle: 'IMPRESA · MEDIA' }} />}
-        {tab === '06' && <ApiScreen />}
-        {tab === '07' && <EnterpriseScreen />}
+        {tab === '04' && <DashboardTab role="prof" variant="avvocato" demoUser={{ name: 'Avv. Giulia Mancini', initials: 'GM', subtitle: 'AVVOCATO · FORO DI ROMA · €29/mese + lead' }} />}
+        {tab === '05' && <DashboardTab role="prof" variant="commercialista" demoUser={{ name: 'Dott. Andrea Conti', initials: 'AC', subtitle: 'COMMERCIALISTA · MILANO · €29/mese' }} />}
+        {tab === '06' && <DashboardTab role="impresa" demoUser={{ name: 'Acme SRL', initials: 'AS', subtitle: 'IMPRESA · MEDIA' }} />}
+        {tab === '07' && <ApiScreen />}
+        {tab === '08' && <EnterpriseScreen />}
       </div>
 
       {/* ── Real auth modals (Supabase) ── */}
