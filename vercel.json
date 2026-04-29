@@ -12,6 +12,10 @@
     {
       "path": "/api/impresa/report-compliance?cron=1",
       "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/health/voice",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

@@ -8,4 +8,9 @@ updates:
     open-pull-requests-limit: 5
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # Voice SDK — pinned esatto, MAI aggiornare automaticamente
+      - dependency-name: "@vapi-ai/web"
+        versions: [">= 0"]
+      - dependency-name: "@daily-co/daily-js"
+        versions: [">= 0"]
