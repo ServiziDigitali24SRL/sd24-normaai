@@ -1,6 +1,9 @@
 import { withSentryConfig } from "@sentry/nextjs";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: new URL('.', import.meta.url).pathname,
+  },
   compress: true,
   poweredByHeader: false,
   compiler: {
