@@ -3,10 +3,25 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Icon from "./Icon";
 import { Badge, WidgetCard, ComplianceScoreCircle, CountUp } from "./DashShared";
+import { createClient } from "@/lib/supabase-browser";
 
 // ─── Storage key ──────────────────────────────────────────────────────────────
 
 const DC_STORAGE = 'norma.dashboard.v1.';
+
+// ─── Live Supabase data ───────────────────────────────────────────────────────
+
+interface LeadItem { id: string; title: string; city: string; type: string; price: string; urgency: string }
+
+interface SupaData {
+  score: number;
+  queryUsate: number;
+  queryIncluse: number;
+  piano: string;
+  walletCrediti: number;
+  leadCount: number;
+  leads: LeadItem[];
+}
 
 // ─── Widget catalog ───────────────────────────────────────────────────────────
 
@@ -141,28 +156,38 @@ DC_SCADENZE_BY_ROLE.professionista = DC_SCADENZE_BY_ROLE.prof;
 
 // ─── Widget renderers ─────────────────────────────────────────────────────────
 
-const DCWScore = ({ score }: { score: number }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 20 }}>
-    <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-        <CountUp value={score} style={{ fontFamily: 'var(--serif)', fontSize: 64, lineHeight: 0.9, letterSpacing: '-0.03em' } as React.CSSProperties} />
-        <span style={{ fontFamily: 'var(--serif)', fontSize: 22, color: 'var(--ink-4)' }}>/100</span>
+const DCWScore = ({ score, queryUsate, queryIncluse, piano }: { score: number; queryUsate?: number; queryIncluse?: number; piano?: string }) => {
+  const today = new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+  const hasRealData = queryIncluse !== undefined && queryIncluse > 0;
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 20 }}>
+      <div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <CountUp value={score} style={{ fontFamily: 'var(--serif)', fontSize: 64, lineHeight: 0.9, letterSpacing: '-0.03em' } as React.CSSProperties} />
+          <span style={{ fontFamily: 'var(--serif)', fontSize: 22, color: 'var(--ink-4)' }}>/100</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
+          {hasRealData ? (
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.08em' }}>
+              {queryUsate}/{queryIncluse} query usate
+            </span>
+          ) : (
+            <span style={{ fontSize: 11.5, color: 'var(--alloro)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Icon name="arrowUp" size={10} /> +4 dal mese scorso
+            </span>
+          )}
+          <Badge tone={score >= 80 ? 'ok' : score >= 60 ? 'warn' : 'accent'}>
+            {piano ? piano.replace('_', ' ').toUpperCase() : (score >= 80 ? 'RISCHIO BASSO' : score >= 60 ? 'RISCHIO MEDIO' : 'RISCHIO ALTO')}
+          </Badge>
+        </div>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 8 }}>
+          {hasRealData ? `Aggiornato · ${today}` : 'Ultimo audit · 14 Mar 2026'}
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 10, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11.5, color: 'var(--alloro)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <Icon name="arrowUp" size={10} /> +4 dal mese scorso
-        </span>
-        <Badge tone={score >= 80 ? 'ok' : score >= 60 ? 'warn' : 'accent'}>
-          Rischio {score >= 80 ? 'basso' : score >= 60 ? 'medio-basso' : 'alto'}
-        </Badge>
-      </div>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 8 }}>
-        Ultimo audit · 14 Mar 2026
-      </div>
+      <ComplianceScoreCircle score={score} size={110} stroke={10} />
     </div>
-    <ComplianceScoreCircle score={score} size={110} stroke={10} />
-  </div>
-);
+  );
+};
 
 const DCWTasks = ({ tasks, onToggle }: { tasks: Task[]; onToggle: (id: string) => void }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -366,39 +391,60 @@ const DCWAlerts = () => (
   </div>
 );
 
-const DCWLeads = () => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-    <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>7 nuovi oggi</div>
-    {[
-      { title: 'Separazione coniugale', city: 'Roma',   type: 'PRIVATO', budget: '€2.500', urg: 'MEDIA', price: '€75' },
-      { title: 'Consulenza GDPR',       city: 'Milano', type: 'IMPRESA', budget: '€8.000', urg: 'ALTA',  price: '€150' },
-      { title: 'Sfratto moroso',         city: 'Torino', type: 'PRIVATO', budget: '€1.800', urg: 'ALTA',  price: '€75' },
-    ].map((l, i) => (
-      <div key={i} style={{ padding: 10, background: 'white', border: '1px solid var(--paper-line)', borderRadius: 6 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 3 }}>{l.title}</div>
-        <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 6 }}>
-          {l.city.toUpperCase()} · {l.type} · {l.budget} · {l.urg}
-        </div>
-        <button className="btn btn-primary" style={{ width: '100%', padding: '5px 8px', fontSize: 11 }}>Acquista {l.price}</button>
-      </div>
-    ))}
-  </div>
-);
+const LEADS_FIXTURE: LeadItem[] = [
+  { id: 'f1', title: 'Separazione coniugale', city: 'Roma',   type: 'PRIVATO', price: '€75',  urgency: 'MEDIA' },
+  { id: 'f2', title: 'Consulenza GDPR',       city: 'Milano', type: 'IMPRESA', price: '€150', urgency: 'ALTA'  },
+  { id: 'f3', title: 'Sfratto moroso',         city: 'Torino', type: 'PRIVATO', price: '€75',  urgency: 'ALTA'  },
+];
 
-const DCWWallet = () => (
-  <div>
-    <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Saldo</div>
-    <div style={{ fontFamily: 'var(--serif)', fontSize: 38, letterSpacing: '-0.02em', lineHeight: 1 }}>€500<span style={{ fontSize: 18, color: 'var(--ink-4)' }}>,00</span></div>
-    <div style={{ marginTop: 10, padding: 10, background: 'var(--paper-tint)', borderRadius: 6, fontSize: 11.5 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <span>Lead acquistato</span>
-        <span style={{ color: 'var(--vermiglio-ink)' }}>−€75</span>
+const DCWLeads = ({ leads, leadCount }: { leads?: LeadItem[]; leadCount?: number }) => {
+  const displayLeads = (leads && leads.length > 0) ? leads : LEADS_FIXTURE;
+  const count = leadCount ?? 7;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        {count > 0 ? `${count} disponibili` : 'Nessun lead oggi'}
       </div>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', marginTop: 2 }}>21 Apr 2026</div>
+      {displayLeads.map((l, i) => (
+        <div key={l.id ?? i} style={{ padding: 10, background: 'white', border: '1px solid var(--paper-line)', borderRadius: 6 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 500, marginBottom: 3 }}>{l.title}</div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', letterSpacing: '0.08em', marginBottom: 6 }}>
+            {l.city.toUpperCase()} · {l.type} · {l.urgency}
+          </div>
+          <button className="btn btn-primary" style={{ width: '100%', padding: '5px 8px', fontSize: 11 }}>Acquista {l.price}</button>
+        </div>
+      ))}
     </div>
-    <button className="btn btn-primary" style={{ width: '100%', marginTop: 10, fontSize: 12 }}>+ Ricarica</button>
-  </div>
-);
+  );
+};
+
+const DCWWallet = ({ walletBalance }: { walletBalance?: number }) => {
+  const euros = walletBalance ?? 0;
+  const whole = Math.floor(euros);
+  const cents = String(Math.round((euros % 1) * 100)).padStart(2, '0');
+  const isReal = walletBalance !== undefined;
+  return (
+    <div>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Saldo</div>
+      <div style={{ fontFamily: 'var(--serif)', fontSize: 38, letterSpacing: '-0.02em', lineHeight: 1 }}>
+        €{isReal ? whole : 500}<span style={{ fontSize: 18, color: 'var(--ink-4)' }}>,{isReal ? cents : '00'}</span>
+      </div>
+      {!isReal && (
+        <div style={{ marginTop: 10, padding: 10, background: 'var(--paper-tint)', borderRadius: 6, fontSize: 11.5 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Lead acquistato</span>
+            <span style={{ color: 'var(--vermiglio-ink)' }}>−€75</span>
+          </div>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 9, color: 'var(--ink-4)', marginTop: 2 }}>21 Apr 2026</div>
+        </div>
+      )}
+      {isReal && euros === 0 && (
+        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--ink-3)' }}>Ricarica per acquistare lead</div>
+      )}
+      <button className="btn btn-primary" style={{ width: '100%', marginTop: 10, fontSize: 12 }}>+ Ricarica</button>
+    </div>
+  );
+};
 
 const DCWFiscali = () => (
   <div>
@@ -463,7 +509,18 @@ const DCWCert = () => (
 
 // ─── Renderer map ─────────────────────────────────────────────────────────────
 
-type RendererProps = { score?: number; tasks?: Task[]; onToggle?: (id: string) => void; scadenze?: DeadlineItem[] };
+type RendererProps = {
+  score?: number;
+  tasks?: Task[];
+  onToggle?: (id: string) => void;
+  scadenze?: DeadlineItem[];
+  queryUsate?: number;
+  queryIncluse?: number;
+  piano?: string;
+  leads?: LeadItem[];
+  leadCount?: number;
+  walletBalance?: number;
+};
 
 const DC_RENDERERS: Record<string, React.ComponentType<RendererProps>> = {
   score:     DCWScore as React.ComponentType<RendererProps>,
@@ -682,7 +739,48 @@ export default function DashboardCustom({ role, variant, onOpenChat: _onOpenChat
   const [editMode, setEditMode] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
-  const [score] = useState(76);
+  const [supaData, setSupaData] = useState<SupaData | null>(null);
+
+  useEffect(() => {
+    const client = createClient();
+    client.auth.getUser().then(async ({ data }) => {
+      const user = data.user;
+      if (!user) return;
+
+      const { data: sub } = await client
+        .from('subscriptions')
+        .select('piano, query_incluse, query_usate_mese')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const queryUsate = sub?.query_usate_mese ?? 0;
+      const queryIncluse = sub?.query_incluse ?? 1;
+      const score = Math.min(100, 50 + Math.round((queryUsate / Math.max(queryIncluse, 1)) * 50));
+      const walletCrediti = (user.user_metadata?.wallet_crediti as number) ?? 0;
+
+      let leadCount = 0;
+      let leads: LeadItem[] = [];
+      if (role === 'prof' && variant !== 'commercialista') {
+        try {
+          const res = await fetch('/api/leads/preview?verticale=avvocato&limit=3');
+          const json = await res.json() as { leads?: { id: string; summary_preview?: string; vertical?: string; city?: string | null; lead_tier?: string; price_cents?: number }[]; count?: number };
+          leadCount = json.count ?? 0;
+          leads = (json.leads ?? []).slice(0, 3).map(l => ({
+            id: l.id,
+            title: l.summary_preview || l.vertical || 'Consulenza legale',
+            city: l.city ?? '—',
+            type: l.lead_tier === 'hot' ? 'URGENTE' : 'PRIVATO',
+            price: '€' + Math.round((l.price_cents ?? 4900) / 100),
+            urgency: l.lead_tier === 'hot' ? 'ALTA' : 'MEDIA',
+          }));
+        } catch {}
+      }
+
+      setSupaData({ score, queryUsate, queryIncluse, piano: sub?.piano ?? '', walletCrediti, leadCount, leads });
+    });
+  }, [role, variant]);
+
+  const score = supaData?.score ?? 76;
   const roleKey = role === 'avvocato' || role === 'commercialista' || role === 'professionista' ? role : (role === 'prof' ? 'prof' : role === 'impresa' ? 'impresa' : 'cittadino');
   const [tasks, setTasks] = useState<Task[]>(() => DC_TASKS_BY_ROLE[roleKey] ?? DC_TASKS_BY_ROLE.impresa);
   const scadenze = DC_SCADENZE_BY_ROLE[roleKey] ?? DC_SCADENZE_BY_ROLE.impresa;
@@ -776,7 +874,18 @@ export default function DashboardCustom({ role, variant, onOpenChat: _onOpenChat
                   </button>
                 )}
               </header>
-              {R && <R score={score} tasks={tasks} onToggle={toggleTask} scadenze={scadenze} />}
+              {R && <R
+                score={score}
+                tasks={tasks}
+                onToggle={toggleTask}
+                scadenze={scadenze}
+                queryUsate={supaData?.queryUsate}
+                queryIncluse={supaData?.queryIncluse}
+                piano={supaData?.piano}
+                leads={supaData?.leads}
+                leadCount={supaData?.leadCount}
+                walletBalance={supaData?.walletCrediti}
+              />}
             </div>
           );
         })}
