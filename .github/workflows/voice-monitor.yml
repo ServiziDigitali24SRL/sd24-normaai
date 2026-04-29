@@ -22,7 +22,7 @@ jobs:
             -X POST https://api.vapi.ai/call/web \
             -H "Authorization: Bearer ${{ secrets.VAPI_PUBLIC_KEY }}" \
             -H "Content-Type: application/json" \
-            -d '{"assistantId":"e4cb1d2b-5afa-440c-94e7-51380cdc1f4a"}')
+            -d '{"assistantId":"00000000-0000-0000-0000-000000000000"}')
           BODY=$(cat /tmp/vapi_body.json)
 
           # Termina subito la call
