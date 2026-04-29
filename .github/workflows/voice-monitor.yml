@@ -165,27 +165,9 @@ Se non puoi fixare in sicurezza, can_fix: false con reason dettagliata.`,
 
             fs.writeFileSync(fix.file, src.replace(fix.original, fix.fixed));
 
-            const branch = `autofix/voice-${Date.now()}`;
+            // Push diretto su main — Vercel deploya automaticamente
             execSync(`git config user.email "autofix@normaai.it"`);
             execSync(`git config user.name "NormaAI Autofix"`);
-            execSync(`git checkout -b ${branch}`);
             execSync(`git add ${fix.file}`);
             execSync(`git commit -m "fix(voice): autofix — ${fix.reason.slice(0, 72)}"`);
-            execSync(`git push origin ${branch}`);
-
-            const pr = await github.rest.pulls.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `fix(voice): [autofix] Vapi ${status} — ${fix.reason.slice(0, 60)}`,
-              head: branch,
-              base: 'main',
-              body: `### 🤖 Voice Autofix\n\n**Errore:** \`POST /call/web → ${status}\`\n\`\`\`json\n${body}\n\`\`\`\n\n**Fix:** ${fix.reason}\n\n---\n*Generato automaticamente da Voice Monitor + Claude Sonnet 4.6*`,
-            });
-
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[Voice DOWN] Vapi ${status} → PR aperta`,
-              body: `${issueBody}\n\nPR: ${pr.data.html_url}`,
-              labels: ['bug', 'voice-down'],
-            });
+            execSync(`git push origin main`);
