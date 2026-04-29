@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import {
   type OrbPersonalityId,
   resolveAssistantId,
@@ -22,9 +23,6 @@ const THINKING_WATCHDOG_MS = 20_000;
 // deeply nested and change shape across SDK versions.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function friendlyVapiError(err: any): string {
-  // Log raw error for debugging — never shown to user
-  console.error("[NormaAI] vapi error detail:", JSON.stringify(err)?.slice(0, 500));
-
   const candidates: string[] = [
     err?.errorMsg, err?.message, err?.error?.message, err?.error?.errorMsg,
     err?.error?.error?.message, err?.error?.error?.error,
@@ -33,10 +31,15 @@ function friendlyVapiError(err: any): string {
 
   const raw = candidates[0]?.toLowerCase() ?? "";
 
+  // Invia a Sentry con contesto completo — mai mostrato all'utente
+  Sentry.captureException(new Error(`VapiError: ${candidates[0] ?? "unknown"}`), {
+    tags: { component: "useMobileVoice" },
+    extra: { vapiError: err, rawMessage: candidates[0] },
+  });
+
   if (raw.includes("permission") || raw.includes("denied") || raw.includes("notallowed")) {
     return "Microfono bloccato. Vai in Impostazioni › Safari › Microfono e abilita normaai.it.";
   }
-  // Tutti gli altri errori: messaggio neutro, dettagli solo in console
   return "Tocca per riprovare.";
 }
 
