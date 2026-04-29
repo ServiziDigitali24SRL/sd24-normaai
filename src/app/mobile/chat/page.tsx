@@ -112,12 +112,32 @@ function resizeImageToBase64(file: File, maxSize: number): Promise<string> {
       canvas.width = Math.round(img.width * scale);
       canvas.height = Math.round(img.height * scale);
       canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      // Rimuovi prefisso data:image/jpeg;base64,
       resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
     };
     img.onerror = reject;
     img.src = url;
   });
+}
+
+function readFileBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function guessMimeType(file: File): string {
+  if (file.type && file.type !== "application/octet-stream") return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    pdf: "application/pdf", txt: "text/plain",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+  };
+  return map[ext] ?? "application/octet-stream";
 }
 
 export default function MobileChatPage() {
@@ -163,21 +183,14 @@ export default function MobileChatPage() {
       // Leggi il file come base64 se presente
       let attachmentPayload: { type: "document" | "image"; mediaType: string; name: string; data: string } | undefined;
       if (currentAttachment) {
-        const isImage = currentAttachment.type.startsWith("image/");
-        let base64: string;
-        if (isImage) {
-          // Ridimensiona immagini >1MB per evitare payload troppo grandi (foto iPhone 4-8MB)
-          base64 = await resizeImageToBase64(currentAttachment, 1200);
-        } else {
-          const arrayBuffer = await currentAttachment.arrayBuffer();
-          const bytes = new Uint8Array(arrayBuffer);
-          let binary = "";
-          for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-          base64 = btoa(binary);
-        }
+        const mimeType = guessMimeType(currentAttachment);
+        const isImage = mimeType.startsWith("image/");
+        const base64 = isImage
+          ? await resizeImageToBase64(currentAttachment, 1200)
+          : await readFileBase64(currentAttachment);
         attachmentPayload = {
           type: isImage ? "image" : "document",
-          mediaType: isImage ? "image/jpeg" : (currentAttachment.type || "application/octet-stream"),
+          mediaType: isImage ? "image/jpeg" : mimeType,
           name: currentAttachment.name,
           data: base64,
         };
@@ -199,6 +212,12 @@ export default function MobileChatPage() {
       if (res.status === 402) {
         setStreaming(false);
         setShowGate(true);
+        return;
+      }
+
+      if (res.status === 413) {
+        setStreaming(false);
+        setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "assistant", text: "Allegato troppo grande. Limite massimo: 5MB.", ts: Date.now() }]);
         return;
       }
 

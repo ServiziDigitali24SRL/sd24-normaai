@@ -1146,6 +1146,27 @@ function resizeDashboardImage(file: File, maxSize: number): Promise<string> {
   });
 }
 
+function readFileBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function guessMimeType(file: File): string {
+  if (file.type && file.type !== 'application/octet-stream') return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  const map: Record<string, string> = {
+    pdf: 'application/pdf', txt: 'text/plain',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp',
+  };
+  return map[ext] ?? 'application/octet-stream';
+}
+
 function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToast, initialFile }: {
   role: string; context: string;
   onClose: () => void; score: number; pushToast: (m: string) => void;
@@ -1183,20 +1204,14 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
     // Leggi file come base64 se presente
     let attachmentPayload: { type: 'document' | 'image'; mediaType: string; name: string; data: string } | undefined;
     if (fileToSend) {
-      const isImage = fileToSend.type.startsWith('image/');
-      let base64: string;
-      if (isImage) {
-        base64 = await resizeDashboardImage(fileToSend, 1200);
-      } else {
-        const buf = await fileToSend.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let bin = '';
-        for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
-        base64 = btoa(bin);
-      }
+      const mimeType = guessMimeType(fileToSend);
+      const isImage = mimeType.startsWith('image/');
+      const base64 = isImage
+        ? await resizeDashboardImage(fileToSend, 1200)
+        : await readFileBase64(fileToSend);
       attachmentPayload = {
         type: isImage ? 'image' : 'document',
-        mediaType: isImage ? 'image/jpeg' : (fileToSend.type || 'application/octet-stream'),
+        mediaType: isImage ? 'image/jpeg' : mimeType,
         name: fileToSend.name,
         data: base64,
       };
@@ -1216,6 +1231,18 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
         }),
       });
 
+      if (res.status === 402) {
+        let errMsg = 'Limite query raggiunto. Registrati o passa a PRO per continuare.';
+        try { const j = await res.json(); if (j?.message) errMsg = j.message; } catch { /* noop */ }
+        setMessages(m => m.map((msg, i) => i === m.length - 1 ? { ...msg, text: errMsg } : msg));
+        setStreaming(false);
+        return;
+      }
+      if (res.status === 413) {
+        setMessages(m => m.map((msg, i) => i === m.length - 1 ? { ...msg, text: 'Allegato troppo grande. Limite massimo: 5MB.' } : msg));
+        setStreaming(false);
+        return;
+      }
       if (!res.ok || !res.body) throw new Error('HTTP ' + res.status);
 
       const reader = res.body.getReader();
