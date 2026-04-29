@@ -80,9 +80,66 @@ const DC_EMAIL_TREE: Record<string, EmailNode[]> = {
   ],
 };
 
-// ─── Widget renderers ─────────────────────────────────────────────────────────
+// ─── Role-aware fixture data ──────────────────────────────────────────────────
 
 interface Task { id: string; text: string; due: string; priority: string; done: boolean }
+interface DeadlineItem { date: string; text: string; urgent: boolean }
+
+const DC_TASKS_BY_ROLE: Record<string, Task[]> = {
+  impresa: [
+    { id: 't1', text: 'Registro trattamenti art. 30', due: '30 Apr', priority: 'alta',  done: false },
+    { id: 't2', text: 'DPIA nuovo CRM',               due: '15 Mag', priority: 'alta',  done: false },
+    { id: 't3', text: 'Cookie banner aggiornamento',  due: '10 Mag', priority: 'media', done: false },
+    { id: 't4', text: 'Contratto DPA fornitore cloud', due: '20 Mag', priority: 'media', done: false },
+  ],
+  cittadino: [
+    { id: 'c1', text: 'Presentazione 730',            due: '30 Set', priority: 'alta',  done: false },
+    { id: 'c2', text: 'Rinnovo contratto locazione',  due: '30 Giu', priority: 'media', done: false },
+    { id: 'c3', text: 'Bolletta gas — reclamo',       due: '15 Mag', priority: 'media', done: false },
+    { id: 'c4', text: 'Verbale assemblea condominio', due: '12 Mag', priority: 'bassa', done: false },
+  ],
+  prof: [
+    { id: 'p1', text: 'Mem. difensiva Rossi c/ INPS', due: '28 Apr', priority: 'alta',  done: false },
+    { id: 'p2', text: 'Revisione profilo directory',  due: '—',      priority: 'bassa', done: false },
+    { id: 'p3', text: 'Follow-up lead L-2041',        due: '3 Mag',  priority: 'alta',  done: false },
+    { id: 'p4', text: 'Atto citazione Bianchi',       due: '15 Mag', priority: 'media', done: false },
+  ],
+};
+DC_TASKS_BY_ROLE.avvocato        = DC_TASKS_BY_ROLE.prof;
+DC_TASKS_BY_ROLE.commercialista  = [
+  { id: 'k1', text: 'Dichiarazione IVA Q1',      due: '30 Apr', priority: 'alta',  done: false },
+  { id: 'k2', text: 'F24 mensile aprile',         due: '16 Mag', priority: 'alta',  done: false },
+  { id: 'k3', text: 'Registro corrispettivi',     due: '15 Mag', priority: 'media', done: false },
+  { id: 'k4', text: 'Revisione bilancio cliente', due: '30 Mag', priority: 'media', done: false },
+];
+DC_TASKS_BY_ROLE.professionista  = DC_TASKS_BY_ROLE.prof;
+
+const DC_SCADENZE_BY_ROLE: Record<string, DeadlineItem[]> = {
+  impresa: [
+    { date: '30 Apr', text: 'Rinnovo consensi marketing', urgent: true },
+    { date: '15 Mag', text: 'Audit annuale GDPR',         urgent: false },
+    { date: '22 Mag', text: 'Scadenza CCNL Commercio',    urgent: false },
+  ],
+  cittadino: [
+    { date: '30 Set', text: 'Presentazione 730/Redditi',  urgent: false },
+    { date: '16 Giu', text: 'IMU prima rata',             urgent: false },
+    { date: '30 Giu', text: 'Registrazione contratto',    urgent: false },
+  ],
+  prof: [
+    { date: '28 Apr', text: 'Udienza Rossi c/ INPS',      urgent: true },
+    { date: '3 Mag',  text: 'Follow-up lead L-2041',      urgent: false },
+    { date: '30 Giu', text: 'Rinnovo iscrizione albo',    urgent: false },
+  ],
+  commercialista: [
+    { date: '30 Apr', text: 'Liquidazione IVA',           urgent: true },
+    { date: '16 Mag', text: 'F24 mensile',                urgent: false },
+    { date: '30 Set', text: 'Dichiarazione 730 clienti',  urgent: false },
+  ],
+};
+DC_SCADENZE_BY_ROLE.avvocato       = DC_SCADENZE_BY_ROLE.prof;
+DC_SCADENZE_BY_ROLE.professionista = DC_SCADENZE_BY_ROLE.prof;
+
+// ─── Widget renderers ─────────────────────────────────────────────────────────
 
 const DCWScore = ({ score }: { score: number }) => (
   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', gap: 20 }}>
@@ -131,24 +188,23 @@ const DCWTasks = ({ tasks, onToggle }: { tasks: Task[]; onToggle: (id: string) =
   </div>
 );
 
-const DCWScadenze = () => (
-  <div style={{ display: 'flex', flexDirection: 'column' }}>
-    {[
-      { date: '30 Apr', text: 'Rinnovo consensi marketing', urgent: true },
-      { date: '15 Mag', text: 'Audit annuale GDPR',         urgent: false },
-      { date: '22 Mag', text: 'Scadenza CCNL',              urgent: false },
-    ].map((d, i) => (
-      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: i < 2 ? '1px solid var(--paper-line)' : 'none' }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.urgent ? 'var(--vermiglio)' : 'var(--ink-4)', flexShrink: 0 }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12.5 }}>{d.text}</div>
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.1em', marginTop: 2 }}>{d.date}</div>
+const DCWScadenze = ({ scadenze }: { scadenze?: DeadlineItem[] }) => {
+  const items = scadenze ?? DC_SCADENZE_BY_ROLE.impresa;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {items.map((d, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 0', borderBottom: i < items.length - 1 ? '1px solid var(--paper-line)' : 'none' }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: d.urgent ? 'var(--vermiglio)' : 'var(--ink-4)', flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12.5 }}>{d.text}</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--ink-4)', letterSpacing: '0.1em', marginTop: 2 }}>{d.date}</div>
+          </div>
+          {d.urgent && <Badge tone="accent">URGENTE</Badge>}
         </div>
-        {d.urgent && <Badge tone="accent">URGENTE</Badge>}
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
 const DCWChecklist = () => {
   const [items, setItems] = useState([
@@ -407,7 +463,7 @@ const DCWCert = () => (
 
 // ─── Renderer map ─────────────────────────────────────────────────────────────
 
-type RendererProps = { score?: number; tasks?: Task[]; onToggle?: (id: string) => void };
+type RendererProps = { score?: number; tasks?: Task[]; onToggle?: (id: string) => void; scadenze?: DeadlineItem[] };
 
 const DC_RENDERERS: Record<string, React.ComponentType<RendererProps>> = {
   score:     DCWScore as React.ComponentType<RendererProps>,
@@ -627,12 +683,9 @@ export default function DashboardCustom({ role, variant, onOpenChat: _onOpenChat
   const [addOpen, setAddOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [score] = useState(76);
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 't1', text: 'Registro trattamenti art. 30', due: '30 Apr', priority: 'alta',  done: false },
-    { id: 't2', text: 'DPIA nuovo CRM',               due: '15 Mag', priority: 'alta',  done: false },
-    { id: 't3', text: 'Cookie banner agg.',            due: '10 Mag', priority: 'media', done: false },
-    { id: 't4', text: 'Contratto DPA cloud',           due: '20 Mag', priority: 'media', done: false },
-  ]);
+  const roleKey = role === 'avvocato' || role === 'commercialista' || role === 'professionista' ? role : (role === 'prof' ? 'prof' : role === 'impresa' ? 'impresa' : 'cittadino');
+  const [tasks, setTasks] = useState<Task[]>(() => DC_TASKS_BY_ROLE[roleKey] ?? DC_TASKS_BY_ROLE.impresa);
+  const scadenze = DC_SCADENZE_BY_ROLE[roleKey] ?? DC_SCADENZE_BY_ROLE.impresa;
 
   const toggleTask = (id: string) => setTasks(t => t.map(x => x.id === id ? { ...x, done: !x.done } : x));
 
@@ -723,7 +776,7 @@ export default function DashboardCustom({ role, variant, onOpenChat: _onOpenChat
                   </button>
                 )}
               </header>
-              {R && <R score={score} tasks={tasks} onToggle={toggleTask} />}
+              {R && <R score={score} tasks={tasks} onToggle={toggleTask} scadenze={scadenze} />}
             </div>
           );
         })}

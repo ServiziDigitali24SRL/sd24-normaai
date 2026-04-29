@@ -150,6 +150,147 @@ const MD_CHECKLIST_DEFAULT: CheckItem[] = [
   { text: 'Verifica cookie terze parti', done: false },
 ];
 
+const MD_CHECKLIST_BY_CONTEXT: Record<string, CheckItem[]> = {
+  // impresa / privacy
+  'privacy/GDPR — Reg. UE 2016/679': [
+    { text: 'Registro trattamenti art. 30 aggiornato', done: false },
+    { text: 'DPO nominato (se obbligatorio)', done: false },
+    { text: 'Privacy policy pubblicata e aggiornata', done: true },
+    { text: 'Consensi raccolti e documentati', done: false },
+    { text: 'Trasferimenti extra-UE verificati', done: false },
+    { text: 'Misure sicurezza tecniche documentate', done: false },
+  ],
+  'privacy/DPIA': [
+    { text: 'Trattamenti ad alto rischio identificati', done: false },
+    { text: 'Valutazione d\'impatto redatta', done: false },
+    { text: 'Misure di mitigazione implementate', done: false },
+    { text: 'DPO consultato (se nominato)', done: false },
+    { text: 'Riesame periodico pianificato', done: false },
+  ],
+  'privacy/Data breach': [
+    { text: 'Procedura gestione data breach definita', done: false },
+    { text: 'Registro violazioni istituito', done: false },
+    { text: 'Template notifica Garante (72h) pronto', done: false },
+    { text: 'Responsabili interni formati', done: false },
+    { text: 'Contatti Garante verificati', done: true },
+  ],
+  'privacy/Cookie & tracking': [
+    { text: 'Cookie policy pubblicata', done: true },
+    { text: 'Banner cookie installato', done: true },
+    { text: 'Registro consensi attivo', done: true },
+    { text: 'Cookie tecnici mappati', done: false },
+    { text: 'Contratto DPA Google Analytics', done: false },
+    { text: 'Verifica cookie terze parti', done: false },
+  ],
+  'privacy/Trasferimenti extra-UE': [
+    { text: 'Mappatura flussi dati verso paesi terzi', done: false },
+    { text: 'SCC (Clausole Standard) firmate', done: false },
+    { text: 'BCR verificate (se applicabile)', done: false },
+    { text: 'Registro trasferimenti aggiornato', done: false },
+    { text: 'Valutazione adeguatezza paese destinazione', done: false },
+  ],
+  'privacy/Videosorveglianza': [
+    { text: 'Informativa ex art. 13 GDPR esposta', done: false },
+    { text: 'Autorizzazione Garante (se richiesta)', done: false },
+    { text: 'Retention impostata (max 24/72h)', done: false },
+    { text: 'Accesso limitato al personale autorizzato', done: false },
+    { text: 'Registro trattamento videosorveglianza', done: false },
+  ],
+  'privacy/AI Act': [
+    { text: 'Sistemi AI classificati per rischio', done: false },
+    { text: 'Documentazione tecnica predisposta', done: false },
+    { text: 'Supervisione umana garantita', done: false },
+    { text: 'Registro sistemi AI ad alto rischio', done: false },
+    { text: 'Conformità art. 9 AI Act verificata', done: false },
+  ],
+  'privacy/NIS2': [
+    { text: 'Analisi del rischio completata', done: false },
+    { text: 'Piano gestione incidenti approvato', done: false },
+    { text: 'Misure sicurezza rete implementate', done: false },
+    { text: 'Notifica autorità competente (entità essenziale)', done: false },
+    { text: 'Formazione personale sicurezza informatica', done: false },
+  ],
+  // impresa / lavoro
+  'lavoro/Sicurezza sul lavoro': [
+    { text: 'DVR (Documento Valutazione Rischi) aggiornato', done: false },
+    { text: 'RSPP nominato e formato', done: false },
+    { text: 'Piano di emergenza aggiornato', done: false },
+    { text: 'Formazione lavoratori completata (eLearning/aula)', done: false },
+    { text: 'Sorveglianza sanitaria attiva', done: false },
+    { text: 'DPI forniti e registrati', done: false },
+  ],
+  'lavoro/CCNL aggiornamenti': [
+    { text: 'CCNL applicato verificato e aggiornato', done: false },
+    { text: 'Mansionari allineati al nuovo testo', done: false },
+    { text: 'Buste paga adeguate', done: false },
+    { text: 'Comunicazione ai dipendenti effettuata', done: false },
+  ],
+  // impresa / fiscale
+  'fiscale/IVA': [
+    { text: 'Registro IVA acquisti tenuto correttamente', done: true },
+    { text: 'Liquidazione periodica effettuata', done: false },
+    { text: 'Comunicazione dati liquidazioni (LIPE)', done: false },
+    { text: 'Dichiarazione IVA annuale presentata', done: false },
+    { text: 'Operazioni black-list verificate', done: false },
+  ],
+  // cittadino / casa
+  'casa/Affitti': [
+    { text: 'Contratto registrato all\'Agenzia Entrate', done: false },
+    { text: 'Ricevute canoni conservate', done: true },
+    { text: 'Eventuali riparazioni documentate', done: false },
+    { text: 'Deposito cauzionale tracciato', done: true },
+    { text: 'Scadenze rinnovo/disdetta calendarizzate', done: false },
+  ],
+  'casa/Condominio': [
+    { text: 'Verbali assemblee conservati', done: true },
+    { text: 'Piano di riparto spese verificato', done: false },
+    { text: 'Regolamento condominiale aggiornato', done: false },
+    { text: 'Quote ordinarie pagate', done: true },
+    { text: 'Eventuali quote straordinarie deliberate', done: false },
+  ],
+  'casa/Mutuo casa': [
+    { text: 'Piano di ammortamento consultato', done: true },
+    { text: 'Agevolazioni prima casa verificate', done: false },
+    { text: 'Polizza scoppio/incendio attiva', done: true },
+    { text: 'Portabilità mutuo valutata', done: false },
+  ],
+  'casa/Compravendita immobili': [
+    { text: 'Visura ipotecaria richiesta', done: false },
+    { text: 'Conformità urbanistica verificata', done: false },
+    { text: 'Proposta irrevocabile d\'acquisto firmata', done: false },
+    { text: 'Compromesso registrato', done: false },
+    { text: 'Atto notarile calendarizzato', done: false },
+  ],
+  // cittadino / fisco
+  'fisco/730': [
+    { text: 'CU (Certificazione Unica) raccolta', done: false },
+    { text: 'Detrazioni e deduzioni documentate', done: false },
+    { text: 'Dichiarazione presentata entro 30 Set', done: false },
+    { text: 'Rimborso/debito verificato', done: false },
+  ],
+  'fisco/IMU/TARI': [
+    { text: 'Categorie catastali verificate', done: true },
+    { text: 'Aliquote comunali 2026 applicate', done: false },
+    { text: 'Prima rata pagata (16 Giu)', done: false },
+    { text: 'Eventuali esenzioni prima casa verificate', done: true },
+  ],
+  // prof
+  'lead/Lead disponibili': [
+    { text: 'Profilo directory aggiornato', done: false },
+    { text: 'Zone di interesse impostate', done: true },
+    { text: 'Specializzazioni indicate', done: true },
+    { text: 'Notifiche nuovi lead abilitate', done: false },
+    { text: 'Budget mensile lead definito', done: false },
+  ],
+  'fascicoli/Fascicoli attivi': [
+    { text: 'Fascicolo aggiornato con ultime note', done: false },
+    { text: 'Scadenze processuali registrate', done: true },
+    { text: 'Cliente aggiornato sullo stato', done: false },
+    { text: 'Documenti probatori archiviati', done: true },
+    { text: 'Onorari fatturati', done: false },
+  ],
+};
+
 const MD_DOCS: DocItem[] = [
   { name: 'contratto_aws_dpa.pdf',    date: '21 Apr 2026', size: '156 KB', tags: ['#contratto', '#dpa', '#aws'] },
   { name: 'privacy_shield_cert.pdf',  date: '10 Mar 2026', size: '89 KB',  tags: ['#privacy', '#cert'] },
@@ -241,10 +382,13 @@ function DashboardHome({ role, user, score, branches, onPickMacro, onOpenChat, p
   const avv = user?.avv as Record<string, unknown> | undefined;
   const profile = user?.profile as Record<string, unknown> | undefined;
 
+  const isProf = role === 'prof' || role === 'avvocato' || role === 'commercialista' || role === 'professionista';
+  const profLabel = role === 'avvocato' ? 'Avvocato' : role === 'commercialista' ? 'Commercialista' : (avv?.role as string) || 'Professionista';
+
   const heroLabel = role === 'impresa'
     ? `Dashboard Impresa · ${((imp?.dimensione as string) || 'MEDIA').toUpperCase()} · ${(imp?.dipendenti as string) || '48'} dipendenti`
-    : role === 'prof'
-    ? `Dashboard Professionista · ${(avv?.role as string) || 'Avvocato'} · Foro di ${(avv?.foro as string) || 'Roma'}`
+    : isProf
+    ? `Dashboard Professionista · ${profLabel} · Foro di ${(avv?.foro as string) || 'Roma'}`
     : `Dashboard Cittadino · ${(profile?.citta as string) || 'Milano'}`;
 
   return (
@@ -986,26 +1130,72 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
     { role: 'ai', text: context ? `Sono pronta ad assisterla su "${context}". Come posso essere utile?` : 'Buongiorno. In cosa posso esserle utile oggi?' },
   ]);
   const [input, setInput] = useState('');
+  const [streaming, setStreaming] = useState(false);
   const [widgetOpen, setWidgetOpen] = useState(true);
   const [liveTasks, setLiveTasks] = useState<LiveTask[]>([]);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const historyRef = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
 
   useEffect(() => {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
   }, [messages]);
 
-  const send = () => {
-    if (!input.trim()) return;
+  const send = async () => {
+    if (!input.trim() || streaming) return;
     const q = input.trim();
     setInput('');
     setMessages(m => [...m, { role: 'user', text: q }]);
-    setTimeout(() => {
-      setMessages(m => [...m, { role: 'ai', text: `Ho analizzato "${q}". In base al Suo profilo e al contesto, Le suggerisco di procedere per punti. Genero un task operativo.` }]);
-      const newTask: LiveTask = { id: 'nt-' + Date.now(), text: q.slice(0, 40), when: 'adesso', isNew: true };
-      setLiveTasks(t => [newTask, ...t]);
-      pushToast(`✓ Task aggiunto: ${newTask.text}`);
-      setTimeout(() => setLiveTasks(t => t.map(x => x.id === newTask.id ? { ...x, isNew: false } : x)), 5000);
-    }, 900);
+    setStreaming(true);
+
+    const history = historyRef.current.slice(-8);
+    const aiMsgId = 'ai-' + Date.now();
+    setMessages(m => [...m, { role: 'ai', text: '' }]);
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: q,
+          vertical: context || null,
+          userId: null,
+          conversationHistory: history,
+          turnNumber: history.filter(h => h.role === 'user').length,
+        }),
+      });
+
+      if (!res.ok || !res.body) throw new Error('HTTP ' + res.status);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            if (event.type === 'text') {
+              fullText += event.text;
+              setMessages(m => m.map((msg, i) => i === m.length - 1 ? { ...msg, text: fullText } : msg));
+            }
+          } catch { /* skip malformed SSE */ }
+        }
+      }
+
+      historyRef.current = [...history, { role: 'user', content: q }, { role: 'assistant', content: fullText }];
+    } catch {
+      setMessages(m => m.map((msg, i) => i === m.length - 1 ? { ...msg, text: 'Errore di connessione. Riprova.' } : msg));
+    } finally {
+      setStreaming(false);
+      void aiMsgId;
+    }
   };
 
   return (
@@ -1056,8 +1246,8 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
               placeholder="Chieda qualcosa…" rows={1}
               style={{ flex: 1, resize: 'none', padding: '12px 16px', border: '1px solid var(--paper-line)', borderRadius: 8, fontSize: 13.5, fontFamily: 'var(--sans)', background: 'var(--paper-tint)', outline: 'none' }}
             />
-            <button onClick={send} className="btn btn-primary" disabled={!input.trim()}>
-              <Icon name="send" size={12} /> Invia
+            <button onClick={send} className="btn btn-primary" disabled={!input.trim() || streaming}>
+              <Icon name="send" size={12} /> {streaming ? '…' : 'Invia'}
             </button>
           </div>
         </div>
@@ -1202,7 +1392,7 @@ function RightPanel({ role, user, onNav, collapsed, onToggle }: {
   const imp = user?.imp as Record<string, unknown> | undefined;
   const planLabel =
     role === 'impresa' ? ((imp?.dimensione as string) || 'media').toUpperCase()
-    : role === 'prof'  ? 'Piano Avvocato'
+    : (role === 'prof' || role === 'avvocato' || role === 'commercialista' || role === 'professionista') ? `Piano ${role === 'avvocato' ? 'Avvocato' : role === 'commercialista' ? 'Commercialista' : 'Professionista'}`
     : 'Piano Gratuito';
 
   if (collapsed) {
@@ -1232,7 +1422,7 @@ function RightPanel({ role, user, onNav, collapsed, onToggle }: {
         </button>
       </WidgetCard>
 
-      {role === 'prof' && (
+      {(role === 'prof' || role === 'avvocato' || role === 'commercialista' || role === 'professionista') && (
         <div style={{ marginTop: 14 }}>
           <WidgetCard title="Lead marketplace" icon="flame" accent="var(--vermiglio)">
             <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--ink-4)', textTransform: 'uppercase' }}>Nuovi oggi</div>
@@ -1272,8 +1462,13 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
   const [rightCollapsed, setRightCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1200);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [tasks, setTasks] = useState(MD_TASKS_BY_MACRO);
-  const [checklist, setChecklist] = useState(MD_CHECKLIST_DEFAULT);
+  const [checklists, setChecklists] = useState<Record<string, CheckItem[]>>({});
   const [documents, setDocuments] = useState(MD_DOCS);
+
+  const getChecklist = (macro: string, item: string | null): CheckItem[] => {
+    const key = item ? `${macro}/${item}` : macro;
+    return checklists[key] ?? MD_CHECKLIST_BY_CONTEXT[key] ?? MD_CHECKLIST_DEFAULT;
+  };
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -1304,18 +1499,19 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
   };
 
   const toggleCheck = (i: number) => {
-    setChecklist(prev => {
-      const next = prev.map((c, idx) => idx === i ? { ...c, done: !c.done } : c);
-      const all = next.every(c => c.done);
-      if (all) {
-        setConfetti(true);
-        pushToast('🎉 Checklist completata al 100%!');
-        setTimeout(() => setConfetti(false), 3000);
-      } else {
-        pushToast('✓ Task completato · Score +2%');
-      }
-      return next;
-    });
+    if (!selection) return;
+    const key = selection.item ? `${selection.macro}/${selection.item}` : selection.macro;
+    const current = getChecklist(selection.macro, selection.item);
+    const next = current.map((c, idx) => idx === i ? { ...c, done: !c.done } : c);
+    setChecklists(prev => ({ ...prev, [key]: next }));
+    const all = next.every(c => c.done);
+    if (all) {
+      setConfetti(true);
+      pushToast('🎉 Checklist completata al 100%!');
+      setTimeout(() => setConfetti(false), 3000);
+    } else {
+      pushToast('✓ Task completato · Score +2%');
+    }
     setScore(s => Math.min(100, s + 2));
   };
 
@@ -1367,7 +1563,7 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
         macroKey={selection.macro}
         macroLabel={selection.macroLabel}
         itemLabel={selection.item}
-        checklist={checklist}
+        checklist={getChecklist(selection.macro, selection.item)}
         onToggleCheck={toggleCheck}
         onBack={onBack || (() => {})}
         onOpenChat={openChat}
