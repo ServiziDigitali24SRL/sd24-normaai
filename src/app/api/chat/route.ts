@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { ChatRequestSchema } from "@/lib/schemas";
 import { rateLimit } from "@/lib/rate-limit";
 import { scoreLeadQuality } from "@/lib/lead-scoring";
 import { resolveUserTier, assembleBasePrompt } from "./system-prompts";
@@ -579,7 +580,18 @@ export async function POST(req: NextRequest) {
   const validSmokeKey = process.env.SMOKE_KEY;
   const isSmokeTest = !!(validSmokeKey && smokeKey && smokeKey === validSmokeKey);
 
-  const { question, vertical, userId: clientUserId, attachment, conversationHistory, turnNumber } = await req.json();
+  // SER-70: Zod validation — parse e sanitize input prima di qualsiasi elaborazione
+  let body: ReturnType<typeof ChatRequestSchema.parse>;
+  try {
+    const raw = await req.json();
+    body = ChatRequestSchema.parse(raw);
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Dati non validi", details: String(err) }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+  const { question, vertical, userId: clientUserId, attachment, conversationHistory, turnNumber } = body;
 
   // CVE-05: risolvi userId SEMPRE dalla sessione cookie
   let userId: string | null = null;
@@ -625,14 +637,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (!question?.trim()) {
-    return new Response(JSON.stringify({ error: "question is required" }), { status: 400, headers: { "Content-Type": "application/json" } });
-  }
-
-  if (question.length > 10000) {
-    return new Response(JSON.stringify({ error: "Messaggio troppo lungo (max 10.000 caratteri)" }), { status: 400, headers: { "Content-Type": "application/json" } });
-  }
-
+  // Validazione già gestita da Zod sopra — question è garantito non-empty e ≤10000 chars
   const currentTurn: number = typeof turnNumber === "number" ? turnNumber : 0;
 
   // ── RATE LIMIT LOGICA ─────────────────────────────────────────────────────
@@ -790,13 +795,42 @@ export async function POST(req: NextRequest) {
       const tGen0 = Date.now();
       try {
         const anthropic = getAnthropic();
-        const anthropicStream = await anthropic.messages.create({
-          model: selectedModel,
-          max_tokens: (vertical && ["Parere Legale", "Memoria Difensiva", "Bozza Contratto", "Analisi Documento", "Analisi Contratto"].includes(vertical)) ? 4096 : 3000,
-          system: fullSystem,
-          messages,
-          stream: true,
-        });
+        const maxTokens = (vertical && ["Parere Legale", "Memoria Difensiva", "Bozza Contratto", "Analisi Documento", "Analisi Contratto"].includes(vertical)) ? 4096 : 3000;
+
+        // SER-69: Prompt caching — system prompt con cache_control:ephemeral
+        // Il system prompt è ~6k token: cache hit risparmia ~90% costi input token
+        const systemWithCache = [
+          { type: "text" as const, text: fullSystem, cache_control: { type: "ephemeral" as const } },
+        ];
+
+        // SER-71: Retry con backoff esponenziale su 429/502/503/504/529
+        const RETRY_STATUSES = new Set([429, 502, 503, 504, 529]);
+        const MAX_RETRIES = 3;
+        let anthropicStream;
+        let lastErr: unknown;
+
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+          try {
+            anthropicStream = await anthropic.messages.create({
+              model: selectedModel,
+              max_tokens: maxTokens,
+              system: systemWithCache,
+              messages,
+              stream: true,
+            });
+            break; // successo — esci dal loop
+          } catch (err) {
+            lastErr = err;
+            const status = (err as { status?: number })?.status;
+            if (!status || !RETRY_STATUSES.has(status)) throw err; // non-retryable
+            if (attempt < MAX_RETRIES - 1) {
+              const delay = Math.min(1000 * 2 ** attempt + Math.random() * 300, 8000);
+              console.warn(`[chat] Anthropic ${status} attempt ${attempt + 1}/${MAX_RETRIES} — retry in ${Math.round(delay)}ms`);
+              await new Promise(r => setTimeout(r, delay));
+            }
+          }
+        }
+        if (!anthropicStream) throw lastErr;
 
         for await (const event of anthropicStream) {
           if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
