@@ -219,7 +219,7 @@ const MD_CHECKLIST_BY_CONTEXT: Record<string, CheckItem[]> = {
     { text: 'Sorveglianza sanitaria attiva', done: false },
     { text: 'DPI forniti e registrati', done: false },
   ],
-  'lavoro/CCNL aggiornamenti': [
+  'lavoro/CCNL applicato': [
     { text: 'CCNL applicato verificato e aggiornato', done: false },
     { text: 'Mansionari allineati al nuovo testo', done: false },
     { text: 'Buste paga adeguate', done: false },
@@ -234,7 +234,7 @@ const MD_CHECKLIST_BY_CONTEXT: Record<string, CheckItem[]> = {
     { text: 'Operazioni black-list verificate', done: false },
   ],
   // cittadino / casa
-  'casa/Affitti': [
+  'casa/Locazione / Affitto': [
     { text: 'Contratto registrato all\'Agenzia Entrate', done: false },
     { text: 'Ricevute canoni conservate', done: true },
     { text: 'Eventuali riparazioni documentate', done: false },
@@ -268,11 +268,17 @@ const MD_CHECKLIST_BY_CONTEXT: Record<string, CheckItem[]> = {
     { text: 'Dichiarazione presentata entro 30 Set', done: false },
     { text: 'Rimborso/debito verificato', done: false },
   ],
-  'fisco/IMU/TARI': [
+  'fisco/IMU': [
     { text: 'Categorie catastali verificate', done: true },
     { text: 'Aliquote comunali 2026 applicate', done: false },
     { text: 'Prima rata pagata (16 Giu)', done: false },
     { text: 'Eventuali esenzioni prima casa verificate', done: true },
+  ],
+  'fisco/TARI': [
+    { text: 'Superficie dichiarata verificata', done: true },
+    { text: 'Categoria utenza corretta (dom./non dom.)', done: false },
+    { text: 'Riduzioni/agevolazioni richieste', done: false },
+    { text: 'Versamento rate effettuato', done: false },
   ],
   // prof
   'lead/Lead disponibili': [
