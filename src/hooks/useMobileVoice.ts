@@ -22,20 +22,13 @@ const THINKING_WATCHDOG_MS = 20_000;
 // deeply nested and change shape across SDK versions.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function friendlyVapiError(err: any): string {
-  if (err == null) return "Errore sconosciuto. Tocca per riprovare.";
+  // Log raw error for debugging — never shown to user
+  console.error("[NormaAI] vapi error detail:", JSON.stringify(err)?.slice(0, 500));
 
-  // Collect candidate strings from known Vapi error shapes
   const candidates: string[] = [
-    err?.errorMsg,
-    err?.message,
-    err?.error?.message,
-    err?.error?.errorMsg,
-    // SDK 2.5 wraps: event.error.error.message / event.error.error.error
-    err?.error?.error?.message,
-    err?.error?.error?.error,
-    err?.errorReason,
-    err?.endedReason,
-    err?.cause?.message,
+    err?.errorMsg, err?.message, err?.error?.message, err?.error?.errorMsg,
+    err?.error?.error?.message, err?.error?.error?.error,
+    err?.errorReason, err?.endedReason, err?.cause?.message,
   ].filter((v): v is string => typeof v === "string" && v.length > 0);
 
   const raw = candidates[0]?.toLowerCase() ?? "";
@@ -43,15 +36,8 @@ function friendlyVapiError(err: any): string {
   if (raw.includes("permission") || raw.includes("denied") || raw.includes("notallowed")) {
     return "Microfono bloccato. Vai in Impostazioni › Safari › Microfono e abilita normaai.it.";
   }
-  if (raw.includes("couldn't get assistant") || raw.includes("assistant")) {
-    return "Servizio voce non disponibile. Tocca per riprovare.";
-  }
-  if (raw.includes("network") || raw.includes("offline")) {
-    return "Connessione assente. Controlla la rete e riprova.";
-  }
-  // Show raw error so we can diagnose what's actually failing
-  const rawMsg = candidates[0] ?? JSON.stringify(err).slice(0, 200);
-  return `Errore voce: ${rawMsg}`;
+  // Tutti gli altri errori: messaggio neutro, dettagli solo in console
+  return "Tocca per riprovare.";
 }
 
 export interface UseMobileVoiceReturn {
@@ -90,11 +76,8 @@ export function useMobileVoice(personality: OrbPersonalityId = "classico"): UseM
       try { vapiRef.current?.stop(); } catch { /* noop */ }
       setOrbState("idle");
       setCallActive(false);
-      setVoiceError(
-        sawCallStartRef.current
-          ? "Norma non riesce a sentirti. Controlla che Safari abbia accesso al microfono (Impostazioni › Safari › Microfono)."
-          : "Connessione vocale non riuscita. Riprova; se persiste, ricarica la pagina."
-      );
+      console.warn("[NormaAI] watchdog fired, sawCallStart:", sawCallStartRef.current);
+      setVoiceError("Tocca per riprovare.");
     }, THINKING_WATCHDOG_MS);
   }, []);
 
