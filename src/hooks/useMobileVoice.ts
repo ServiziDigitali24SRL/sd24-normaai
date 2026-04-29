@@ -49,8 +49,9 @@ function friendlyVapiError(err: any): string {
   if (raw.includes("network") || raw.includes("offline")) {
     return "Connessione assente. Controlla la rete e riprova.";
   }
-  // Generic Vapi start failure (Bad Request, server error, Daily.co join fail…)
-  return "Voce non disponibile in questo momento. Tocca per riprovare.";
+  // Show raw error so we can diagnose what's actually failing
+  const rawMsg = candidates[0] ?? JSON.stringify(err).slice(0, 200);
+  return `Errore voce: ${rawMsg}`;
 }
 
 export interface UseMobileVoiceReturn {
