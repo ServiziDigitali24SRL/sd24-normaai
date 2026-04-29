@@ -470,10 +470,10 @@ function selectModel(role: string | null, vertical: string | null, question: str
   if (!role || role === "privato") return { model: "claude-sonnet-4-6", poolWeight: 0 };
   if (isTrial) return { model: "claude-sonnet-4-6", poolWeight: 0 };
   if (role === "impresa" || role === "professionista") {
-    if (vertical && OPUS_VERTICALS.includes(vertical)) return { model: "claude-opus-4-6", poolWeight: 5 };
+    if (vertical && OPUS_VERTICALS.includes(vertical)) return { model: "claude-opus-4-7", poolWeight: 5 };
     const q = question.toLowerCase();
-    if (OPUS_KEYWORDS.some(k => q.includes(k))) return { model: "claude-opus-4-6", poolWeight: 5 };
-    if (attachment?.textContent && attachment.textContent.length > 15000) return { model: "claude-opus-4-6", poolWeight: 5 };
+    if (OPUS_KEYWORDS.some(k => q.includes(k))) return { model: "claude-opus-4-7", poolWeight: 5 };
+    if (attachment?.textContent && attachment.textContent.length > 15000) return { model: "claude-opus-4-7", poolWeight: 5 };
     const matches = question.match(/€\s*[\d.,]+/g) ?? [];
     for (const m of matches) {
       const val = parseFloat(m.replace(/[€\s.]/g, "").replace(",", "."));
