@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { ChatRequestSchema } from "@/lib/schemas";
 import { validateCitations, countValidCitations } from "@/lib/citation-validator";
+import { getFromCache, setInCache, type CachedResponse } from "@/lib/semantic-cache";
+import { encryptPii, isPiiEncryptionEnabled } from "@/lib/pii-crypto";
 import { rateLimit } from "@/lib/rate-limit";
 import { scoreLeadQuality } from "@/lib/lead-scoring";
 import { resolveUserTier, assembleBasePrompt } from "./system-prompts";
@@ -204,13 +206,26 @@ interface Source {
 async function logAuditTrail(userId: string | null, sessioneId: string, query: string, risposta: string, sources: Source[], hasGraph: boolean, hasProfilo: boolean, latenzaMs: number): Promise<void> {
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
   try {
+    // SER-83: cifra query/risposta se PII encryption abilitata
+    const queryTrunc = query.slice(0, 500);
+    const rispostaTrunc = risposta.slice(0, 2000);
+    const piiEnabled = isPiiEncryptionEnabled();
     await fetch(`${SUPABASE_URL}/rest/v1/audit_risposte`, {
       method: "POST",
       headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
       body: JSON.stringify({
-        user_id: userId || null, sessione_id: sessioneId, query: query.slice(0, 500), risposta: risposta.slice(0, 2000),
+        user_id: userId || null,
+        sessione_id: sessioneId,
+        query: queryTrunc,
+        risposta: rispostaTrunc,
+        // Colonne cifrate (SER-83) — null se encryption non abilitata
+        query_enc: piiEnabled ? encryptPii(queryTrunc) : null,
+        risposta_enc: piiEnabled ? encryptPii(rispostaTrunc) : null,
         fonti_usate: sources.map((s) => ({ id: s.id, titolo: s.titolo, fonte: s.fonte })),
-        graph_usato: hasGraph, profilo_usato: hasProfilo, modello_ai: "claude-sonnet-4-6", latenza_ms: latenzaMs,
+        graph_usato: hasGraph,
+        profilo_usato: hasProfilo,
+        modello_ai: "claude-sonnet-4-6",
+        latenza_ms: latenzaMs,
       }),
     });
   } catch (e) { Sentry.captureException(e, { extra: { fn: "logAuditTrail" } }); }
@@ -414,10 +429,15 @@ function getVerticale(vertical: string | null): string | undefined {
   return map[vertical];
 }
 
+// SER-78: EU-only Anthropic endpoint
+// Imposta ANTHROPIC_EU_BASE_URL su un proxy EU (es. Cloudflare Worker eu-central) per
+// garantire che i dati non lascino l'UE. Se non impostato, usa il default Anthropic (US).
+// Setup: deploy CF Worker in EU → https://your-worker.workers.dev/v1 → set ANTHROPIC_EU_BASE_URL
 function getAnthropic(): Anthropic {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY not configured");
-  return new Anthropic({ apiKey: key });
+  const baseURL = process.env.ANTHROPIC_EU_BASE_URL || undefined;
+  return new Anthropic({ apiKey: key, ...(baseURL ? { baseURL } : {}) });
 }
 
 // ── Impresa Model Routing ─────────────────────────────────────────────────────
@@ -527,11 +547,12 @@ async function checkAndIncrementAnonymous(ip: string, sessionId: string): Promis
   } catch { return { count: 0, limit: LIMIT }; }
 }
 
-// Controlla e incrementa usage free giornaliero — ritorna conteggio corrente
+// SER-72: Controlla e incrementa usage giornaliero — limiti per-piano da DB
+// RPC ritorna JSON {count, limit} — limit=-1 significa illimitato
 async function checkAndIncrementDaily(userId: string): Promise<{ count: number; limit: number }> {
   const date = getItalianDate();
-  const LIMIT = 10;
-  if (!SUPABASE_URL || !SUPABASE_KEY) return { count: 0, limit: LIMIT };
+  const FALLBACK_LIMIT = 10;
+  if (!SUPABASE_URL || !SUPABASE_KEY) return { count: 0, limit: FALLBACK_LIMIT };
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/increment_daily_usage`, {
       method: "POST",
@@ -539,10 +560,15 @@ async function checkAndIncrementDaily(userId: string): Promise<{ count: number; 
       body: JSON.stringify({ p_user_id: userId, p_date: date }),
       signal: AbortSignal.timeout(4000),
     });
-    if (!res.ok) return { count: 0, limit: LIMIT };
-    const count = await res.json() as number;
-    return { count, limit: LIMIT };
-  } catch { return { count: 0, limit: LIMIT }; }
+    if (!res.ok) return { count: 0, limit: FALLBACK_LIMIT };
+    const data = await res.json() as { count?: number; limit?: number } | number;
+    // Supporta sia risposta JSON {count, limit} (nuovo) che numero scalare (legacy)
+    if (typeof data === "object" && data !== null && "count" in data) {
+      const limit = (data.limit ?? FALLBACK_LIMIT) === -1 ? Infinity : (data.limit ?? FALLBACK_LIMIT);
+      return { count: data.count ?? 0, limit };
+    }
+    return { count: typeof data === "number" ? data : 0, limit: FALLBACK_LIMIT };
+  } catch { return { count: 0, limit: FALLBACK_LIMIT }; }
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -678,6 +704,37 @@ export async function POST(req: NextRequest) {
   }
   // PRO: nessun controllo quota
 
+  // SER-81: Semantic cache check — skip RAG+LLM se abbiamo risposta già cached
+  // Cache attiva solo per query senza attachment e senza conversazione (turno 0)
+  const canUseCache = !attachment && currentTurn === 0 && !isSmokeTest;
+  if (canUseCache) {
+    const cached = await getFromCache(question, vertical);
+    if (cached) {
+      // Cache hit: replay la risposta cached come SSE stream
+      const { readable, writable } = new TransformStream();
+      const writer = writable.getWriter();
+      const encoder = new TextEncoder();
+      const sendCached = (obj: unknown) =>
+        writer.write(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+      (async () => {
+        // Stream il testo in chunk da 50 chars per mantenere UX fluida
+        const CHUNK_SIZE = 50;
+        for (let i = 0; i < cached.answer.length; i += CHUNK_SIZE) {
+          sendCached({ type: "text", text: cached.answer.slice(i, i + CHUNK_SIZE) });
+        }
+        const LEGAL_NOTICE_CACHED =
+          "⚖️ **Avviso legale**: Le informazioni fornite da NormaAI hanno scopo puramente informativo " +
+          "e non costituiscono parere legale. Consulta un professionista abilitato per decisioni giuridiche rilevanti.";
+        sendCached({ type: "sources", sources: cached.sources, hasRag: true, confidence: cached.confidenceScore, confidenceLevel: cached.confidenceLevel, disclaimer: cached.disclaimer, legal_notice: LEGAL_NOTICE_CACHED, cached: true });
+        sendCached({ type: "done", confidence: cached.confidenceScore, confidenceLevel: cached.confidenceLevel, legal_notice: LEGAL_NOTICE_CACHED, human_review_required: false, human_review_reason: null, cached: true });
+        writer.close();
+      })().catch(() => writer.close());
+      return new Response(readable, {
+        headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "X-Accel-Buffering": "no", "X-Cache": "HIT" },
+      });
+    }
+  }
+
   // ── Langfuse trace ─────────────────────────────────────────────────────
   const lfTrace = traceRAGQuery({
     name: "rag-query",
@@ -692,6 +749,8 @@ export async function POST(req: NextRequest) {
   let ragContext = "";
   let sources: Source[] = [];
   let chunkUrns: string[] = [];
+  // SER-81: disclaimer hoisted so cache write can access it after message_stop
+  let disclaimer = "⚠️ Risposta parzialmente verificata — consulta un professionista.";
 
   const ragDebugInfo: Record<string, unknown> = { started: true };
   console.log(`[RAG-START] question="${question.slice(0,50)}" vertical=${vertical}`);
@@ -863,7 +922,7 @@ export async function POST(req: NextRequest) {
             const effectiveConfidence = validCitationsCount > 0
               ? Math.min(1, confidenceScore + 0.1) // bonus se ci sono citazioni valide
               : confidenceScore;
-            const disclaimer =
+            disclaimer =
               !citationValidation.valid
                 ? "⚠️ Risposta con citazioni da verificare — consulta un professionista prima di agire."
                 : confidenceLevel === "alta"
@@ -873,8 +932,40 @@ export async function POST(req: NextRequest) {
                 : "🔴 Risposta con bassa copertura normativa — consulta un esperto prima di agire.";
             void effectiveConfidence; // usato per future metriche
 
-            send({ type: "sources", sources: citedSources.length > 0 ? citedSources : sources.slice(0, 3), hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0, confidence: confidenceScore, confidenceLevel, disclaimer });
-            send({ type: "done", popup_suggestion: popupSuggestion ?? null, confidence: confidenceScore, confidenceLevel });
+            // SER-68: Disclaimer legale permanente (art.348 c.p. + GDPR art.22 + AI Act art.14)
+            const LEGAL_NOTICE =
+              "⚖️ **Avviso legale**: Le informazioni fornite da NormaAI hanno scopo puramente informativo " +
+              "e non costituiscono parere legale, consulenza professionale o prestazione d'opera intellettuale " +
+              "ai sensi dell'art. 2229 c.c. NormaAI non esercita la professione forense (art. 348 c.p.). " +
+              "Per decisioni che producono effetti giuridici rilevanti, consulta un professionista abilitato " +
+              "(avvocato, commercialista, consulente del lavoro). " +
+              "Ai sensi dell'art. 22 GDPR e dell'art. 14 AI Act, hai sempre il diritto alla revisione umana " +
+              "di questa risposta automatizzata.";
+
+            // SER-68: Verifica se la query riguarda materie ad alto rischio giuridico
+            const HIGH_RISK_KEYWORDS = [
+              "processo", "tribunale", "corte", "udienza", "sentenza", "condanna",
+              "arresto", "detenzione", "carcere", "sanzione penale", "reato", "imputato",
+              "difesa penale", "appello penale", "cassazione penale",
+              "licenziamento", "esproprio", "sequestro", "pignoramento",
+              "interdizione", "inabilitazione", "fallimento",
+            ];
+            const questionLower = question.toLowerCase();
+            const isHighRiskQuery = HIGH_RISK_KEYWORDS.some(kw => questionLower.includes(kw));
+            const humanReviewRequired =
+              isHighRiskQuery ||
+              confidenceLevel === "bassa" ||
+              !citationValidation.valid;
+            const humanReviewReason = humanReviewRequired
+              ? isHighRiskQuery
+                ? "Materia ad alto impatto giuridico — si raccomanda la revisione da parte di un professionista abilitato."
+                : confidenceLevel === "bassa"
+                ? "Copertura normativa insufficiente — la risposta potrebbe essere incompleta."
+                : "Citazioni normative da verificare manualmente."
+              : null;
+
+            send({ type: "sources", sources: citedSources.length > 0 ? citedSources : sources.slice(0, 3), hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0, confidence: confidenceScore, confidenceLevel, disclaimer, legal_notice: LEGAL_NOTICE });
+            send({ type: "done", popup_suggestion: popupSuggestion ?? null, confidence: confidenceScore, confidenceLevel, legal_notice: LEGAL_NOTICE, human_review_required: humanReviewRequired, human_review_reason: humanReviewReason });
           }
           // Capture token usage from message_delta (Anthropic streams usage in the final event)
           if (event.type === "message_delta") {
@@ -921,6 +1012,19 @@ export async function POST(req: NextRequest) {
         controller.close();
         logAuditTrail(userId || null, sessioneId, question, fullResponse, sources, graphContext.length > 0, !!profile, Date.now() - t0).catch(() => {});
         logQuery(userId || null, vertical || null, question, fullResponse, sources, selectedModel, Date.now() - t0).catch(() => {});
+        // SER-81: Write to semantic cache (non-blocking, only cacheable responses)
+        if (canUseCache && fullResponse.length > 100 && confidenceLevel !== "bassa") {
+          const cacheEntry: CachedResponse = {
+            answer: fullResponse,
+            sources: sources.slice(0, 5).map(s => ({ id: s.id, titolo: s.titolo, fonte: s.fonte, url: s.url, tipo: s.tipo, status: s.status })),
+            disclaimer,
+            confidenceScore,
+            confidenceLevel,
+            cachedAt: new Date().toISOString(),
+            cacheVersion: process.env.NORMAAI_CORPUS_VERSION ?? "v1",
+          };
+          setInCache(question, vertical, cacheEntry).catch(() => {});
+        }
         // Increment company pool for impresa
         if (companyProfile?.id && poolWeight > 0) {
           incrementCompanyPool(companyProfile.id, poolWeight, getItalianMonth()).catch(() => {});

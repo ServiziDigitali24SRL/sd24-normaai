@@ -1,0 +1,462 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "SER-82: Golden Set NormaAI — query di riferimento per LLM-judge eval",
+    "total": 50,
+    "target": 500,
+    "verticals": ["lavoro", "fisco", "edilizia", "privacy", "penale", "civile", "appalti", "immobiliare", "famiglia", "consumatori"],
+    "last_updated": "2026-04-29"
+  },
+  "queries": [
+    {
+      "id": "GS-001",
+      "vertical": "lavoro",
+      "question": "Quali sono i termini di preavviso per il licenziamento di un operaio con 5 anni di anzianità nel settore metalmeccanico?",
+      "expected_citations": ["CCNL Metalmeccanici", "D.Lgs. 23/2015", "L. 604/1966"],
+      "required_topics": ["preavviso", "anzianità", "CCNL"],
+      "forbidden_hallucinations": ["indennità inventate", "anni sbagliati"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-002",
+      "vertical": "lavoro",
+      "question": "Un lavoratore può essere licenziato durante il periodo di malattia?",
+      "expected_citations": ["L. 300/1970 art. 18", "D.Lgs. 23/2015", "CCNL"],
+      "required_topics": ["periodo di comporto", "tutela malattia", "licenziamento nullo"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-003",
+      "vertical": "lavoro",
+      "question": "Come funziona il contratto a tempo determinato dopo il Decreto Dignità?",
+      "expected_citations": ["D.L. 87/2018", "D.Lgs. 81/2015"],
+      "required_topics": ["causali", "durata massima 24 mesi", "proroghe"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-004",
+      "vertical": "lavoro",
+      "question": "Qual è la differenza tra lavoro subordinato e partita IVA monocommittente?",
+      "expected_citations": ["D.Lgs. 81/2015 art. 2", "Cass. sez. lav."],
+      "required_topics": ["etero-organizzazione", "monocommittenza", "riqualificazione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-005",
+      "vertical": "fisco",
+      "question": "Quali sono le aliquote IRPEF 2024?",
+      "expected_citations": ["L. 207/2024", "TUIR art. 11"],
+      "required_topics": ["scaglioni", "aliquote 23% 35% 43%"],
+      "forbidden_hallucinations": ["aliquote pre-riforma 2024"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-006",
+      "vertical": "fisco",
+      "question": "Come funziona la cedolare secca sugli affitti?",
+      "expected_citations": ["D.Lgs. 23/2011", "TUIR art. 3"],
+      "required_topics": ["aliquota 21%", "contratti agevolati 10%", "opzione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-007",
+      "vertical": "fisco",
+      "question": "Quando scatta l'obbligo di fatturazione elettronica per i forfettari?",
+      "expected_citations": ["L. 197/2022 art. 1 co. 54", "D.Lgs. 127/2015"],
+      "required_topics": ["1 luglio 2022", "soglia 25.000 euro", "1 gennaio 2024 tutti"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-008",
+      "vertical": "privacy",
+      "question": "Quali dati personali sono considerati categorie particolari ai sensi del GDPR?",
+      "expected_citations": ["Reg. UE 2016/679 art. 9"],
+      "required_topics": ["salute", "origine etnica", "biometria", "opinioni politiche"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-009",
+      "vertical": "privacy",
+      "question": "Entro quanto tempo bisogna notificare un data breach al Garante?",
+      "expected_citations": ["Reg. UE 2016/679 art. 33"],
+      "required_topics": ["72 ore", "violazione dati personali"],
+      "forbidden_hallucinations": ["48 ore", "24 ore"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-010",
+      "vertical": "privacy",
+      "question": "Un datore di lavoro può monitorare le email dei dipendenti?",
+      "expected_citations": ["L. 300/1970 art. 4", "Reg. UE 2016/679", "Cass. sez. lav."],
+      "required_topics": ["accordo sindacale", "informativa", "proporzionalità"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-011",
+      "vertical": "edilizia",
+      "question": "Cosa serve per la CILA semplificata?",
+      "expected_citations": ["D.P.R. 380/2001 art. 6-bis", "D.L. 76/2020"],
+      "required_topics": ["comunicazione inizio lavori", "asseverazione", "tecnico abilitato"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-012",
+      "vertical": "edilizia",
+      "question": "Quali interventi rientrano nella manutenzione straordinaria leggera?",
+      "expected_citations": ["D.P.R. 380/2001 art. 3"],
+      "required_topics": ["CILA", "elementi strutturali", "frazionamento"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-013",
+      "vertical": "civile",
+      "question": "Quali sono i termini di prescrizione per i contratti di appalto privato?",
+      "expected_citations": ["art. 2226 c.c.", "art. 2946 c.c."],
+      "required_topics": ["2 anni vizi", "10 anni ordinaria", "decorrenza"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-014",
+      "vertical": "civile",
+      "question": "Come si calcola il risarcimento del danno non patrimoniale?",
+      "expected_citations": ["art. 2059 c.c.", "Corte Cost. n. 233/2003", "Cass. S.U. n. 26972/2008"],
+      "required_topics": ["tabelle Milano", "personalizzazione", "danno biologico"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-015",
+      "vertical": "appalti",
+      "question": "Qual è la soglia per gli appalti sotto-soglia comunitaria per i lavori nel 2024?",
+      "expected_citations": ["D.Lgs. 36/2023", "Dir. 2014/24/UE"],
+      "required_topics": ["5.538.000 euro", "soglie comunitarie"],
+      "forbidden_hallucinations": ["soglie errate"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-016",
+      "vertical": "appalti",
+      "question": "Cos'è il subappalto a cascata nel nuovo codice degli appalti?",
+      "expected_citations": ["D.Lgs. 36/2023 art. 119"],
+      "required_topics": ["subappalto qualificato", "responsabilità solidale", "divieto cascata"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-017",
+      "vertical": "immobiliare",
+      "question": "Quali sono le imposte sull'acquisto della prima casa?",
+      "expected_citations": ["D.P.R. 131/1986", "L. 728/1972"],
+      "required_topics": ["imposta registro 2%", "catastale 50 euro", "ipotecaria 50 euro"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-018",
+      "vertical": "immobiliare",
+      "question": "Cosa si intende per usufrutto e come si calcola?",
+      "expected_citations": ["art. 978 c.c.", "DPR 131/1986 art. 46"],
+      "required_topics": ["diritto reale", "nuda proprietà", "prospetto ANCE"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-019",
+      "vertical": "famiglia",
+      "question": "Come funziona l'assegno di mantenimento per i figli in caso di separazione?",
+      "expected_citations": ["art. 337-ter c.c.", "Cass. sez. I"],
+      "required_topics": ["criteri di calcolo", "reddito genitori", "tenore di vita"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-020",
+      "vertical": "consumatori",
+      "question": "Quali sono i diritti del consumatore in caso di prodotto difettoso acquistato online?",
+      "expected_citations": ["D.Lgs. 206/2005 art. 130", "Dir. 2019/771/UE"],
+      "required_topics": ["2 anni garanzia", "sostituzione riparazione", "difetto di conformità"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-021",
+      "vertical": "lavoro",
+      "question": "Come funziona la cassa integrazione ordinaria (CIGO)?",
+      "expected_citations": ["D.Lgs. 148/2015"],
+      "required_topics": ["13 settimane", "integrazione salariale 80%", "massimale"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-022",
+      "vertical": "fisco",
+      "question": "Cosa si intende per abuso del diritto fiscale?",
+      "expected_citations": ["L. 212/2000 art. 10-bis", "Cass. sez. trib."],
+      "required_topics": ["vantaggio fiscale indebito", "operazioni prive di sostanza", "elusione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-023",
+      "vertical": "penale",
+      "question": "Cos'è il reato di autoriciclaggio?",
+      "expected_citations": ["art. 648-ter.1 c.p."],
+      "required_topics": ["sostituzione provento reato", "attività economica", "pena"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-024",
+      "vertical": "penale",
+      "question": "Quando scatta la responsabilità 231 per le imprese?",
+      "expected_citations": ["D.Lgs. 231/2001"],
+      "required_topics": ["MOG", "OdV", "reati presupposto", "sanzione pecuniaria"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-025",
+      "vertical": "privacy",
+      "question": "Quando è obbligatoria la nomina del DPO?",
+      "expected_citations": ["Reg. UE 2016/679 art. 37"],
+      "required_topics": ["autorità pubblica", "trattamenti su larga scala", "dati sensibili"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-026",
+      "vertical": "civile",
+      "question": "Cosa si intende per mora del debitore?",
+      "expected_citations": ["art. 1219 c.c.", "art. 1224 c.c."],
+      "required_topics": ["costituzione in mora", "interessi moratori", "intimazione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-027",
+      "vertical": "edilizia",
+      "question": "Il superbonus 110% è ancora applicabile nel 2025?",
+      "expected_citations": ["L. 234/2021", "D.L. 39/2024"],
+      "required_topics": ["aliquota ridotta", "scadenze", "cessione credito"],
+      "forbidden_hallucinations": ["110% ancora attivo per tutti"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-028",
+      "vertical": "lavoro",
+      "question": "Cosa prevede il welfare aziendale dal punto di vista fiscale?",
+      "expected_citations": ["TUIR art. 51 co. 2", "L. 208/2015"],
+      "required_topics": ["fringe benefit", "soglia 1000 euro", "beni e servizi esclusi"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-029",
+      "vertical": "appalti",
+      "question": "Come funziona il criterio dell'offerta economicamente più vantaggiosa (OEPV)?",
+      "expected_citations": ["D.Lgs. 36/2023 art. 108"],
+      "required_topics": ["criteri qualitativi", "ponderazione", "soglia anomalia"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-030",
+      "vertical": "famiglia",
+      "question": "Cosa prevede il patto di famiglia per le imprese familiari?",
+      "expected_citations": ["art. 768-bis c.c."],
+      "required_topics": ["trasferimento azienda", "legittimari", "liquidazione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-031",
+      "vertical": "consumatori",
+      "question": "Cos'è il diritto di recesso e in quali casi si applica negli acquisti online?",
+      "expected_citations": ["D.Lgs. 206/2005 art. 52", "Dir. 2011/83/UE"],
+      "required_topics": ["14 giorni", "contratti a distanza", "rimborso"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-032",
+      "vertical": "fisco",
+      "question": "Come funziona il ravvedimento operoso?",
+      "expected_citations": ["D.Lgs. 472/1997 art. 13"],
+      "required_topics": ["riduzione sanzione", "termini ravvedimento sprint breve lungo", "interessi legali"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-033",
+      "vertical": "civile",
+      "question": "Quali sono gli effetti della clausola risolutiva espressa?",
+      "expected_citations": ["art. 1456 c.c."],
+      "required_topics": ["risoluzione automatica", "inadempimento specifico", "dichiarazione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-034",
+      "vertical": "privacy",
+      "question": "Cosa prevede l'AI Act europeo per i sistemi di IA ad alto rischio?",
+      "expected_citations": ["Reg. UE 2024/1689", "Dir. 2016/680/UE"],
+      "required_topics": ["allegato III", "requisiti conformità", "notifica autorità"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-035",
+      "vertical": "lavoro",
+      "question": "Cosa si intende per distacco transnazionale di lavoratori?",
+      "expected_citations": ["D.Lgs. 136/2016", "Dir. 2018/957/UE"],
+      "required_topics": ["parità retributiva", "nucleo duro", "dichiarazione anticipata"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-036",
+      "vertical": "penale",
+      "question": "Qual è la differenza tra peculato e malversazione?",
+      "expected_citations": ["art. 314 c.p.", "art. 316 c.p."],
+      "required_topics": ["pubblico ufficiale", "denaro altrui", "appropriazione vs distrazione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-037",
+      "vertical": "immobiliare",
+      "question": "Cosa succede se il costruttore fallisce prima della consegna dell'immobile?",
+      "expected_citations": ["D.Lgs. 122/2005"],
+      "required_topics": ["fideiussione obbligatoria", "polizza indennitaria", "escussione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-038",
+      "vertical": "edilizia",
+      "question": "La tettoia è considerata volume edilizio?",
+      "expected_citations": ["D.P.R. 380/2001", "TAR"],
+      "required_topics": ["pertinenza", "superficie coperta", "permesso di costruire"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-039",
+      "vertical": "appalti",
+      "question": "Cosa prevede il soccorso istruttorio nel codice degli appalti?",
+      "expected_citations": ["D.Lgs. 36/2023 art. 101"],
+      "required_topics": ["integrazione documentale", "regolarizzazione", "sanzione"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-040",
+      "vertical": "fisco",
+      "question": "Come funziona la tassazione delle criptovalute in Italia?",
+      "expected_citations": ["L. 197/2022 art. 1 co. 126", "TUIR art. 67 co. 1 lett. c-sexies"],
+      "required_topics": ["imposta sostitutiva 26%", "plusvalenze", "soglia 2000 euro"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-041",
+      "vertical": "famiglia",
+      "question": "Quali sono le differenze tra separazione consensuale e giudiziale?",
+      "expected_citations": ["art. 158 c.c.", "art. 711 c.p.c."],
+      "required_topics": ["tempi", "costi", "accordo coniugi", "negoziazione assistita"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-042",
+      "vertical": "consumatori",
+      "question": "Cosa fa l'AGCM in materia di pratiche commerciali scorrette?",
+      "expected_citations": ["D.Lgs. 206/2005 artt. 18-27", "Dir. 2005/29/CE"],
+      "required_topics": ["sanzione", "procedimento", "pratiche ingannevoli aggressive"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-043",
+      "vertical": "lavoro",
+      "question": "Cos'è il contratto di apprendistato professionalizzante?",
+      "expected_citations": ["D.Lgs. 81/2015 artt. 43-45", "CCNL"],
+      "required_topics": ["durata massima 3 anni", "piano formativo", "tutor aziendale"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-044",
+      "vertical": "civile",
+      "question": "Quali sono i requisiti del contratto per iscritto?",
+      "expected_citations": ["art. 1350 c.c."],
+      "required_topics": ["forma ad substantiam", "atti traslativi immobili", "nullità"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-045",
+      "vertical": "privacy",
+      "question": "Come si redige un'informativa GDPR per un sito e-commerce?",
+      "expected_citations": ["Reg. UE 2016/679 artt. 13-14"],
+      "required_topics": ["identità titolare", "base giuridica", "periodo conservazione", "diritti interessato"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-046",
+      "vertical": "penale",
+      "question": "Cosa si intende per tentativo punibile nel codice penale?",
+      "expected_citations": ["art. 56 c.p."],
+      "required_topics": ["atti idonei diretti", "univocità", "desistenza volontaria"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-047",
+      "vertical": "appalti",
+      "question": "Quando scatta l'esclusione automatica delle offerte anomale?",
+      "expected_citations": ["D.Lgs. 36/2023 art. 110"],
+      "required_topics": ["sotto-soglia", "10 offerte", "soglia di anomalia automatica"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-048",
+      "vertical": "immobiliare",
+      "question": "Cosa prevede la prelazione del conduttore in caso di vendita dell'immobile locato?",
+      "expected_citations": ["L. 392/1978 art. 38"],
+      "required_topics": ["prelazione locatizia", "60 giorni", "comunicazione notarile"],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "GS-049",
+      "vertical": "fisco",
+      "question": "Cos'è il patent box e chi può beneficiarne?",
+      "expected_citations": ["L. 190/2014 art. 1 co. 37-45", "D.M. 28/11/2017"],
+      "required_topics": ["deduzione reddito", "beni immateriali", "opzione 5 anni"],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "GS-050",
+      "vertical": "lavoro",
+      "question": "Quali obblighi ha il datore di lavoro in materia di sicurezza sul lavoro?",
+      "expected_citations": ["D.Lgs. 81/2008 artt. 17-18"],
+      "required_topics": ["DVR", "RSPP", "formazione obbligatoria", "medico competente"],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    }
+  ]
+}
