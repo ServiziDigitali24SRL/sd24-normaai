@@ -126,13 +126,12 @@ export default function MobileChatPage() {
 
   const sendMessage = async (text: string) => {
     if ((!text.trim() && !attachment) || streaming) return;
-    const fullText = attachment
-      ? `${text.trim()}${text.trim() ? "\n" : ""}[Allegato: ${attachment.name}]`
-      : text.trim();
+    const question = text.trim() || (attachment ? `Analizza questo documento: ${attachment.name}` : "");
+    const currentAttachment = attachment;
     setInput("");
     setAttachment(null);
 
-    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text: fullText, ts: Date.now() };
+    const userMsg: Message = { id: crypto.randomUUID(), role: "user", text: currentAttachment ? `${question}\n📎 ${currentAttachment.name}` : question, ts: Date.now() };
     setMessages((prev) => [...prev, userMsg]);
     setStreaming(true);
     setCurrentText("");
@@ -142,15 +141,33 @@ export default function MobileChatPage() {
         { role: m.role === "user" ? "user" : "assistant" as const, content: m.text },
       ]);
 
+      // Leggi il file come base64 se presente
+      let attachmentPayload: { type: "document" | "image"; mediaType: string; name: string; data: string } | undefined;
+      if (currentAttachment) {
+        const arrayBuffer = await currentAttachment.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = "";
+        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+        const base64 = btoa(binary);
+        const isImage = currentAttachment.type.startsWith("image/");
+        attachmentPayload = {
+          type: isImage ? "image" : "document",
+          mediaType: currentAttachment.type || "application/octet-stream",
+          name: currentAttachment.name,
+          data: base64,
+        };
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: fullText,
+          question,
           vertical: null,
           userId: null,
           conversationHistory: history,
           turnNumber: messages.filter((m) => m.role === "user").length,
+          ...(attachmentPayload ? { attachment: attachmentPayload } : {}),
         }),
       });
 
