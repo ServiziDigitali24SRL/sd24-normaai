@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { ChatRequestSchema } from "@/lib/schemas";
+import { validateCitations, countValidCitations } from "@/lib/citation-validator";
 import { rateLimit } from "@/lib/rate-limit";
 import { scoreLeadQuality } from "@/lib/lead-scoring";
 import { resolveUserTier, assembleBasePrompt } from "./system-prompts";
@@ -848,13 +849,29 @@ export async function POST(req: NextRequest) {
             const citedSources = citedIndices.size > 0
               ? sources.filter((_, i) => citedIndices.has(i))
               : [];
-            // SER-86: disclaimer dinamico basato su confidence score
+            // SER-79: Validazione citazioni normative post-generazione
+            const citationValidation = validateCitations(fullResponse);
+            const validCitationsCount = countValidCitations(fullResponse);
+            if (!citationValidation.valid) {
+              Sentry.captureMessage("Citazioni sospette nella risposta AI", {
+                level: "warning",
+                extra: { suspiciousCitations: citationValidation.suspiciousCitations, userId, vertical },
+              });
+            }
+
+            // SER-86: disclaimer dinamico — considera anche la qualità delle citazioni
+            const effectiveConfidence = validCitationsCount > 0
+              ? Math.min(1, confidenceScore + 0.1) // bonus se ci sono citazioni valide
+              : confidenceScore;
             const disclaimer =
-              confidenceLevel === "alta"
-                ? `Basato su ${citedSources.length || sources.length} fonti normative verificate.`
+              !citationValidation.valid
+                ? "⚠️ Risposta con citazioni da verificare — consulta un professionista prima di agire."
+                : confidenceLevel === "alta"
+                ? `Basato su ${citedSources.length || sources.length} fonti normative (${validCitationsCount} citazioni verificate).`
                 : confidenceLevel === "media"
                 ? "⚠️ Risposta parzialmente verificata — ti consiglio di consultare un professionista."
                 : "🔴 Risposta con bassa copertura normativa — consulta un esperto prima di agire.";
+            void effectiveConfidence; // usato per future metriche
 
             send({ type: "sources", sources: citedSources.length > 0 ? citedSources : sources.slice(0, 3), hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0, confidence: confidenceScore, confidenceLevel, disclaimer });
             send({ type: "done", popup_suggestion: popupSuggestion ?? null, confidence: confidenceScore, confidenceLevel });

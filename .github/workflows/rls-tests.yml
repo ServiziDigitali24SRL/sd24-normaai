@@ -1,0 +1,41 @@
+# SER-73: RLS pgtap tests in CI
+# Esegue i test di Row Level Security ad ogni PR su light-theme
+name: RLS Tests
+
+on:
+  pull_request:
+    branches: [light-theme, main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+      - '.github/workflows/rls-tests.yml'
+  push:
+    branches: [light-theme]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/tests/**'
+
+jobs:
+  rls-tests:
+    name: RLS Policy Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local
+        run: supabase start --ignore-health-check
+
+      - name: Run RLS tests
+        run: supabase test db
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
