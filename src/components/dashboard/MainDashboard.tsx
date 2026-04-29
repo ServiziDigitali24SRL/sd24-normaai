@@ -1128,9 +1128,28 @@ function SubcategoryDetail({ macroKey, macroLabel, itemLabel, checklist, onToggl
 
 // ─── Chat Compliance Expanded ─────────────────────────────────────────────────
 
-function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToast }: {
+function resizeDashboardImage(file: File, maxSize: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToast, initialFile }: {
   role: string; context: string;
   onClose: () => void; score: number; pushToast: (m: string) => void;
+  initialFile?: File | null;
 }) {
   const [messages, setMessages] = useState([
     { role: 'ai', text: context ? `Sono pronta ad assisterla su "${context}". Come posso essere utile?` : 'Buongiorno. In cosa posso esserle utile oggi?' },
@@ -1139,23 +1158,49 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
   const [streaming, setStreaming] = useState(false);
   const [widgetOpen, setWidgetOpen] = useState(true);
   const [liveTasks, setLiveTasks] = useState<LiveTask[]>([]);
+  const [pendingFile, setPendingFile] = useState<File | null>(initialFile ?? null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
   }, [messages]);
 
   const send = async () => {
-    if (!input.trim() || streaming) return;
-    const q = input.trim();
+    if ((!input.trim() && !pendingFile) || streaming) return;
+    const q = input.trim() || (pendingFile ? `Analizza questo documento: ${pendingFile.name}` : '');
+    const fileToSend = pendingFile;
     setInput('');
-    setMessages(m => [...m, { role: 'user', text: q }]);
+    setPendingFile(null);
+    setMessages(m => [...m, { role: 'user', text: fileToSend ? `${q}\n📎 ${fileToSend.name}` : q }]);
     setStreaming(true);
 
     const history = historyRef.current.slice(-8);
     const aiMsgId = 'ai-' + Date.now();
     setMessages(m => [...m, { role: 'ai', text: '' }]);
+
+    // Leggi file come base64 se presente
+    let attachmentPayload: { type: 'document' | 'image'; mediaType: string; name: string; data: string } | undefined;
+    if (fileToSend) {
+      const isImage = fileToSend.type.startsWith('image/');
+      let base64: string;
+      if (isImage) {
+        base64 = await resizeDashboardImage(fileToSend, 1200);
+      } else {
+        const buf = await fileToSend.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+        base64 = btoa(bin);
+      }
+      attachmentPayload = {
+        type: isImage ? 'image' : 'document',
+        mediaType: isImage ? 'image/jpeg' : (fileToSend.type || 'application/octet-stream'),
+        name: fileToSend.name,
+        data: base64,
+      };
+    }
 
     try {
       const res = await fetch('/api/chat', {
@@ -1167,6 +1212,7 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
           userId: null,
           conversationHistory: history,
           turnNumber: history.filter(h => h.role === 'user').length,
+          ...(attachmentPayload ? { attachment: attachmentPayload } : {}),
         }),
       });
 
@@ -1243,18 +1289,34 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
         </div>
 
         <div style={{ borderTop: '1px solid var(--paper-line)', padding: 20, background: 'white' }}>
-          <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-            <button onClick={() => pushToast('Apri selezione file')} style={{ background: 'transparent', border: '1px solid var(--paper-line)', borderRadius: 8, padding: 10, cursor: 'pointer', color: 'var(--ink-3)' }}>
-              <Icon name="paperclip" size={14} />
-            </button>
-            <textarea value={input} onChange={e => setInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-              placeholder="Chieda qualcosa…" rows={1}
-              style={{ flex: 1, resize: 'none', padding: '12px 16px', border: '1px solid var(--paper-line)', borderRadius: 8, fontSize: 13.5, fontFamily: 'var(--sans)', background: 'var(--paper-tint)', outline: 'none' }}
-            />
-            <button onClick={send} className="btn btn-primary" disabled={!input.trim() || streaming}>
-              <Icon name="send" size={12} /> {streaming ? '…' : 'Invia'}
-            </button>
+          <div style={{ maxWidth: 760, margin: '0 auto' }}>
+            {pendingFile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 10px', background: 'var(--paper-tint)', border: '1px solid var(--paper-line)', borderRadius: 6, fontSize: 12, fontFamily: 'var(--sans)' }}>
+                <Icon name="paperclip" size={11} />
+                <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pendingFile.name}</span>
+                <button onClick={() => setPendingFile(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 14, lineHeight: 1 }}>×</button>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf,.doc,.docx,.txt"
+                style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) setPendingFile(f); e.target.value = ''; }}
+              />
+              <button onClick={() => fileInputRef.current?.click()} style={{ background: 'transparent', border: '1px solid var(--paper-line)', borderRadius: 8, padding: 10, cursor: 'pointer', color: pendingFile ? 'var(--vermiglio)' : 'var(--ink-3)' }}>
+                <Icon name="paperclip" size={14} />
+              </button>
+              <textarea value={input} onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
+                placeholder="Chieda qualcosa…" rows={1}
+                style={{ flex: 1, resize: 'none', padding: '12px 16px', border: '1px solid var(--paper-line)', borderRadius: 8, fontSize: 13.5, fontFamily: 'var(--sans)', background: 'var(--paper-tint)', outline: 'none' }}
+              />
+              <button onClick={send} className="btn btn-primary" disabled={(!input.trim() && !pendingFile) || streaming}>
+                <Icon name="send" size={12} /> {streaming ? '…' : 'Invia'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1465,6 +1527,7 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
   const [toast, setToast] = useState<string | null>(null);
   const [confetti, setConfetti] = useState(false);
   const [chatCtx, setChatCtx] = useState<string | null>(null);
+  const [chatInitialFile, setChatInitialFile] = useState<File | null>(null);
   const [rightCollapsed, setRightCollapsed] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1200);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [tasks, setTasks] = useState(MD_TASKS_BY_MACRO);
@@ -1490,8 +1553,8 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
     toastTimer.current = setTimeout(() => setToast(null), 3000);
   };
 
-  const openChat = (ctx?: string) => setChatCtx(ctx || selection?.item || selection?.macro || 'generale');
-  const closeChat = () => setChatCtx(null);
+  const openChat = (ctx?: string) => { setChatInitialFile(null); setChatCtx(ctx || selection?.item || selection?.macro || 'generale'); };
+  const closeChat = () => { setChatCtx(null); setChatInitialFile(null); };
 
   const toggleTask = (id: string) => {
     setTasks(prev => {
@@ -1532,7 +1595,7 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
   if (chatCtx) {
     return (
       <>
-        <ChatComplianceExpanded role={role} context={chatCtx} onClose={closeChat} score={score} pushToast={pushToast} />
+        <ChatComplianceExpanded role={role} context={chatCtx} onClose={closeChat} score={score} pushToast={pushToast} initialFile={chatInitialFile} />
         <MDToast toast={toast} />
       </>
     );
@@ -1596,6 +1659,7 @@ export default function MainDashboard({ role, user, selection, onBack, onNav, on
             context={chatBarContext}
             onSend={(text) => openChat(text)}
             onOpenChat={openChat}
+            onSendWithFile={(text, file) => { setChatInitialFile(file); setChatCtx(text || selection?.item || selection?.macro || 'generale'); }}
           />
         </div>
         <RightPanel role={role} user={user} onNav={onNav} collapsed={rightCollapsed} onToggle={() => setRightCollapsed(c => !c)} />

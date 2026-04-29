@@ -9,6 +9,7 @@ interface FixedChatBarProps {
   context?: string | null;       // nome sottocategoria attiva (es. "Locazione / Affitto")
   onSend?: (text: string) => void;
   onOpenChat?: (ctx?: string) => void;
+  onSendWithFile?: (text: string, file: File) => void;
 }
 
 // ─── Menu item style ──────────────────────────────────────────────────────────
@@ -32,11 +33,12 @@ const menuItemStyle: React.CSSProperties = {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function FixedChatBar({ context, onSend, onOpenChat }: FixedChatBarProps) {
+export default function FixedChatBar({ context, onSend, onOpenChat, onSendWithFile }: FixedChatBarProps) {
   const [text, setText] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordSec, setRecordSec] = useState(0);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
   const textRef = useRef<HTMLTextAreaElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -91,10 +93,16 @@ export default function FixedChatBar({ context, onSend, onOpenChat }: FixedChatB
 
   // ── Invia messaggio testuale ──────────────────────────────────────────────
   const send = () => {
-    if (!text.trim()) return;
-    onSend?.(text.trim());
-    onOpenChat?.(context ?? text.trim());
+    if (!text.trim() && !pendingFile) return;
+    const msg = text.trim() || (pendingFile ? `Analizza questo documento: ${pendingFile.name}` : "");
+    if (pendingFile && onSendWithFile) {
+      onSendWithFile(msg, pendingFile);
+    } else {
+      onSend?.(msg);
+      onOpenChat?.(context ?? msg);
+    }
     setText("");
+    setPendingFile(null);
   };
 
   const handleKey = (e: React.KeyboardEvent) => {
@@ -115,6 +123,15 @@ export default function FixedChatBar({ context, onSend, onOpenChat }: FixedChatB
         zIndex: 40,
       }}
     >
+      {/* File in attesa */}
+      {pendingFile && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, padding: "5px 10px", background: "var(--paper-tint)", border: "1px solid var(--paper-line)", borderRadius: 6, fontSize: 12, fontFamily: "var(--sans)" }}>
+          <Paperclip size={11} color="var(--ink-3)" />
+          <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pendingFile.name}</span>
+          <button onClick={() => setPendingFile(null)} style={{ background: "transparent", border: "none", cursor: "pointer", color: "var(--ink-3)", fontSize: 14, lineHeight: 1, padding: 0 }}>×</button>
+        </div>
+      )}
+
       {/* Label contestuale */}
       {context && (
         <div
@@ -241,10 +258,8 @@ export default function FixedChatBar({ context, onSend, onOpenChat }: FixedChatB
             style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) {
-                // TODO: upload file → widget W1 subcategoria attiva
-                onOpenChat?.(context ?? undefined);
-              }
+              if (file) { setPendingFile(file); setMenuOpen(false); }
+              e.target.value = "";
             }}
           />
           <input
@@ -255,10 +270,8 @@ export default function FixedChatBar({ context, onSend, onOpenChat }: FixedChatB
             style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) {
-                // TODO: upload immagine → analisi AI
-                onOpenChat?.(context ?? undefined);
-              }
+              if (file) { setPendingFile(file); setMenuOpen(false); }
+              e.target.value = "";
             }}
           />
         </div>
@@ -329,7 +342,7 @@ export default function FixedChatBar({ context, onSend, onOpenChat }: FixedChatB
         )}
 
         {/* ── Microfono (push-to-talk) o Invia ── */}
-        {text.trim() ? (
+        {(text.trim() || pendingFile) ? (
           <button
             onClick={send}
             title="Invia"
