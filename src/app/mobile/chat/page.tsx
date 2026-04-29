@@ -101,6 +101,25 @@ function TypingIndicator() {
   );
 }
 
+function resizeImageToBase64(file: File, maxSize: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // Rimuovi prefisso data:image/jpeg;base64,
+      resolve(canvas.toDataURL("image/jpeg", 0.85).split(",")[1]);
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 export default function MobileChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -144,15 +163,21 @@ export default function MobileChatPage() {
       // Leggi il file come base64 se presente
       let attachmentPayload: { type: "document" | "image"; mediaType: string; name: string; data: string } | undefined;
       if (currentAttachment) {
-        const arrayBuffer = await currentAttachment.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        let binary = "";
-        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-        const base64 = btoa(binary);
         const isImage = currentAttachment.type.startsWith("image/");
+        let base64: string;
+        if (isImage) {
+          // Ridimensiona immagini >1MB per evitare payload troppo grandi (foto iPhone 4-8MB)
+          base64 = await resizeImageToBase64(currentAttachment, 1200);
+        } else {
+          const arrayBuffer = await currentAttachment.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = "";
+          for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+          base64 = btoa(binary);
+        }
         attachmentPayload = {
           type: isImage ? "image" : "document",
-          mediaType: currentAttachment.type || "application/octet-stream",
+          mediaType: isImage ? "image/jpeg" : (currentAttachment.type || "application/octet-stream"),
           name: currentAttachment.name,
           data: base64,
         };
