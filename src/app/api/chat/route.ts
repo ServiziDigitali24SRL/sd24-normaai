@@ -775,6 +775,16 @@ export async function POST(req: NextRequest) {
       const enc = new TextEncoder();
       const send = (obj: unknown) => controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
+      // SER-86: Confidence score basato su similarity dei chunk RAG recuperati
+      const rawSimilarities = sources.map(s => (s as unknown as { similarity?: number }).similarity ?? 0);
+      const avgSimilarity = rawSimilarities.length > 0
+        ? rawSimilarities.reduce((a, b) => a + b, 0) / rawSimilarities.length
+        : 0;
+      const confidenceScore = Math.round(avgSimilarity * 100) / 100;
+      const confidenceLevel: "alta" | "media" | "bassa" =
+        confidenceScore >= 0.75 ? "alta" :
+        confidenceScore >= 0.50 ? "media" : "bassa";
+
       // debug: ragDebugInfo available here for troubleshooting
       let fullResponse = "";
       const tGen0 = Date.now();
@@ -804,8 +814,16 @@ export async function POST(req: NextRequest) {
             const citedSources = citedIndices.size > 0
               ? sources.filter((_, i) => citedIndices.has(i))
               : [];
-            send({ type: "sources", sources: citedSources.length > 0 ? citedSources : sources.slice(0, 3), hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0 });
-            send({ type: "done", popup_suggestion: popupSuggestion ?? null });
+            // SER-86: disclaimer dinamico basato su confidence score
+            const disclaimer =
+              confidenceLevel === "alta"
+                ? `Basato su ${citedSources.length || sources.length} fonti normative verificate.`
+                : confidenceLevel === "media"
+                ? "⚠️ Risposta parzialmente verificata — ti consiglio di consultare un professionista."
+                : "🔴 Risposta con bassa copertura normativa — consulta un esperto prima di agire.";
+
+            send({ type: "sources", sources: citedSources.length > 0 ? citedSources : sources.slice(0, 3), hasRag: ragContext.length > 0, hasGraph: graphContext.length > 0, hasPrecedents: precedentsContext.length > 0, confidence: confidenceScore, confidenceLevel, disclaimer });
+            send({ type: "done", popup_suggestion: popupSuggestion ?? null, confidence: confidenceScore, confidenceLevel });
           }
           // Capture token usage from message_delta (Anthropic streams usage in the final event)
           if (event.type === "message_delta") {
@@ -825,7 +843,12 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (err) {
-        send({ type: "error", message: String(err) });
+        // SER-98: cattura errori post-primo-chunk invisibili a Sentry in streaming
+        Sentry.captureException(err, {
+          tags: { type: "stream_error", route: "/api/chat" },
+          extra: { userId, vertical, model: selectedModel },
+        });
+        send({ type: "error", message: "Errore nella generazione della risposta. Riprova tra un momento." });
       } finally {
         // If generation was not logged via message_delta, log it now
         if (fullResponse) {
