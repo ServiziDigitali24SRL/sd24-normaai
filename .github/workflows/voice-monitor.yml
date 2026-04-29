@@ -1,0 +1,191 @@
+name: Voice Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Vapi voice
+        id: vapi
+        run: |
+          HTTP=$(curl -s -o /tmp/vapi_body.json -w "%{http_code}" \
+            -X POST https://api.vapi.ai/call/web \
+            -H "Authorization: Bearer ${{ secrets.VAPI_PUBLIC_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"assistantId":"e4cb1d2b-5afa-440c-94e7-51380cdc1f4a"}')
+          BODY=$(cat /tmp/vapi_body.json)
+          echo "status=$HTTP" >> $GITHUB_OUTPUT
+          echo "body=$BODY" >> $GITHUB_OUTPUT
+
+          # Termina subito la call se creata
+          CALL_ID=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || true)
+          if [ -n "$CALL_ID" ]; then
+            curl -s -X PATCH "https://api.vapi.ai/call/$CALL_ID" \
+              -H "Authorization: Bearer ${{ secrets.VAPI_PRIVATE_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d '{"status":"ended"}' > /dev/null || true
+          fi
+
+          if [ "$HTTP" != "201" ]; then
+            echo "FAILED=true" >> $GITHUB_ENV
+          else
+            echo "FAILED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Check for existing open voice-down issue
+        if: env.FAILED == 'true'
+        id: existing
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'voice-down',
+              state: 'open',
+            });
+            return issues.data.length > 0 ? 'true' : 'false';
+          result-encoding: string
+
+      - name: Claude diagnoses and fixes voice failure
+        if: env.FAILED == 'true' && steps.existing.outputs.result == 'false'
+        uses: actions/github-script@v7
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          VAPI_STATUS: ${{ steps.vapi.outputs.status }}
+          VAPI_BODY: ${{ steps.vapi.outputs.body }}
+        with:
+          script: |
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+
+            const status = process.env.VAPI_STATUS;
+            const body = process.env.VAPI_BODY;
+            const hook = fs.readFileSync('src/hooks/useMobileVoice.ts', 'utf8');
+            const personalities = fs.readFileSync('src/lib/orb-personalities.ts', 'utf8');
+
+            // Ask Claude to diagnose and fix
+            const res = await fetch('https://api.anthropic.com/v1/messages', {
+              method: 'POST',
+              headers: {
+                'x-api-key': process.env.ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01',
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify({
+                model: 'claude-sonnet-4-6',
+                max_tokens: 2048,
+                messages: [{
+                  role: 'user',
+                  content: `Sei un senior engineer di NormaAI. Il monitor automatico ha rilevato che la voce Vapi è DOWN.
+
+POST https://api.vapi.ai/call/web → HTTP ${status}
+Response body: ${body}
+
+File useMobileVoice.ts:
+\`\`\`typescript
+${hook.slice(0, 6000)}
+\`\`\`
+
+File orb-personalities.ts:
+\`\`\`typescript
+${personalities.slice(0, 3000)}
+\`\`\`
+
+Analizza l'errore e proponi un fix. Rispondi SOLO con JSON:
+{
+  "can_fix": true/false,
+  "reason": "causa e fix in una riga",
+  "file": "path/del/file da modificare",
+  "original": "stringa esatta da sostituire",
+  "fixed": "stringa corretta"
+}
+Se non puoi fixare in sicurezza, can_fix: false con reason dettagliata.`,
+                }],
+              }),
+            });
+
+            const data = await res.json();
+            const text = data?.content?.[0]?.text ?? '';
+
+            let fix;
+            try {
+              fix = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? '{}');
+            } catch { fix = { can_fix: false, reason: 'Parse error' }; }
+
+            const issueBody = `**Voice monitor ha rilevato: POST /call/web → ${status}**\n\n\`\`\`json\n${body}\n\`\`\`\n\n**Claude:** ${fix.reason ?? 'Analisi non disponibile.'}\n\n---\n🤖 Voice Monitor`;
+
+            if (!fix.can_fix || !fix.file || !fix.original) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Voice DOWN] Vapi ${status} — richiede analisi`,
+                body: issueBody,
+                labels: ['bug', 'voice-down'],
+              });
+              return;
+            }
+
+            // Apply fix
+            if (!fs.existsSync(fix.file)) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Voice DOWN] Vapi ${status} — file non trovato`,
+                body: issueBody,
+                labels: ['bug', 'voice-down'],
+              });
+              return;
+            }
+
+            const src = fs.readFileSync(fix.file, 'utf8');
+            if (!src.includes(fix.original)) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `[Voice DOWN] Vapi ${status} — snippet non trovato`,
+                body: issueBody,
+                labels: ['bug', 'voice-down'],
+              });
+              return;
+            }
+
+            fs.writeFileSync(fix.file, src.replace(fix.original, fix.fixed));
+
+            const branch = `autofix/voice-${Date.now()}`;
+            execSync(`git config user.email "autofix@normaai.it"`);
+            execSync(`git config user.name "NormaAI Autofix"`);
+            execSync(`git checkout -b ${branch}`);
+            execSync(`git add ${fix.file}`);
+            execSync(`git commit -m "fix(voice): autofix — ${fix.reason.slice(0, 72)}"`);
+            execSync(`git push origin ${branch}`);
+
+            const pr = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `fix(voice): [autofix] Vapi ${status} — ${fix.reason.slice(0, 60)}`,
+              head: branch,
+              base: 'main',
+              body: `### 🤖 Voice Autofix\n\n**Errore:** \`POST /call/web → ${status}\`\n\`\`\`json\n${body}\n\`\`\`\n\n**Fix:** ${fix.reason}\n\n---\n*Generato automaticamente da Voice Monitor + Claude Sonnet 4.6*`,
+            });
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[Voice DOWN] Vapi ${status} → PR aperta`,
+              body: `${issueBody}\n\nPR: ${pr.data.html_url}`,
+              labels: ['bug', 'voice-down'],
+            });
