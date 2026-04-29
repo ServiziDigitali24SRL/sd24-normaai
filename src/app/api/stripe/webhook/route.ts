@@ -8,6 +8,8 @@ import {
 } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
+// SER-74: CRITICO — Edge Runtime consuma il body prima di constructEvent → firma fallisce silenziosamente
+export const runtime = "nodejs";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
