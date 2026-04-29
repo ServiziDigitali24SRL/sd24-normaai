@@ -1,0 +1,17 @@
+# SER-78: Anthropic EU Proxy — Cloudflare Worker
+name = "normaai-anthropic-eu-proxy"
+main = "index.ts"
+compatibility_date = "2024-04-01"
+
+# Deploy in EU (Frankfurt) per data residency
+[env.production]
+name = "normaai-anthropic-eu-proxy"
+
+# Smart Placement disabilitato: vogliamo SEMPRE Frankfurt
+[placement]
+mode = "off"
+
+# Routes (sostituisci con il tuo account CF)
+# [[routes]]
+# pattern = "api-eu.normaai.it/*"
+# zone_name = "normaai.it"
