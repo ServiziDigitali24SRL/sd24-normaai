@@ -74,7 +74,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         return { ok: false, error: error.message };
       }
 
-      const chunks: CitationRef[] = (data ?? []).map((r: {
+      let chunks: CitationRef[] = (data ?? []).map((r: {
         id: string; urn: string; title: string; article: string | null;
         content: string; status: string;
       }) => ({
@@ -85,6 +85,33 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         source_chunk_id: r.id,
         verified: r.status === "vigente",
       }));
+
+      // Optional rerank step. Skipped gracefully when RERANK_ENDPOINT_URL is unset
+      // (e.g. before GEX44 is provisioned). When set, re-orders chunks via
+      // bge-reranker-v2-m3 self-hosted on GEX44 and keeps the top topK.
+      const rerankUrl = process.env.RERANK_ENDPOINT_URL;
+      if (rerankUrl && chunks.length > 0) {
+        try {
+          const rr = await fetch(`${rerankUrl}/rerank`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: input.query,
+              documents: chunks.map(c => c.excerpt),
+              top_n: topK,
+            }),
+            signal: AbortSignal.timeout(2000),
+          });
+          if (rr.ok) {
+            const rj = await rr.json() as { results?: Array<{ index: number; score: number }> };
+            if (rj.results?.length) {
+              chunks = rj.results.map(r => chunks[r.index]).filter(Boolean);
+            }
+          }
+        } catch {
+          // Reranker offline → keep dense order, no degradation
+        }
+      }
 
       const ragContext = chunks
         .map((c, i) => `[Fonte ${i + 1}] ${c.title}${c.article ? `, ${c.article}` : ""}\n${c.excerpt}`)

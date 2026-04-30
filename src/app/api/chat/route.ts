@@ -11,17 +11,14 @@
 // users get user_id-bound. Rate limit applies to both via @/lib/rate-limit.
 
 import { NextRequest } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { runPipeline } from "@/lib/agent-orchestrator";
 import { getSystemPrompt, type SofiaChannel } from "./system-prompts";
 import { guardInput } from "@/lib/guardrails";
 import { encodeAgentEvent, type AgentEvent } from "@/lib/agent-events";
+import { getProvider } from "@/lib/llm/router";
 import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
-
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "";
-const LLM_MODEL = process.env.LLM_MODEL ?? "claude-sonnet-4-5-20250929";
 
 interface ChatBody {
   conversation_id: string;
@@ -72,23 +69,11 @@ export async function POST(req: NextRequest) {
               ? `${sys}\n\nCONTESTO NORMATIVO (Norm Retriever):\n${ragContext}`
               : sys;
 
-            if (!ANTHROPIC_API_KEY) {
-              return `[Stub Sofia — API key non configurata]\nDomanda: ${query}`;
-            }
-
-            const client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
-            const r = await client.messages.create({
-              model: LLM_MODEL,
-              max_tokens: 1500,
-              system: fullSys,
-              messages: [{ role: "user", content: query }],
-            });
-            const text = r.content
-              .filter((b) => b.type === "text")
-              .map((b) => (b as { type: "text"; text: string }).text)
-              .join("\n");
-
-            send(`event: token\ndata: ${JSON.stringify({ text })}\n\n`);
+            const provider = getProvider(channel);
+            const text = await provider.streamTokens(
+              { systemPrompt: fullSys, userMessage: query, maxTokens: channel === "chat" ? 1500 : 800 },
+              (tok) => send(`event: token\ndata: ${JSON.stringify({ text: tok })}\n\n`),
+            );
             return text;
           },
         });
