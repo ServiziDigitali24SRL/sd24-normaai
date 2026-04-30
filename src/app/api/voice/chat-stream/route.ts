@@ -118,7 +118,10 @@ export async function POST(req: NextRequest) {
         let firstTokenMs: number | null = null;
 
         // TTS task queue — process sentences serially to preserve audio order.
-        // Each sentence pushes audio chunks into the SSE stream as they stream from ElevenLabs.
+        // Each sentence pushes PCM int16-LE chunks into the SSE stream.
+        // We buffer any odd byte across chunks so each emitted base64 payload
+        // contains an integer number of Int16 samples (avoid client misalignment).
+        let pcmResidue: Uint8Array = new Uint8Array(0);
         let ttsQueue: Promise<void> = Promise.resolve();
         const enqueueTts = (sentence: string) => {
           if (!sentence.trim()) return;
@@ -129,9 +132,19 @@ export async function POST(req: NextRequest) {
                   firstAudioMs = Date.now() - tStart;
                   send("timing", { phase: "first_audio_ms_from_request_start", ms: firstAudioMs });
                 }
-                // Convert Uint8Array → base64 (Node Buffer)
-                const b64 = Buffer.from(chunk).toString("base64");
-                send("audio", { b64 });
+                // Combine residue + new chunk
+                const combined = new Uint8Array(pcmResidue.byteLength + chunk.byteLength);
+                combined.set(pcmResidue, 0);
+                combined.set(chunk, pcmResidue.byteLength);
+                // Emit only the even-byte portion; carry odd byte forward
+                const evenLen = combined.byteLength & ~1;
+                if (evenLen > 0) {
+                  const b64 = Buffer.from(combined.buffer, combined.byteOffset, evenLen).toString("base64");
+                  send("audio", { b64 });
+                }
+                pcmResidue = combined.byteLength > evenLen
+                  ? combined.subarray(evenLen)
+                  : new Uint8Array(0);
               }
             } catch (err) {
               send("error", { message: err instanceof Error ? err.message : "tts_chunk_failed" });
