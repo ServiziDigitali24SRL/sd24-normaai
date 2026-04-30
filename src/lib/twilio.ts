@@ -1,0 +1,143 @@
+/**
+ * NormaAI — Twilio: SMS OTP + WhatsApp notifiche
+ * Usa Twilio REST API direttamente (no npm package).
+ */
+
+const ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID ?? "";
+const AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN ?? "";
+const SMS_FROM = process.env.TWILIO_PHONE_FROM ?? ""; // es. +39... o numero virtuale Twilio
+const WA_FROM = process.env.TWILIO_WHATSAPP_FROM ?? "whatsapp:+14155238886"; // Twilio sandbox default
+
+function twilioHeaders() {
+  const creds = Buffer.from(`${ACCOUNT_SID}:${AUTH_TOKEN}`).toString("base64");
+  return {
+    Authorization: `Basic ${creds}`,
+    "Content-Type": "application/x-www-form-urlencoded",
+  };
+}
+
+function formEncode(params: Record<string, string>): string {
+  return Object.entries(params)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join("&");
+}
+
+async function sendMessage(to: string, from: string, body: string): Promise<boolean> {
+  if (!ACCOUNT_SID || !AUTH_TOKEN) {
+    console.error("[twilio] TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN non configurati");
+    return false;
+  }
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Messages.json`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: twilioHeaders(),
+      body: formEncode({ To: to, From: from, Body: body }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("[twilio] Error:", res.status, err);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[twilio] Fetch error:", e);
+    return false;
+  }
+}
+
+// ─── SMS ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Invia OTP via SMS.
+ * @param phone Numero E.164 es. +393331234567
+ */
+export async function sendOtpSms(phone: string, otp: string): Promise<boolean> {
+  if (!SMS_FROM) {
+    console.error("[twilio] TWILIO_PHONE_FROM non configurato");
+    return false;
+  }
+  const body = `NormaAI — Il tuo codice di verifica è: ${otp}\nValido 10 minuti. Non condividerlo.`;
+  return sendMessage(phone, SMS_FROM, body);
+}
+
+// ─── WHATSAPP ─────────────────────────────────────────────────────────────────
+
+/**
+ * Notifica un professionista via SMS quando arriva un nuovo lead.
+ * @param phone Numero E.164 es. +393331234567
+ */
+export async function sendLeadSMS(
+  phone: string,
+  professionalName: string,
+  leadSummary: string,
+  price: number
+): Promise<boolean> {
+  if (!SMS_FROM) {
+    console.error("[twilio] TWILIO_PHONE_FROM non configurato");
+    return false;
+  }
+  const priceFormatted = typeof price === "number" && price > 100
+    ? (price / 100).toFixed(2)   // price_cents
+    : price.toFixed(2);           // gia in euro
+  const summary = leadSummary.slice(0, 130) + (leadSummary.length > 130 ? "…" : "");
+  const body =
+    `NormaAI - Ciao ${professionalName}, nuovo lead disponibile!\n` +
+    `"${summary}"\n` +
+    `Prezzo: EUR ${priceFormatted} - Acquista su normaai.it`;
+  return sendMessage(phone, SMS_FROM, body);
+}
+
+/**
+ * @deprecated Usare sendLeadSMS. Mantenuto per retrocompatibilità.
+ * Notifica un professionista via WhatsApp quando arriva un nuovo lead.
+ */
+export async function sendLeadWhatsApp(
+  phone: string,
+  professionalName: string,
+  leadSummary: string,
+  price: number
+): Promise<boolean> {
+  // Fallback a SMS (WhatsApp Business non ancora configurato)
+  return sendLeadSMS(phone, professionalName, leadSummary, price);
+}
+
+/**
+ * Invia OTP via WhatsApp (alternativa a SMS).
+ */
+export async function sendOtpWhatsApp(phone: string, otp: string): Promise<boolean> {
+  const body =
+    `🔐 *NormaAI* — Il tuo codice di verifica è:\n\n*${otp}*\n\nValido 10 minuti. Non condividerlo con nessuno.`;
+  return sendMessage(`whatsapp:${phone}`, WA_FROM, body);
+}
+
+// ─── ONBOARDING ───────────────────────────────────────────────────────────────
+
+export interface WelcomeSMSData {
+  phone: string;
+  name: string;
+  role: 'privato' | 'professionista' | 'impresa';
+}
+
+/**
+ * SMS di benvenuto post-onboarding.
+ * Mittente: TWILIO_PHONE_FROM (impostare "NormaAI" come Alphanumeric Sender ID)
+ */
+export async function sendWelcomeSMS(data: WelcomeSMSData): Promise<boolean> {
+  if (!SMS_FROM) {
+    console.error("[twilio] TWILIO_PHONE_FROM non configurato");
+    return false;
+  }
+  const messages: Record<string, string> = {
+    privato:       `Ciao ${data.name}! Benvenuto in NormaAI. Cerca la tua normativa: normaai.it`,
+    professionista:`Benvenuto ${data.name}! NormaAI e' pronto per le tue ricerche professionali: normaai.it`,
+    impresa:       `Benvenuto ${data.name}! NormaAI ti supporta nella compliance aziendale: normaai.it`,
+  };
+  return sendMessage(data.phone, SMS_FROM, messages[data.role] ?? messages.privato);
+}
+
+export function validatePhoneNumber(phone: string): boolean {
+  const italianPhone = /^(\+39|0039)?[\s]?([0-9]{2,3}[\s]?[0-9]{6,7}|[0-9]{3}[\s]?[0-9]{7,8})$/;
+  const international = /^\+[1-9]\d{1,14}$/;
+  return italianPhone.test(phone) || international.test(phone);
+}

@@ -1,0 +1,39 @@
+// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
+// The config you add here will be used whenever one of the edge features is loaded.
+// Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
+// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: "https://b64b0a7ed287cb8c352b11092cfe7519@o4511179464507392.ingest.de.sentry.io/4511179572772944",
+
+  // SER-65: 10% sampling in production
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+
+  // Enable logs to be sent to Sentry
+  enableLogs: true,
+
+  // SER-65: GDPR — MAI inviare PII di default
+  sendDefaultPii: false,
+
+  // SER-65: Scrub PII sensibili prima dell'invio
+  beforeSend(event) {
+    if (event.request?.headers) {
+      delete event.request.headers["authorization"];
+      delete event.request.headers["cookie"];
+      delete event.request.headers["x-api-key"];
+    }
+    if (event.request?.cookies) {
+      event.request.cookies = {};
+    }
+    if (event.user) {
+      delete event.user.email;
+      delete event.user.ip_address;
+    }
+    if (event.request?.url?.includes("/api/health")) {
+      return null;
+    }
+    return event;
+  },
+});

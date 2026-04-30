@@ -1,0 +1,59 @@
+name: Voice Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Vapi voice
+        id: vapi
+        run: |
+          HTTP=$(curl -s -o /tmp/vapi_body.json -w "%{http_code}" \
+            -X POST https://api.vapi.ai/call/web \
+            -H "Authorization: Bearer ${{ secrets.VAPI_PUBLIC_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"assistantId":"e4cb1d2b-5afa-440c-94e7-51380cdc1f4a"}')
+          BODY=$(cat /tmp/vapi_body.json)
+
+          # Termina subito la call
+          CALL_ID=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))" 2>/dev/null || true)
+          if [ -n "$CALL_ID" ]; then
+            curl -s -X PATCH "https://api.vapi.ai/call/$CALL_ID" \
+              -H "Authorization: Bearer ${{ secrets.VAPI_PRIVATE_KEY }}" \
+              -H "Content-Type: application/json" \
+              -d '{"status":"ended"}' > /dev/null || true
+          fi
+
+          echo "VAPI_HTTP=$HTTP" >> $GITHUB_ENV
+          # Salva body su file per evitare problemi con caratteri speciali in env
+          echo "$BODY" > /tmp/vapi_body_clean.json
+
+      - name: Check existing voice-down issue
+        if: env.VAPI_HTTP != '201'
+        id: existing
+        run: |
+          COUNT=$(gh issue list --label voice-down --state open --json number --jq length)
+          echo "ISSUE_COUNT=$COUNT" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Autofix
+        if: env.VAPI_HTTP != '201' && env.ISSUE_COUNT == '0'
+        run: |
+          VAPI_STATUS=$VAPI_HTTP \
+          VAPI_BODY=$(cat /tmp/vapi_body_clean.json) \
+          GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} \
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }} \
+          node scripts/voice-autofix.js
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

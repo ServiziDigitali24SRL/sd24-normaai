@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "src/app/api/chat/route.ts": {
+      "maxDuration": 120
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/scadenze/notify",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/impresa/report-compliance?cron=1",
+      "schedule": "0 9 1 * *"
+    },
+    {
+      "path": "/api/health/voice",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}
