@@ -2,7 +2,7 @@
 // Fase 1: pure dense (vector cosine) on Supabase pgvector.
 // Fase 2: hybrid with BM25 sparse via Postgres tsvector + score fusion.
 
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase-admin";
 import type { Agent, AgentContext, AgentResult, CitationRef } from "./types";
 
 interface NormRetrieverInput {
@@ -57,7 +57,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       // pgvector cosine search via RPC (defined separately as a SQL function
       // when corpus is populated). For now we issue a direct SELECT with the
       // <=> operator. Vertical filter is optional.
-      const sb = supabaseAdmin();
+      const sb = createAdminClient();
       const { data, error } = await sb.rpc("match_corpus_chunks", {
         query_embedding: embedding,
         match_count: topK,

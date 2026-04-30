@@ -3,7 +3,6 @@ import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import PlausibleAnalytics from "@/components/PlausibleAnalytics";
 import SessionGuard from "@/components/SessionGuard";
-import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
   title: "NormaAI — La norma è uguale per tutti.",
@@ -84,12 +83,10 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-          {children}
-          <SessionGuard />
-          <CookieBanner />
-          <PlausibleAnalytics />
-        </ThemeProvider>
+        {children}
+        <SessionGuard />
+        <CookieBanner />
+        <PlausibleAnalytics />
       </body>
     </html>
   );

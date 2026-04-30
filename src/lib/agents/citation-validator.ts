@@ -3,7 +3,7 @@
 // in corpus_chunks. If not, mark `verified=false` and the Response Composer
 // will either rewrite or strip the unverified citation.
 
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { createAdminClient } from "@/lib/supabase-admin";
 import type { Agent, AgentContext, AgentResult, CitationRef } from "./types";
 
 interface CitationValidatorInput {
@@ -41,7 +41,7 @@ export const citationValidatorAgent: Agent<CitationValidatorInput, CitationValid
     ctx.emit({ agent: "citation-validator", state: "started" });
 
     try {
-      const sb = supabaseAdmin();
+      const sb = createAdminClient();
       const validated: CitationRef[] = [];
       let invalidCount = 0;
 

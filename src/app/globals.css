@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Paper backgrounds */
+  --paper:        #FDFBF7;
+  --paper-tint:   #F8F4ED;
+  --paper-2:      #F0EADD;
+  --paper-line:   #E8E0D2;
+
+  /* Ink (text) */
+  --ink-1:        #1A1714;
+  --ink-2:        #3D3530;
+  --ink-3:        #6B5F55;
+  --ink-4:        #9A8E83;
+  --ink-5:        #C4B9AC;
+
+  /* Accent */
+  --vermiglio:        #C93924;
+  --vermiglio-ink:    #8E2818;
+  --vermiglio-tint:   #FBE8E4;
+  --ocra:             #C9A14B;
+  --ocra-tint:        #FBF2DD;
+
+  /* Status */
+  --green-success:    #2E7D5B;
+  --red-error:        #B43B25;
+
+  /* Typography */
+  --serif: 'Source Serif Pro', 'Iowan Old Style', Georgia, serif;
+  --sans:  'Inter', -apple-system, system-ui, sans-serif;
+  --mono:  'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink-1);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+@keyframes mdPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
