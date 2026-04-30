@@ -40,7 +40,7 @@ export default function TestAvatarPage() {
         </h1>
         <p style={{ fontSize: 13, color: "var(--ink-3)", marginTop: 8 }}>
           Scrivi un testo (o usa una preset) e premi <strong>Genera</strong>.
-          La generazione richiede 8–15 secondi.
+          La generazione richiede 60–90 secondi (avatar Business HeyGen).
         </p>
       </header>
 
