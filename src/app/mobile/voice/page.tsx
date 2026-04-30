@@ -40,6 +40,9 @@ export default function MobileVoicePage() {
       const { MicVAD } = await import("@ricky0123/vad-web");
 
       const vad = await MicVAD.new({
+        // Load worklet + Silero ONNX model from CDN (avoid Next.js bundle issues)
+        baseAssetPath: "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/",
+        onnxWASMBasePath: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/",
         // Sensitivity tuning for mobile mic + Italian speech
         positiveSpeechThreshold: 0.55,
         negativeSpeechThreshold: 0.35,
