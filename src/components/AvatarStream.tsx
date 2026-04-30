@@ -54,21 +54,44 @@ export function AvatarStream({
         const j = await r.json();
         if (!r.ok || !j.videoId) throw new Error(j.error ?? "generate_failed");
 
+        const startedAt = Date.now();
+        const MAX_WAIT_MS = 180_000; // 3 min hard cap — HeyGen Business avg 60-90s, p95 ≤180s
+
         const poll = async () => {
           if (cancelled) return;
-          const s = await fetch(`/api/avatar/status?id=${j.videoId}`).then(x => x.json());
+          const res = await fetch(`/api/avatar/status?id=${j.videoId}`);
+          const s = await res.json().catch(() => ({}));
           if (cancelled) return;
+
+          // Treat any error response (HTTP non-2xx OR `{error: ...}` body) as failed
+          if (!res.ok || s.error) {
+            setError(s.error ?? `status_http_${res.status}`);
+            setPhase("error");
+            if (tickTimer) clearInterval(tickTimer);
+            return;
+          }
+
           if (s.status === "completed" && s.videoUrl) {
             setVideoUrl(s.videoUrl);
             setPhase("ready");
             if (tickTimer) clearInterval(tickTimer);
-          } else if (s.status === "failed") {
+            return;
+          }
+          if (s.status === "failed") {
             setError(s.error ?? "heygen_failed");
             setPhase("error");
             if (tickTimer) clearInterval(tickTimer);
-          } else {
-            pollTimer = setTimeout(poll, 2000);
+            return;
           }
+
+          // Still processing — bail out if we've exceeded the hard cap
+          if (Date.now() - startedAt > MAX_WAIT_MS) {
+            setError("timeout_180s");
+            setPhase("error");
+            if (tickTimer) clearInterval(tickTimer);
+            return;
+          }
+          pollTimer = setTimeout(poll, 2000);
         };
         await poll();
       } catch (e) {

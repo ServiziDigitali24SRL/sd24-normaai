@@ -24,8 +24,18 @@ export interface LlmProvider {
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY ?? "";
 const ANTHROPIC_MODEL = process.env.LLM_MODEL ?? "claude-sonnet-4-5-20250929";
-const GROQ_KEY = process.env.GROQ_API_KEY ?? "";
-const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+
+// "Groq" provider routes via OpenRouter by default (single API key, free tier available).
+// Override OPENROUTER_API_KEY with GROQ_API_KEY to hit Groq directly when latency matters.
+const GROQ_KEY = process.env.GROQ_API_KEY ?? process.env.OPENROUTER_API_KEY ?? "";
+const GROQ_BASE = process.env.GROQ_API_KEY
+  ? "https://api.groq.com/openai/v1"          // direct Groq (lowest latency)
+  : "https://openrouter.ai/api/v1";           // OpenRouter fallback (single key)
+const GROQ_MODEL = process.env.GROQ_MODEL ?? (
+  process.env.GROQ_API_KEY
+    ? "llama-3.3-70b-versatile"               // Groq direct model id
+    : "meta-llama/llama-3.3-70b-instruct:free" // OpenRouter FREE tier (20 RPM, 50/day)
+);
 
 const anthropicProvider: LlmProvider = {
   name: "anthropic",
@@ -78,7 +88,7 @@ const groqProvider: LlmProvider = {
 
   async complete({ systemPrompt, userMessage, maxTokens = 800, temperature = 0.4 }) {
     if (!GROQ_KEY) return `[Stub Groq] ${userMessage}`;
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const r = await fetch(`${GROQ_BASE}/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${GROQ_KEY}`,
@@ -105,7 +115,7 @@ const groqProvider: LlmProvider = {
       onToken(stub);
       return stub;
     }
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const r = await fetch(`${GROQ_BASE}/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${GROQ_KEY}`,
