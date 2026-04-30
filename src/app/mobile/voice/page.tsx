@@ -23,10 +23,11 @@ export default function MobileVoicePage() {
   const [latency, setLatency] = useState<{ asr?: number; firstAudio?: number; llmFirst?: number } | null>(null);
 
   const vadRef = useRef<{ destroy: () => void; pause: () => void; start: () => void } | null>(null);
-  const audioElRef = useRef<HTMLAudioElement | null>(null);
-  const mediaSourceRef = useRef<MediaSource | null>(null);
-  const sourceBufferRef = useRef<SourceBuffer | null>(null);
-  const audioQueueRef = useRef<Uint8Array[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const audioGainRef = useRef<GainNode | null>(null);
+  const nextStartTimeRef = useRef<number>(0);     // when to schedule next AudioBufferSourceNode
+  const sampleRateRef = useRef<number>(22050);
+  const scheduledNodesRef = useRef<AudioBufferSourceNode[]>([]);
   const turnsRef = useRef<Turn[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -36,6 +37,15 @@ export default function MobileVoicePage() {
   async function start() {
     setError(null);
     try {
+      // Init AudioContext on user gesture (required by autoplay policy)
+      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new Ctx();
+      audioCtxRef.current = ctx;
+      const gain = ctx.createGain();
+      gain.gain.value = 1.0;
+      gain.connect(ctx.destination);
+      audioGainRef.current = gain;
+
       // Dynamic import — vad-web uses workers + onnxruntime, must be client-side
       const { MicVAD } = await import("@ricky0123/vad-web");
 
@@ -43,12 +53,12 @@ export default function MobileVoicePage() {
         // Self-host VAD worklet, Silero ONNX, and ORT wasm under /vad/
         baseAssetPath: "/vad/",
         onnxWASMBasePath: "/vad/",
-        // Sensitivity tuning for mobile mic + Italian speech
+        // Sensitivity tuning — tolerate 1.8s pause within a sentence
         positiveSpeechThreshold: 0.55,
         negativeSpeechThreshold: 0.35,
         minSpeechMs: 250,          // ≥250ms speech to consider real
-        redemptionMs: 700,         // 700ms silence before speech end
-        preSpeechPadMs: 100,       // 100ms padding before speech start
+        redemptionMs: 1800,        // 1.8s silence before considering speech ended
+        preSpeechPadMs: 200,       // 200ms padding before speech start
         onSpeechStart: () => onSpeechStart(),
         onSpeechEnd: (audio) => onSpeechEnd(audio),
       });
@@ -63,20 +73,25 @@ export default function MobileVoicePage() {
 
   function stop() {
     abortRef.current?.abort();
+    stopAllScheduledAudio();
     vadRef.current?.destroy();
     vadRef.current = null;
-    if (audioElRef.current) {
-      audioElRef.current.pause();
-      audioElRef.current.src = "";
-    }
+    audioCtxRef.current?.close().catch(() => { /* ignore */ });
+    audioCtxRef.current = null;
     setMode("idle");
+  }
+
+  function stopAllScheduledAudio() {
+    for (const n of scheduledNodesRef.current) {
+      try { n.stop(); } catch { /* ignore */ }
+    }
+    scheduledNodesRef.current = [];
+    nextStartTimeRef.current = 0;
   }
 
   function onSpeechStart() {
     // User started talking — interrupt Sofia if she's speaking
-    if (audioElRef.current && !audioElRef.current.paused) {
-      audioElRef.current.pause();
-    }
+    stopAllScheduledAudio();
     abortRef.current?.abort();
     setMode("user-speaking");
     setPartialSofia("");
@@ -85,27 +100,14 @@ export default function MobileVoicePage() {
   async function onSpeechEnd(audioFloat32: Float32Array) {
     setMode("thinking");
     setPartialUser("");
+
+    // Reset audio scheduling for this turn
+    nextStartTimeRef.current = 0;
+    scheduledNodesRef.current = [];
+
     // Encode Float32 PCM (16kHz mono from VAD) → WAV bytes
     const wavBuf = pcmToWav(audioFloat32, 16000);
 
-    // Set up MediaSource for streamed audio playback
-    const ms = new MediaSource();
-    mediaSourceRef.current = ms;
-    audioQueueRef.current = [];
-    if (audioElRef.current) audioElRef.current.src = URL.createObjectURL(ms);
-
-    ms.addEventListener("sourceopen", () => {
-      try {
-        const sb = ms.addSourceBuffer("audio/mpeg");
-        sourceBufferRef.current = sb;
-        sb.addEventListener("updateend", flushQueue);
-        flushQueue();
-      } catch (e) {
-        setError(`mediasource_${e instanceof Error ? e.message : "unknown"}`);
-      }
-    });
-
-    // POST to streaming SSE endpoint
     const fd = new FormData();
     fd.append("file", new Blob([new Uint8Array(wavBuf)], { type: "audio/wav" }), "rec.wav");
     fd.append("history", JSON.stringify(
@@ -138,7 +140,6 @@ export default function MobileVoicePage() {
         if (done) break;
         buf += decoder.decode(value, { stream: true });
 
-        // Split SSE messages
         const parts = buf.split("\n\n");
         buf = parts.pop() ?? "";
         for (const part of parts) {
@@ -148,7 +149,10 @@ export default function MobileVoicePage() {
           let payload: Record<string, unknown>;
           try { payload = JSON.parse(data); } catch { continue; }
 
-          if (ev === "user") {
+          if (ev === "meta") {
+            const sr = (payload.audio as { sampleRate?: number })?.sampleRate;
+            if (sr) sampleRateRef.current = sr;
+          } else if (ev === "user") {
             userText = String(payload.text ?? "");
             setPartialUser(userText);
           } else if (ev === "text") {
@@ -156,15 +160,10 @@ export default function MobileVoicePage() {
             setPartialSofia(sofiaText);
           } else if (ev === "audio") {
             const b64 = String(payload.b64 ?? "");
-            const bin = atob(b64);
-            const arr = new Uint8Array(bin.length);
-            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-            audioQueueRef.current.push(arr);
-            flushQueue();
-            if (!played && audioElRef.current) {
+            schedulePcmChunk(b64);
+            if (!played) {
               played = true;
               setMode("sofia-speaking");
-              audioElRef.current.play().catch(() => { /* user gesture? */ });
             }
           } else if (ev === "timing") {
             const phase = String(payload.phase);
@@ -173,18 +172,6 @@ export default function MobileVoicePage() {
             if (phase === "llm_first_token_ms") localLatency.llmFirst = ms;
             if (phase === "first_audio_ms_from_request_start") localLatency.firstAudio = ms;
             setLatency({ ...localLatency });
-          } else if (ev === "done") {
-            // Mark MediaSource end of stream
-            try {
-              if (mediaSourceRef.current?.readyState === "open") {
-                if (sourceBufferRef.current?.updating) {
-                  sourceBufferRef.current.addEventListener("updateend",
-                    () => mediaSourceRef.current?.endOfStream(), { once: true });
-                } else {
-                  mediaSourceRef.current.endOfStream();
-                }
-              }
-            } catch { /* ignore */ }
           } else if (ev === "error") {
             throw new Error(String(payload.message ?? "stream_error"));
           }
@@ -194,30 +181,58 @@ export default function MobileVoicePage() {
       if (e instanceof Error && e.name === "AbortError") return;
       setError(e instanceof Error ? e.message : "fetch_failed");
       setMode("listening");
+      return;
     }
 
-    // Save final transcript
     if (userText && sofiaText) {
       setTurns(t => [...t, { user: userText, sofia: sofiaText }]);
     }
     setPartialUser("");
     setPartialSofia("");
 
-    // When audio finishes, return to listening
-    audioElRef.current?.addEventListener("ended", () => setMode("listening"), { once: true });
-    if (!played) setMode("listening");
+    // Schedule "back to listening" when last audio finishes
+    const ctx = audioCtxRef.current;
+    const lastEnd = nextStartTimeRef.current;
+    if (ctx && played && lastEnd > ctx.currentTime) {
+      const remainingMs = (lastEnd - ctx.currentTime) * 1000;
+      setTimeout(() => setMode("listening"), Math.max(0, remainingMs));
+    } else {
+      setMode("listening");
+    }
   }
 
-  function flushQueue() {
-    const sb = sourceBufferRef.current;
-    if (!sb || sb.updating) return;
-    const next = audioQueueRef.current.shift();
-    if (!next) return;
-    try {
-      sb.appendBuffer(new Uint8Array(next));
-    } catch (e) {
-      setError(`appendbuffer_${e instanceof Error ? e.message : "unknown"}`);
-    }
+  // Decode base64 → Int16 PCM → Float32 → schedule on the AudioContext timeline.
+  // Each chunk is appended right after the previous so playback is gapless.
+  function schedulePcmChunk(b64: string) {
+    const ctx = audioCtxRef.current;
+    const gain = audioGainRef.current;
+    if (!ctx || !gain) return;
+
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    if (u8.byteLength < 2) return;
+
+    // Int16LE → Float32 in [-1, 1]
+    const i16 = new Int16Array(u8.buffer, u8.byteOffset, u8.byteLength >> 1);
+    const f32 = new Float32Array(i16.length);
+    for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 0x8000;
+
+    const sr = sampleRateRef.current;
+    const buf = ctx.createBuffer(1, f32.length, sr);
+    buf.getChannelData(0).set(f32);
+
+    const node = ctx.createBufferSource();
+    node.buffer = buf;
+    node.connect(gain);
+
+    const startAt = Math.max(ctx.currentTime, nextStartTimeRef.current);
+    node.start(startAt);
+    nextStartTimeRef.current = startAt + buf.duration;
+    scheduledNodesRef.current.push(node);
+    node.onended = () => {
+      scheduledNodesRef.current = scheduledNodesRef.current.filter(n => n !== node);
+    };
   }
 
   // ── UI ──
@@ -356,7 +371,6 @@ export default function MobileVoicePage() {
         </p>
       )}
 
-      <audio ref={audioElRef} hidden />
     </main>
   );
 }

@@ -86,6 +86,9 @@ export async function POST(req: NextRequest) {
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
 
       try {
+        // Tell client what audio format to expect (PCM int16 LE @ 22050Hz mono)
+        send("meta", { audio: { format: "pcm_int16le", sampleRate: 22050, channels: 1 } });
+
         // ── 1. ASR (blocking) ────────────────────────────────────────
         const tAsr = Date.now();
         const asr = await transcribe(audioBuffer, filename, { language: "it" });

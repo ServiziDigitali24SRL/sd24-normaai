@@ -12,6 +12,12 @@ export interface StreamSynthesizeOptions {
   text: string;
   voiceId?: string;
   modelId?: string;
+  /**
+   * Output format. Defaults to PCM 22050Hz mono int16-LE for browser-friendly
+   * streaming via Web Audio API (no MediaSource codec quirks).
+   * Pass "mp3_44100_128" if you need a self-contained MP3 file instead.
+   */
+  outputFormat?: "pcm_22050" | "pcm_16000" | "pcm_44100" | "mp3_44100_128";
 }
 
 export async function* streamSynthesize(opts: StreamSynthesizeOptions): AsyncGenerator<Uint8Array, void, unknown> {
@@ -19,15 +25,17 @@ export async function* streamSynthesize(opts: StreamSynthesizeOptions): AsyncGen
 
   const voiceId = opts.voiceId ?? DEFAULT_VOICE;
   const model = opts.modelId ?? DEFAULT_MODEL;
+  const outputFormat = opts.outputFormat ?? "pcm_22050";
+  const accept = outputFormat.startsWith("pcm") ? "audio/pcm" : "audio/mpeg";
 
   const r = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=${outputFormat}`,
     {
       method: "POST",
       headers: {
         "xi-api-key": API_KEY,
         "Content-Type": "application/json",
-        Accept: "audio/mpeg",
+        Accept: accept,
       },
       body: JSON.stringify({
         text: opts.text,
