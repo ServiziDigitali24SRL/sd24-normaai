@@ -94,7 +94,8 @@ export async function generateVideo(p: GenerateVideoParams): Promise<{ videoId: 
 export async function getVideoStatus(videoId: string): Promise<VideoStatus> {
   if (!API_KEY) throw new Error("heygen_no_api_key");
 
-  const r = await fetch(`${BASE}/video_status.get?video_id=${videoId}`, {
+  // Status endpoint lives on v1, not v2
+  const r = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${videoId}`, {
     headers: { "X-Api-Key": API_KEY },
   });
   if (!r.ok) throw new Error(`heygen_status_${r.status}`);
@@ -105,7 +106,7 @@ export async function getVideoStatus(videoId: string): Promise<VideoStatus> {
       video_url?: string;
       thumbnail_url?: string;
       duration?: number;
-      error?: { detail?: string };
+      error?: string | { detail?: string };
     };
   };
   const d = j.data;
@@ -115,6 +116,6 @@ export async function getVideoStatus(videoId: string): Promise<VideoStatus> {
     videoUrl: d?.video_url,
     thumbnailUrl: d?.thumbnail_url,
     durationSec: d?.duration,
-    error: d?.error?.detail,
+    error: typeof d?.error === "string" ? d.error : d?.error?.detail,
   };
 }
