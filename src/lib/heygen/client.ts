@@ -13,14 +13,14 @@ const API_KEY = process.env.HEYGEN_API_KEY ?? "";
 export const AVATARS = {
   sofia: {
     avatarId: "Violante_Business_Sitting_Front_public",
-    voiceId: process.env.HEYGEN_VOICE_ID_SOFIA ?? "131a2a3eef0c4a82a07c1d24a39bca39",
+    // "Linda Fiore" — Italian female, warm professional
+    voiceId: process.env.HEYGEN_VOICE_ID_SOFIA ?? "c3b0f442f1c8483d8faab719cad7b2cb",
     label: "Sofia",
   },
   marco: {
     avatarId: "Onat_Macbook_Front2_public",
-    // TODO set HEYGEN_VOICE_ID_MARCO to a real Italian male voice id from
-    // GET /v2/voices. Falls back to Elena (female) until configured.
-    voiceId: process.env.HEYGEN_VOICE_ID_MARCO ?? "131a2a3eef0c4a82a07c1d24a39bca39",
+    // "Marco Santini" — Italian male, professional
+    voiceId: process.env.HEYGEN_VOICE_ID_MARCO ?? "bbc1f5ddc810412ab98baab4daf9f11b",
     label: "Marco",
   },
 } as const;
