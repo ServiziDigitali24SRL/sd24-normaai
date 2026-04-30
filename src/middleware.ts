@@ -20,7 +20,9 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/invest-lead" ||
     pathname === "/api/leads/preview" ||               // lead preview pubblica
     pathname === "/api/mobile/buy-lead" ||              // mobile: acquisto lead
-    pathname === "/api/mobile/pay-professional"         // mobile: pagamento professionista
+    pathname === "/api/mobile/pay-professional" ||      // mobile: pagamento professionista
+    pathname === "/api/avatar/generate" ||               // avatar HeyGen: freemium pubblico
+    pathname === "/api/avatar/status"                    // avatar HeyGen: poll status
   );
 }
 
