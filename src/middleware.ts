@@ -22,7 +22,8 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/mobile/buy-lead" ||              // mobile: acquisto lead
     pathname === "/api/mobile/pay-professional" ||      // mobile: pagamento professionista
     pathname === "/api/avatar/generate" ||               // avatar HeyGen: freemium pubblico
-    pathname === "/api/avatar/status"                    // avatar HeyGen: poll status
+    pathname === "/api/avatar/status" ||                 // avatar HeyGen: poll status
+    pathname === "/api/voice/transcribe"                 // voice ASR (Voxtral): freemium pubblico
   );
 }
 
