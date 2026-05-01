@@ -25,16 +25,23 @@ export interface LlmProvider {
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY ?? "";
 const ANTHROPIC_MODEL = process.env.LLM_MODEL ?? "claude-sonnet-4-5-20250929";
 
-// "Groq" provider routes via OpenRouter by default (single API key, free tier available).
-// Override OPENROUTER_API_KEY with GROQ_API_KEY to hit Groq directly when latency matters.
-const GROQ_KEY = process.env.GROQ_API_KEY ?? process.env.OPENROUTER_API_KEY ?? "";
-const GROQ_BASE = process.env.GROQ_API_KEY
-  ? "https://api.groq.com/openai/v1"          // direct Groq (lowest latency)
-  : "https://openrouter.ai/api/v1";           // OpenRouter fallback (single key)
+// "Groq" provider routing.
+// Priority:
+//   1. OPENROUTER_API_KEY → routes to Llama-3.3-70b on OpenRouter, prefers Groq backend
+//      (paid pay-per-token, no 30 RPM cap, single key for everything)
+//   2. GROQ_API_KEY → direct Groq (free tier 30 RPM, lowest latency)
+//   3. neither → Anthropic fallback
+const USE_OPENROUTER = !!process.env.OPENROUTER_API_KEY;
+const GROQ_KEY = USE_OPENROUTER
+  ? process.env.OPENROUTER_API_KEY!
+  : (process.env.GROQ_API_KEY ?? "");
+const GROQ_BASE = USE_OPENROUTER
+  ? "https://openrouter.ai/api/v1"
+  : "https://api.groq.com/openai/v1";
 const GROQ_MODEL = process.env.GROQ_MODEL ?? (
-  process.env.GROQ_API_KEY
-    ? "llama-3.3-70b-versatile"               // Groq direct model id
-    : "meta-llama/llama-3.3-70b-instruct:free" // OpenRouter FREE tier (20 RPM, 50/day)
+  USE_OPENROUTER
+    ? "meta-llama/llama-3.3-70b-instruct"   // OpenRouter paid (provider:groq enforced below)
+    : "llama-3.3-70b-versatile"             // Groq direct model id
 );
 
 const anthropicProvider: LlmProvider = {
@@ -81,6 +88,43 @@ const anthropicProvider: LlmProvider = {
   },
 };
 
+// Helpers shared between complete() and streamTokens()
+function groqHeaders(): Record<string, string> {
+  const h: Record<string, string> = {
+    Authorization: `Bearer ${GROQ_KEY}`,
+    "Content-Type": "application/json",
+  };
+  if (USE_OPENROUTER) {
+    h["HTTP-Referer"] = "https://normaai.it";
+    h["X-Title"] = "NormaAI Voice";
+  }
+  return h;
+}
+
+function groqBody(p: {
+  systemPrompt: string;
+  userMessage: string;
+  maxTokens: number;
+  temperature: number;
+  stream: boolean;
+}): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    model: GROQ_MODEL,
+    max_tokens: p.maxTokens,
+    temperature: p.temperature,
+    stream: p.stream,
+    messages: [
+      { role: "system", content: p.systemPrompt },
+      { role: "user", content: p.userMessage },
+    ],
+  };
+  // On OpenRouter, force Groq backend (with fallback if unavailable)
+  if (USE_OPENROUTER) {
+    body.provider = { order: ["groq"], allow_fallbacks: true };
+  }
+  return body;
+}
+
 // Groq exposes an OpenAI-compatible endpoint at https://api.groq.com/openai/v1
 // We hit it directly with fetch — no SDK dependency.
 const groqProvider: LlmProvider = {
@@ -90,19 +134,8 @@ const groqProvider: LlmProvider = {
     if (!GROQ_KEY) return `[Stub Groq] ${userMessage}`;
     const r = await fetch(`${GROQ_BASE}/chat/completions`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${GROQ_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        max_tokens: maxTokens,
-        temperature,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-      }),
+      headers: groqHeaders(),
+      body: JSON.stringify(groqBody({ systemPrompt, userMessage, maxTokens, temperature, stream: false })),
     });
     if (!r.ok) throw new Error(`groq_${r.status}`);
     const j = await r.json() as { choices: Array<{ message: { content: string } }> };
@@ -117,20 +150,8 @@ const groqProvider: LlmProvider = {
     }
     const r = await fetch(`${GROQ_BASE}/chat/completions`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${GROQ_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        max_tokens: maxTokens,
-        temperature,
-        stream: true,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-      }),
+      headers: groqHeaders(),
+      body: JSON.stringify(groqBody({ systemPrompt, userMessage, maxTokens, temperature, stream: true })),
     });
     if (!r.ok || !r.body) throw new Error(`groq_${r.status}`);
 
