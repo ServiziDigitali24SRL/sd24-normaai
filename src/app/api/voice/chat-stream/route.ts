@@ -91,7 +91,17 @@ export async function POST(req: NextRequest) {
 
         // ── 1. ASR (blocking) ────────────────────────────────────────
         const tAsr = Date.now();
-        const asr = await transcribe(audioBuffer, filename, { language: "it" });
+        const asr = await transcribe(audioBuffer, filename, {
+          language: "it",
+          // Bias the decoder toward common Italian legal/everyday vocabulary.
+          // Helps Voxtral resist auto-detecting English on short or noisy clips.
+          contextBias: [
+            "Sofia", "NormaAI", "avvocato", "consulenza", "contratto",
+            "multa", "locazione", "caparra", "sentenza", "cassazione",
+            "decreto", "articolo", "ricorso", "denuncia", "buongiorno",
+            "ciao", "grazie", "per favore", "dimmi", "scusa",
+          ],
+        });
         const userText = asr.text;
         send("timing", { phase: "asr", ms: Date.now() - tAsr });
         send("user", { text: userText });

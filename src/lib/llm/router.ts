@@ -169,13 +169,39 @@ const groqProvider: LlmProvider = {
 /**
  * Pick the right provider for the channel:
  *   chat   → Anthropic (quality, no real-time pressure)
- *   voice  → Groq (sub-300ms first token)
- *   avatar → Groq (lip-sync window is tight)
+ *   voice  → Groq (sub-300ms first token), with auto-fallback to Anthropic on 429/5xx
+ *   avatar → Groq, same fallback
  *
  * If GROQ_API_KEY is missing, voice/avatar fall back to Anthropic.
  */
 export function getProvider(channel: LlmChannel): LlmProvider {
   if (channel === "chat") return anthropicProvider;
   if (!GROQ_KEY) return anthropicProvider;
-  return groqProvider;
+
+  // Wrap groqProvider with auto-fallback to Anthropic on rate-limit/5xx
+  return {
+    name: "groq",
+    async complete(p) {
+      try {
+        return await groqProvider.complete(p);
+      } catch (err) {
+        if (shouldFallback(err)) return anthropicProvider.complete(p);
+        throw err;
+      }
+    },
+    async streamTokens(p, onToken) {
+      try {
+        return await groqProvider.streamTokens(p, onToken);
+      } catch (err) {
+        if (shouldFallback(err)) return anthropicProvider.streamTokens(p, onToken);
+        throw err;
+      }
+    },
+  };
+}
+
+function shouldFallback(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  // Groq throws "groq_429" / "groq_5xx" from our wrapper
+  return /groq_(4(?!00|01|03)\d\d|5\d\d)/.test(err.message);
 }
