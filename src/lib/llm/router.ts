@@ -189,14 +189,37 @@ const groqProvider: LlmProvider = {
 
 /**
  * Pick the right provider for the channel:
- *   chat   → Anthropic (quality, no real-time pressure)
- *   voice  → Groq (sub-300ms first token), with auto-fallback to Anthropic on 429/5xx
+ *   chat   → Anthropic (quality), with auto-fallback to OR/Groq on 4xx/5xx
+ *            (e.g. low credit balance, rate limit)
+ *   voice  → Groq (sub-300ms first token), with auto-fallback to Anthropic
  *   avatar → Groq, same fallback
  *
- * If GROQ_API_KEY is missing, voice/avatar fall back to Anthropic.
+ * If GROQ/OR key is missing, voice/avatar fall back to Anthropic.
  */
 export function getProvider(channel: LlmChannel): LlmProvider {
-  if (channel === "chat") return anthropicProvider;
+  if (channel === "chat") {
+    // Wrap anthropic with fallback to Groq/OR on credit/quota errors
+    if (!GROQ_KEY) return anthropicProvider;
+    return {
+      name: "anthropic",
+      async complete(p) {
+        try {
+          return await anthropicProvider.complete(p);
+        } catch (err) {
+          if (shouldFallback(err)) return groqProvider.complete(p);
+          throw err;
+        }
+      },
+      async streamTokens(p, onToken) {
+        try {
+          return await anthropicProvider.streamTokens(p, onToken);
+        } catch (err) {
+          if (shouldFallback(err)) return groqProvider.streamTokens(p, onToken);
+          throw err;
+        }
+      },
+    };
+  }
   if (!GROQ_KEY) return anthropicProvider;
 
   // Wrap groqProvider with auto-fallback to Anthropic on rate-limit/5xx
@@ -223,6 +246,12 @@ export function getProvider(channel: LlmChannel): LlmProvider {
 
 function shouldFallback(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
-  // Groq throws "groq_429" / "groq_5xx" from our wrapper
-  return /groq_(4(?!00|01|03)\d\d|5\d\d)/.test(err.message);
+  const msg = err.message;
+  // Groq/OR: "groq_429" / "groq_5xx"
+  if (/groq_(4(?!00|01|03)\d\d|5\d\d)/.test(msg)) return true;
+  // Anthropic SDK error messages — credit balance / rate limit / overload
+  if (/credit balance|rate.?limit|overloaded|429|529|insufficient/i.test(msg)) return true;
+  // Bare "400 {...credit balance...}" string from SDK
+  if (/^400\s.*credit/i.test(msg)) return true;
+  return false;
 }

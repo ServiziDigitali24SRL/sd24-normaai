@@ -65,13 +65,18 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       });
 
       if (error) {
+        // Graceful degradation: if the corpus_chunks table or RPC doesn't exist
+        // on the connected Supabase (e.g. production DB without marketplace
+        // schema), continue without RAG context — the LLM still answers from
+        // its own knowledge. We log it as a "done" event with 0 chunks so the
+        // pipeline doesn't abort.
         ctx.emit({
           agent: "norm-retriever",
-          state: "error",
+          state: "done",
           durationMs: Date.now() - t0,
-          error: error.message,
+          output: `RAG non disponibile (${error.code ?? "no_corpus"}); LLM only`,
         });
-        return { ok: false, error: error.message };
+        return { ok: true, data: { chunks: [], ragContext: "" } };
       }
 
       let chunks: CitationRef[] = (data ?? []).map((r: {
