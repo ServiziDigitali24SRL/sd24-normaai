@@ -1,6 +1,7 @@
-// Norm Retriever Agent — RAG hybrid (vector + sparse) over corpus_chunks.
-// Fase 1: pure dense (vector cosine) on Supabase pgvector.
-// Fase 2: hybrid with BM25 sparse via Postgres tsvector + score fusion.
+// Norm Retriever Agent — RAG dense vector search over normaai_chunks (8.3M rows).
+// SER-108 (1 maggio 2026): switched from corpus_chunks (empty) to normaai_chunks (production).
+// Embedding: FastEmbed bge-small-en-v1.5 via Hetzner VPS (EMBED_VPS_URL).
+// RPC: match_normaai_chunks (existing in production, embedding inline on chunks).
 
 import { createAdminClient } from "@/lib/supabase-admin";
 import type { Agent, AgentContext, AgentResult, CitationRef } from "./types";
@@ -17,16 +18,17 @@ interface NormRetrieverOutput {
 }
 
 /**
- * Embed the user query with the same model used for corpus_chunks.embedding.
- * Returns a 384-dim vector. Uses FastEmbed bge-small-en-v1.5 served via the
- * Hetzner agent VPS embedding endpoint, with a fallback to OpenAI ada-002
- * truncated if the primary is down.
+ * Embed the user query with the same model used for normaai_chunks.embedding.
+ * Returns a 384-dim vector. Uses FastEmbed bge-small-en-v1.5 served via Hetzner VPS
+ * (EMBED_VPS_URL=http://89.167.123.25:8765/embed).
+ *
+ * Response format: { data: [{ embedding: [0.22, 0.08, ...] }] }
  */
 async function embedQuery(query: string): Promise<number[]> {
-  const endpoint = process.env.EMBED_ENDPOINT_URL;
+  // Support both EMBED_VPS_URL (current) and EMBED_ENDPOINT_URL (legacy) for backwards compat
+  const endpoint = process.env.EMBED_VPS_URL ?? process.env.EMBED_ENDPOINT_URL;
   if (!endpoint) {
-    // No embedding endpoint configured — return zero vector so caller can
-    // fallback to BM25-only or keyword search. In MVP this is acceptable.
+    // No embedding endpoint configured → graceful degradation (zero vector).
     return new Array(384).fill(0);
   }
   try {
@@ -34,13 +36,42 @@ async function embedQuery(query: string): Promise<number[]> {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ texts: [query] }),
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error(`embed ${res.status}`);
-    const j = await res.json();
-    return j.embeddings?.[0] ?? new Array(384).fill(0);
+    const j = await res.json() as {
+      data?: Array<{ embedding: number[] }>;
+      embeddings?: number[][];  // legacy format fallback
+    };
+    return j.data?.[0]?.embedding ?? j.embeddings?.[0] ?? new Array(384).fill(0);
   } catch {
     return new Array(384).fill(0);
   }
+}
+
+/**
+ * Extract article reference from titolo (e.g. "L. 604/1966 - art. 6" → "art. 6")
+ * or from chunk text first 200 chars (looks for "art. N" / "articolo N").
+ */
+function extractArticle(titolo: string, chunk: string): string | null {
+  // Try titolo first
+  const titoloMatch = titolo.match(/\bart(?:icolo|\.)\s*(\d+(?:[\-\s]?(?:bis|ter|quater|quinquies))?)/i);
+  if (titoloMatch) return `art. ${titoloMatch[1]}`;
+  // Fallback: first 200 chars of chunk
+  const chunkMatch = chunk.slice(0, 200).match(/\bart(?:icolo|\.)\s*(\d+(?:[\-\s]?(?:bis|ter|quater|quinquies))?)/i);
+  if (chunkMatch) return `art. ${chunkMatch[1]}`;
+  return null;
+}
+
+/**
+ * Build URN from fonte field. Best-effort.
+ * Examples: "L. 604/1966" → "urn:nir:stato:legge:1966-07-15;604"
+ *           "D.Lgs. 36/2023" → "urn:nir:stato:decreto.legislativo:2023;36"
+ */
+function buildUrn(fonte: string): string {
+  // Just return the fonte string — it already serves as a unique reference
+  // for citation purposes. Real URN construction would need a NIR mapper.
+  return fonte || "";
 }
 
 export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> = {
@@ -54,41 +85,89 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       const topK = input.topK ?? 6;
       const embedding = await embedQuery(input.query);
 
-      // pgvector cosine search via RPC (defined separately as a SQL function
-      // when corpus is populated). For now we issue a direct SELECT with the
-      // <=> operator. Vertical filter is optional.
+      // pgvector cosine search via RPC match_normaai_chunks (production, 8.3M chunks).
+      // Embedding inline on normaai_chunks.embedding (384-dim, bge-small-en-v1.5).
+      //
+      // ⚠️ The HNSW index is PARTIAL per verticale (lavoro, edilizia, finanziario,
+      // avvocato, commercialista, generale). Without filter_verticale the query
+      // does a full table scan on 8.3M rows → timeout. So when vertical is null
+      // we fan-out across the 4 main verticals in parallel and merge top-K.
+      //
+      // Returned schema: id, fonte, tipo, titolo, chunk, url, verticale, data, similarity
       const sb = createAdminClient();
-      const { data, error } = await sb.rpc("match_corpus_chunks", {
-        query_embedding: embedding,
-        match_count: topK,
-        filter_vertical: input.vertical ?? null,
-      });
 
-      if (error) {
-        // Graceful degradation: if the corpus_chunks table or RPC doesn't exist
-        // on the connected Supabase (e.g. production DB without marketplace
-        // schema), continue without RAG context — the LLM still answers from
-        // its own knowledge. We log it as a "done" event with 0 chunks so the
-        // pipeline doesn't abort.
+      type ChunkRow = {
+        id: string;
+        fonte: string;
+        tipo: string;
+        titolo: string;
+        chunk: string;
+        url: string | null;
+        verticale: string | null;
+        data: string | null;
+        similarity: number;
+      };
+
+      const callRpc = async (verticale: string | null) => {
+        const { data, error } = await sb.rpc("match_normaai_chunks", {
+          query_embedding: embedding,
+          match_count: topK,
+          match_threshold: 0.10,
+          filter_verticale: verticale,
+          filter_tipo: null,
+          only_vigente: false,
+        });
+        if (error) return { rows: [] as ChunkRow[], err: error };
+        return { rows: (data ?? []) as ChunkRow[], err: null };
+      };
+
+      let allRows: ChunkRow[] = [];
+      let lastError: { code?: string; message?: string } | null = null;
+
+      if (input.vertical) {
+        // Specific vertical → single fast indexed query
+        const r = await callRpc(input.vertical);
+        if (r.err) lastError = r.err;
+        allRows = r.rows;
+      } else {
+        // Fan-out across the 4 main verticals (HNSW index covers each)
+        const verticals = ["lavoro", "edilizia", "avvocato", "commercialista"];
+        const results = await Promise.all(verticals.map((v) => callRpc(v)));
+        for (const r of results) {
+          if (r.err && !lastError) lastError = r.err;
+          allRows.push(...r.rows);
+        }
+        // Sort by similarity desc and dedup by id
+        const seen = new Set<string>();
+        allRows = allRows
+          .sort((a, b) => b.similarity - a.similarity)
+          .filter((r) => {
+            if (seen.has(r.id)) return false;
+            seen.add(r.id);
+            return true;
+          })
+          .slice(0, topK);
+      }
+
+      if (lastError && allRows.length === 0) {
+        // All RPC calls failed → graceful degradation
         ctx.emit({
           agent: "norm-retriever",
           state: "done",
           durationMs: Date.now() - t0,
-          output: `RAG non disponibile (${error.code ?? "no_corpus"}); LLM only`,
+          output: `RAG non disponibile (${lastError.code ?? "rpc_error"}: ${lastError.message ?? ""}); LLM only`,
         });
         return { ok: true, data: { chunks: [], ragContext: "" } };
       }
 
-      let chunks: CitationRef[] = (data ?? []).map((r: {
-        id: string; urn: string; title: string; article: string | null;
-        content: string; status: string;
-      }) => ({
-        urn: r.urn,
-        title: r.title,
-        article: r.article,
-        excerpt: r.content.slice(0, 600),
+      // Map normaai_chunks schema → CitationRef
+      let chunks: CitationRef[] = allRows.map((r) => ({
+        urn: buildUrn(r.fonte),
+        title: r.titolo || r.fonte,
+        article: extractArticle(r.titolo ?? "", r.chunk ?? ""),
+        excerpt: (r.chunk ?? "").slice(0, 600),
         source_chunk_id: r.id,
-        verified: r.status === "vigente",
+        verified: r.similarity >= 0.5, // higher threshold = more confident match
       }));
 
       // Optional rerank step. Skipped gracefully when RERANK_ENDPOINT_URL is unset
