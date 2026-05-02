@@ -25,30 +25,49 @@ interface NormRetrieverOutput {
  * Response format: { data: [{ embedding: [0.22, 0.08, ...] }] }
  */
 async function embedQuery(query: string): Promise<number[]> {
-  // Support both EMBED_VPS_URL (current GEX44 https://embed.normaai.it) and
-  // EMBED_ENDPOINT_URL (legacy http://89.167.123.25:8765) for backwards compat.
+  // Architettura embedding NormaAI (post-SER-118):
+  // - Corpus attuale: 384-dim bge-small su normaai_chunks.embedding (rollback safe)
+  // - Corpus nuovo: 1024-dim bge-m3 su normaai_chunks.embedding_bgem3 (Phase 2 in corso)
+  // Strategy: usa Infinity bge-m3 OpenAI-compatible API con dimensions=384
+  //   (Matryoshka truncation) per match con corpus attuale.
+  //   Quando Phase 2 finita + nuovo RPC ready, switcha a 1024-dim full.
   const endpoint = process.env.EMBED_VPS_URL ?? process.env.EMBED_ENDPOINT_URL;
-  if (!endpoint) {
-    // No embedding endpoint configured → graceful degradation (zero vector).
-    // Default dim is 384 (legacy bge-small) — bge-m3 returns 1024 but RPC
-    // match_normaai_chunks expects 384 today (corpus indexed with bge-small).
-    // Re-embedding to bge-m3 1024 is SER-118 (post-rebench).
-    return new Array(384).fill(0);
-  }
-  // Detect new GEX44 endpoint (TEI bge-m3) vs legacy (FastEmbed bge-small).
-  // - New: HF TEI POST /embed body {"inputs": [...]} → returns [[float], ...]
-  // - Legacy: POST /embed body {"texts": [...]} → returns {data: [{embedding: [...]}]}
-  const isTei = endpoint.includes("embed.normaai.it") || endpoint.includes("/v1");
   const apiKey = process.env.NORMAAI_INTERNAL_API_KEY;
+  const targetDim = parseInt(process.env.EMBED_DIM ?? "384", 10); // 384 ora, 1024 post-Phase2
+
+  if (!endpoint) {
+    return new Array(targetDim).fill(0);
+  }
+  // Endpoint detection:
+  //   - Infinity OpenAI-compat: /embeddings + body {"input":[...], "model":..., "dimensions":N}
+  //   - TEI HF: /embed + body {"inputs":[...]}
+  //   - Legacy FastEmbed VPS attuale: /embed + body {"texts":[...]}
+  const isInfinity = endpoint.includes("embed.normaai.it");
+  const isTei = endpoint.includes("/v1") || isInfinity;
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
 
-    const body = isTei
-      ? JSON.stringify({ inputs: [query] })
-      : JSON.stringify({ texts: [query] });
+    let url: string;
+    let body: string;
+    if (isInfinity) {
+      // Infinity OpenAI-compatible
+      url = `${endpoint}/embeddings`;
+      body = JSON.stringify({
+        input: [query],
+        model: "BAAI/bge-m3",
+        dimensions: targetDim,
+      });
+    } else if (isTei) {
+      url = `${endpoint}/embed`;
+      body = JSON.stringify({ inputs: [query] });
+    } else {
+      // Legacy FastEmbed
+      url = `${endpoint}/embed`;
+      body = JSON.stringify({ texts: [query] });
+    }
 
-    const res = await fetch(`${endpoint}/embed`, {
+    const res = await fetch(url, {
       method: "POST",
       headers,
       body,
@@ -58,12 +77,57 @@ async function embedQuery(query: string): Promise<number[]> {
     const j = await res.json() as
       | number[][]
       | { data?: Array<{ embedding: number[] }>; embeddings?: number[][] };
-    // TEI returns [[...]] directly
-    if (Array.isArray(j)) return j[0] ?? new Array(384).fill(0);
-    // Legacy returns { data: [{embedding: [...]}] } or { embeddings: [[...]] }
-    return j.data?.[0]?.embedding ?? j.embeddings?.[0] ?? new Array(384).fill(0);
+    // Infinity OpenAI: { data: [{embedding: [...]}] }
+    // TEI: [[...]]
+    // Legacy: { data: [...]} or { embeddings: [[...]] }
+    if (Array.isArray(j)) return j[0] ?? new Array(targetDim).fill(0);
+    return j.data?.[0]?.embedding ?? j.embeddings?.[0] ?? new Array(targetDim).fill(0);
   } catch {
-    return new Array(384).fill(0);
+    return new Array(targetDim).fill(0);
+  }
+}
+
+/**
+ * Reranker step: prende N candidate chunks dalla retrieval RPC e li riordina
+ * via cross-encoder (bge-reranker-v2-m3) per scoring più accurato query↔chunk.
+ *
+ * Endpoint: https://rerank.normaai.it/rerank (TEI compat)
+ *   POST body: {"query": "...", "texts": ["chunk1", ...]}
+ *   Response: [{"index": N, "score": float}, ...] ordered by score desc
+ *
+ * NDCG@10 atteso post-reranker: ~0.91 vs ~0.78 senza (bench legal IT).
+ * Latenza: ~50-150ms per 12 candidates.
+ */
+async function rerankChunks<T extends { excerpt: string }>(
+  query: string,
+  candidates: T[],
+  topK: number,
+): Promise<T[]> {
+  const endpoint = process.env.RERANK_URL;
+  const apiKey = process.env.NORMAAI_INTERNAL_API_KEY;
+  if (!endpoint || candidates.length === 0) return candidates.slice(0, topK);
+  try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+    const res = await fetch(`${endpoint}/rerank`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        query,
+        texts: candidates.map((c) => c.excerpt.slice(0, 2000)),
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`rerank ${res.status}`);
+    const ranked = await res.json() as Array<{ index: number; score: number }>;
+    // Sort by score desc, take top-K, project back to original objects
+    return ranked
+      .slice(0, topK)
+      .map((r) => candidates[r.index])
+      .filter(Boolean);
+  } catch {
+    // Reranker offline → fallback to retrieval order
+    return candidates.slice(0, topK);
   }
 }
 
@@ -101,16 +165,12 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
 
     try {
       const topK = input.topK ?? 6;
+      // Retrieve 2× topK candidates from RPC, then rerank to topK final.
+      const retrievalCount = topK * 2;
       const embedding = await embedQuery(input.query);
 
       // pgvector cosine search via RPC match_normaai_chunks (production, 8.3M chunks).
-      // Embedding inline on normaai_chunks.embedding (384-dim, bge-small-en-v1.5).
-      //
-      // ⚠️ The HNSW index is PARTIAL per verticale (lavoro, edilizia, finanziario,
-      // avvocato, commercialista, generale). Without filter_verticale the query
-      // does a full table scan on 8.3M rows → timeout. So when vertical is null
-      // we fan-out across the 4 main verticals in parallel and merge top-K.
-      //
+      // HNSW PARTIAL per verticale → fan-out parallel se vertical=null.
       // Returned schema: id, fonte, tipo, titolo, chunk, url, verticale, data, similarity
       const sb = createAdminClient();
 
@@ -129,7 +189,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       const callRpc = async (verticale: string | null) => {
         const { data, error } = await sb.rpc("match_normaai_chunks", {
           query_embedding: embedding,
-          match_count: topK,
+          match_count: retrievalCount,
           match_threshold: 0.10,
           filter_verticale: verticale,
           filter_tipo: null,
@@ -155,7 +215,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
           if (r.err && !lastError) lastError = r.err;
           allRows.push(...r.rows);
         }
-        // Sort by similarity desc and dedup by id
+        // Sort by similarity desc and dedup by id (keep retrievalCount for reranking)
         const seen = new Set<string>();
         allRows = allRows
           .sort((a, b) => b.similarity - a.similarity)
@@ -164,7 +224,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
             seen.add(r.id);
             return true;
           })
-          .slice(0, topK);
+          .slice(0, retrievalCount);
       }
 
       if (lastError && allRows.length === 0) {
@@ -178,42 +238,21 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         return { ok: true, data: { chunks: [], ragContext: "" } };
       }
 
-      // Map normaai_chunks schema → CitationRef
-      let chunks: CitationRef[] = allRows.map((r) => ({
+      // Map normaai_chunks schema → CitationRef (retrievalCount candidates)
+      const candidates: CitationRef[] = allRows.map((r) => ({
         urn: buildUrn(r.fonte),
         title: r.titolo || r.fonte,
         article: extractArticle(r.titolo ?? "", r.chunk ?? ""),
         excerpt: (r.chunk ?? "").slice(0, 600),
         source_chunk_id: r.id,
-        verified: r.similarity >= 0.5, // higher threshold = more confident match
+        verified: r.similarity >= 0.5,
       }));
 
-      // Optional rerank step. Skipped gracefully when RERANK_ENDPOINT_URL is unset
-      // (e.g. before GEX44 is provisioned). When set, re-orders chunks via
-      // bge-reranker-v2-m3 self-hosted on GEX44 and keeps the top topK.
-      const rerankUrl = process.env.RERANK_ENDPOINT_URL;
-      if (rerankUrl && chunks.length > 0) {
-        try {
-          const rr = await fetch(`${rerankUrl}/rerank`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              query: input.query,
-              documents: chunks.map(c => c.excerpt),
-              top_n: topK,
-            }),
-            signal: AbortSignal.timeout(2000),
-          });
-          if (rr.ok) {
-            const rj = await rr.json() as { results?: Array<{ index: number; score: number }> };
-            if (rj.results?.length) {
-              chunks = rj.results.map(r => chunks[r.index]).filter(Boolean);
-            }
-          }
-        } catch {
-          // Reranker offline → keep dense order, no degradation
-        }
-      }
+      // Reranker step (bge-reranker-v2-m3 su GEX44 → https://rerank.normaai.it).
+      // Riordina i 2× topK candidates in base alla cross-attention query↔chunk
+      // e ritorna i topK più rilevanti. Boost atteso: +13 punti NDCG@10.
+      // Fallback: se reranker offline, ritorna candidates[:topK] in ordine similarity.
+      const chunks = await rerankChunks(input.query, candidates, topK);
 
       const ragContext = chunks
         .map((c, i) => `[Fonte ${i + 1}] ${c.title}${c.article ? `, ${c.article}` : ""}\n${c.excerpt}`)
