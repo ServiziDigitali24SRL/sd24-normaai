@@ -23,6 +23,7 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/mobile/pay-professional" ||      // mobile: pagamento professionista
     pathname === "/api/avatar/generate" ||               // avatar HeyGen: freemium pubblico
     pathname === "/api/avatar/status" ||                 // avatar HeyGen: poll status
+    pathname.startsWith("/api/avatar/streaming/") ||     // LiveAvatar WebRTC session (freemium)
     pathname === "/api/voice/transcribe" ||              // voice ASR (Voxtral): freemium pubblico
     pathname === "/api/voice/tts" ||                     // voice TTS (Voxtral): freemium pubblico
     pathname === "/api/voice/chat-turn" ||               // voice loop turn (ASR+LLM+TTS)
