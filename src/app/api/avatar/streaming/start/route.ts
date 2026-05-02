@@ -45,13 +45,17 @@ export async function POST(req: NextRequest) {
       greeting: body.greeting,
     });
 
-    // Start the actual streaming session (avatar enters "ready" state)
-    await startSession(token.session_id);
+    // Start the actual streaming session (avatar enters "ready" state).
+    // /sessions/start requires Bearer session_token and returns LiveKit access.
+    const started = await startSession(token.session_id, token.session_token);
 
     return NextResponse.json({
-      session_id: token.session_id,
+      session_id: started.session_id,
       session_token: token.session_token,
-      livekit_url: token.livekit_url,
+      livekit_url: started.livekit_url,
+      livekit_client_token: started.livekit_client_token,
+      ws_url: started.ws_url,
+      max_session_duration: started.max_session_duration,
       avatar: avatarKey,
     });
   } catch (err) {

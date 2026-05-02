@@ -37,8 +37,15 @@ export interface CreateSessionInput {
 
 export interface SessionToken {
   session_id: string;
-  session_token: string;   // short-lived JWT for client SDK
-  livekit_url?: string;    // WebRTC server URL (LiveKit-compat)
+  session_token: string;   // short-lived JWT (used as Bearer for /sessions/start)
+}
+
+export interface StartedSession {
+  session_id: string;
+  livekit_url: string;
+  livekit_client_token: string;
+  ws_url?: string;
+  max_session_duration?: number;
 }
 
 /**
@@ -83,18 +90,41 @@ export async function createSessionToken(input: CreateSessionInput): Promise<Ses
   return {
     session_id: j.data.session_id,
     session_token: j.data.session_token,
-    livekit_url: j.data.livekit_url,
   };
 }
 
-/** Start the actual streaming session (post-token). */
-export async function startSession(session_id: string): Promise<void> {
+/**
+ * Start the actual streaming session.
+ * Auth: Bearer session_token (NOT X-API-KEY — /start uses the JWT issued by /token).
+ * Returns LiveKit URL + client token needed by the frontend SDK.
+ */
+export async function startSession(
+  session_id: string,
+  session_token: string,
+): Promise<StartedSession> {
   const r = await fetch(`${BASE}/sessions/start`, {
     method: "POST",
-    headers: { "X-API-KEY": API_KEY, "Content-Type": "application/json" },
+    headers: {
+      "Authorization": `Bearer ${session_token}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ session_id }),
   });
   if (!r.ok) throw new Error(`liveavatar_start_${r.status}`);
+  const j = await r.json() as {
+    code: number;
+    data?: {
+      session_id: string;
+      livekit_url: string;
+      livekit_client_token: string;
+      ws_url?: string;
+      max_session_duration?: number;
+    };
+  };
+  if (j.code !== 1000 || !j.data) {
+    throw new Error(`liveavatar_start_bad_${j.code}`);
+  }
+  return j.data;
 }
 
 /** Stop session (cleanup quota). */
