@@ -25,24 +25,42 @@ interface NormRetrieverOutput {
  * Response format: { data: [{ embedding: [0.22, 0.08, ...] }] }
  */
 async function embedQuery(query: string): Promise<number[]> {
-  // Support both EMBED_VPS_URL (current) and EMBED_ENDPOINT_URL (legacy) for backwards compat
+  // Support both EMBED_VPS_URL (current GEX44 https://embed.normaai.it) and
+  // EMBED_ENDPOINT_URL (legacy http://89.167.123.25:8765) for backwards compat.
   const endpoint = process.env.EMBED_VPS_URL ?? process.env.EMBED_ENDPOINT_URL;
   if (!endpoint) {
     // No embedding endpoint configured → graceful degradation (zero vector).
+    // Default dim is 384 (legacy bge-small) — bge-m3 returns 1024 but RPC
+    // match_normaai_chunks expects 384 today (corpus indexed with bge-small).
+    // Re-embedding to bge-m3 1024 is SER-118 (post-rebench).
     return new Array(384).fill(0);
   }
+  // Detect new GEX44 endpoint (TEI bge-m3) vs legacy (FastEmbed bge-small).
+  // - New: HF TEI POST /embed body {"inputs": [...]} → returns [[float], ...]
+  // - Legacy: POST /embed body {"texts": [...]} → returns {data: [{embedding: [...]}]}
+  const isTei = endpoint.includes("embed.normaai.it") || endpoint.includes("/v1");
+  const apiKey = process.env.NORMAAI_INTERNAL_API_KEY;
   try {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+    const body = isTei
+      ? JSON.stringify({ inputs: [query] })
+      : JSON.stringify({ texts: [query] });
+
     const res = await fetch(`${endpoint}/embed`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ texts: [query] }),
-      signal: AbortSignal.timeout(5000),
+      headers,
+      body,
+      signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error(`embed ${res.status}`);
-    const j = await res.json() as {
-      data?: Array<{ embedding: number[] }>;
-      embeddings?: number[][];  // legacy format fallback
-    };
+    const j = await res.json() as
+      | number[][]
+      | { data?: Array<{ embedding: number[] }>; embeddings?: number[][] };
+    // TEI returns [[...]] directly
+    if (Array.isArray(j)) return j[0] ?? new Array(384).fill(0);
+    // Legacy returns { data: [{embedding: [...]}] } or { embeddings: [[...]] }
     return j.data?.[0]?.embedding ?? j.embeddings?.[0] ?? new Array(384).fill(0);
   } catch {
     return new Array(384).fill(0);
