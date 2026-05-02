@@ -822,3 +822,42 @@ export function assembleBasePrompt(tier: UserTier, vertical: string | null): str
   // "Avvocato" / "Commercialista" UI pills → il tier li copre già, nessun overlay
   return base;
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// v7 PROMPT ROUTER (additivo, non rompe il sistema tier)
+//
+// Nuova architettura prompt-kit v1.2: 18 prompt v7 (chat IT, avatar IT,
+// 4 voice IT, 7 immigrato multilingue, 6 turista multilingue).
+// Score finale Claude Opus judge: 9 prompt ≥95, 9 prompt ≥94. Media 95.0/100.
+//
+// Uso: import { getPromptV7, type PromptKey } from "@/app/api/chat/system-prompts";
+//   const prompt = getPromptV7({ channel: "voice", persona: "mediatore", language: "it" });
+//
+// Vedi src/lib/prompts/index.ts per il routing e i 18 .ts sorgente.
+// ════════════════════════════════════════════════════════════════════════════
+export {
+  getSystemPrompt as getPromptV7,
+  SUPPORTED_VOICE_COMBINATIONS,
+  CHAT_IT_PROMPT,
+  AVATAR_IT_PROMPT,
+  VOICE_MEDIATORE_PROMPT,
+  VOICE_AGGRESSIVO_PROMPT,
+  VOICE_CONSULENTE_ANZIANI_PROMPT,
+  VOICE_IMMIGRATO_AR_PROMPT,
+  VOICE_IMMIGRATO_BN_PROMPT,
+  VOICE_IMMIGRATO_EN_PROMPT,
+  VOICE_IMMIGRATO_ES_PROMPT,
+  VOICE_IMMIGRATO_RO_PROMPT,
+  VOICE_IMMIGRATO_UK_PROMPT,
+  VOICE_IMMIGRATO_ZH_PROMPT,
+  VOICE_TURISTA_DE_PROMPT,
+  VOICE_TURISTA_EN_PROMPT,
+  VOICE_TURISTA_ES_PROMPT,
+  VOICE_TURISTA_FR_PROMPT,
+  VOICE_TURISTA_JA_PROMPT,
+  VOICE_TURISTA_ZH_PROMPT,
+  type Channel as ChannelV7,
+  type VoicePersona,
+  type Language,
+  type PromptKey,
+} from "@/lib/prompts";
