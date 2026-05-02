@@ -77,7 +77,7 @@ export async function createSessionToken(input: CreateSessionInput): Promise<Ses
     throw new Error(`liveavatar_${r.status}_${body.slice(0, 200)}`);
   }
   const j = await r.json() as { code: number; data?: { session_id: string; session_token: string; livekit_url?: string } };
-  if (j.code !== 100 || !j.data) {
+  if (j.code !== 1000 || !j.data) {
     throw new Error(`liveavatar_bad_response_${j.code}`);
   }
   return {
