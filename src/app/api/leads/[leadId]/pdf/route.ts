@@ -29,7 +29,7 @@ export async function POST(
 
   const { data: lead, error } = await sb
     .from("leads")
-    .select("id, conversation_id, contact_name, summary")
+    .select("id, conversation_id, contact_name, summary, city, vertical")
     .eq("id", leadId)
     .maybeSingle();
 
@@ -61,10 +61,11 @@ export async function POST(
   const pdfBuffer = await generateParerePdf({
     conversationId: lead.conversation_id,
     userName: lead.contact_name ?? "Cliente",
+    userCity: lead.city ?? undefined,
     userQuestion: userQuestion || lead.summary,
     aiSummary: aiSummary || "Nessun contenuto AI registrato.",
     citations,
-    highRisk: false,
+    vertical: lead.vertical ?? undefined,
     generatedAt: new Date(),
   });
 
