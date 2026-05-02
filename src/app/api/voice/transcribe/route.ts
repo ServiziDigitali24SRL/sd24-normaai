@@ -8,7 +8,10 @@
 // Voxtral Mini Transcribe italiano: ~4s on 9s audio, WER ~0%.
 
 import { NextRequest, NextResponse } from "next/server";
-import { transcribe } from "@/lib/asr/voxtral";
+// Routed ASR: prefers Whisper-large-v3 on GEX44 (Tailscale-only, free, GDPR
+// internal) and falls back to Voxtral cloud on any failure. Identical API
+// surface so the route handler doesn't change.
+import { transcribe } from "@/lib/asr/router";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Vercel function timeout

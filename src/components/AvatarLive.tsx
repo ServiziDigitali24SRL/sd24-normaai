@@ -15,8 +15,9 @@ import StreamingAvatar, {
   StreamingEvents,
   TaskType,
 } from "@heygen/streaming-avatar";
+import { AvatarShell, type AvatarKey, type AvatarPhase } from "./AvatarShell";
 
-export type AvatarKey = "sofia" | "marco";
+export type { AvatarKey };
 
 export interface AvatarLiveHandle {
   speak: (text: string) => Promise<void>;
@@ -24,7 +25,7 @@ export interface AvatarLiveHandle {
   stop: () => Promise<void>;
 }
 
-type Phase = "idle" | "connecting" | "ready" | "speaking" | "error";
+type Phase = Extract<AvatarPhase, "idle" | "connecting" | "ready" | "speaking" | "error">;
 
 export const AvatarLive = forwardRef<
   AvatarLiveHandle,
@@ -128,110 +129,27 @@ export const AvatarLive = forwardRef<
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatar]);
 
-  const pickerBtn = (key: AvatarKey, label: string) => (
-    <button
-      key={key}
-      onClick={() => onAvatarChange?.(key)}
-      disabled={!onAvatarChange || phase === "connecting"}
-      style={{
-        padding: "6px 14px",
-        borderRadius: 999,
-        border: "1px solid var(--paper-line, #E8E0D2)",
-        background: avatar === key ? "var(--vermiglio, #C93924)" : "white",
-        color: avatar === key ? "white" : "var(--ink-2)",
-        fontFamily: "var(--mono)",
-        fontSize: 11,
-        fontWeight: 600,
-        letterSpacing: "0.13em",
-        textTransform: "uppercase",
-        cursor: onAvatarChange && phase !== "connecting" ? "pointer" : "default",
-      }}
-    >
-      {label}
-    </button>
-  );
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-      {showSelector && (
-        <div style={{ display: "flex", gap: 8 }}>
-          {pickerBtn("sofia", "Sofia")}
-          {pickerBtn("marco", "Marco")}
-        </div>
-      )}
-      <div
+    <AvatarShell
+      avatar={avatar}
+      phase={phase}
+      onAvatarChange={onAvatarChange}
+      showSelector={showSelector}
+      waitingLabel="connessione"
+      error={error}
+    >
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        muted={false}
         style={{
           width: "100%",
-          maxWidth: 360,
-          aspectRatio: "9 / 16",
-          borderRadius: 12,
-          overflow: "hidden",
-          background: "var(--paper-tint, #F8F4ED)",
-          position: "relative",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+          height: "100%",
+          objectFit: "cover",
+          display: phase === "ready" || phase === "speaking" ? "block" : "none",
         }}
-      >
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          muted={false}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            display: phase === "ready" || phase === "speaking" ? "block" : "none",
-          }}
-        />
-        {(phase === "connecting" || phase === "idle") && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              color: "var(--ink-3)",
-              fontFamily: "var(--mono)",
-              fontSize: 11,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                border: "2px solid var(--paper-line, #E8E0D2)",
-                borderTopColor: "var(--vermiglio, #C93924)",
-                animation: "spin 0.8s linear infinite",
-              }}
-            />
-            <span>{avatar === "marco" ? "Marco" : "Sofia"} · connessione</span>
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </div>
-        )}
-        {phase === "error" && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              padding: 16,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              color: "var(--red-error, #B43B25)",
-              fontSize: 13,
-            }}
-          >
-            Avatar non disponibile{error ? `: ${error.slice(0, 80)}` : ""}
-          </div>
-        )}
-      </div>
-    </div>
+      />
+    </AvatarShell>
   );
 });

@@ -66,18 +66,57 @@ function buildDisclaimer(highRisk: boolean, channel: string): string {
 
 /**
  * Strip inline citations whose URN doesn't appear in the validated list.
- * Conservative: only removes clearly hallucinated patterns (D.Lgs X/Y) when
- * X/Y combination is not in any verified citation.
+ * Conservative: only removes clearly hallucinated patterns when X/Y
+ * combination is not in any verified citation.
+ *
+ * Returns { sanitized, removedCount }.
  */
-function stripUnverifiedCitations(text: string, citations: CitationRef[]): string {
-  const validKeys = new Set(citations.filter(c => c.verified).map(c => {
-    // build keys like "d.lgs. 36/2023" lowercased
-    return c.title.toLowerCase().replace(/\s+/g, " ").trim();
-  }));
+const URN_INLINE_PATTERNS: RegExp[] = [
+  /D\.?\s?Lgs\.?\s+n?\.?\s?(\d+)\/(\d{4})/gi,
+  /D\.?\s?L\.?\s+n?\.?\s?(\d+)\/(\d{4})/gi,
+  /D\.?P\.?R\.?\s+n?\.?\s?(\d+)\/(\d{4})/gi,
+  /\bL\.?\s+n?\.?\s?(\d+)\/(\d{4})/gi,
+  /Reg\.?\s+(?:UE|CE|CEE)\s+(\d{4})\/(\d+)/gi,
+  /Cass\.?\s+(?:sez\.?\s*\w+\.?\s*)?(?:S\.?U\.?\s*)?n\.?\s*(\d+)\/(\d{4})/gi,
+  /Corte\s+Cost\.?\s+(?:sent\.?\s+)?n\.?\s*(\d+)\/(\d{4})/gi,
+];
 
-  // Simple pattern: replace bracketed [Fonte N] only — keep prose intact.
-  // Aggressive sanitization is the LLM's job at composition time.
-  return text;
+function buildVerifiedSignatures(citations: CitationRef[]): Set<string> {
+  // Each verified citation contributes one or more "signatures" we can match
+  // against inline references. Signature format: "<num>/<year>" lowercased.
+  const sigs = new Set<string>();
+  for (const c of citations) {
+    if (!c.verified) continue;
+    const haystack = `${c.title} ${c.article ?? ""} ${c.urn ?? ""}`.toLowerCase();
+    // Extract every "N/YYYY" pattern that appears anywhere in the citation
+    const matches = haystack.matchAll(/(\d+)\/(\d{4})/g);
+    for (const m of matches) {
+      sigs.add(`${m[1]}/${m[2]}`);
+    }
+    // Also include URN as-is (if present) for direct comparison
+    if (c.urn) sigs.add(c.urn.toLowerCase());
+  }
+  return sigs;
+}
+
+function stripUnverifiedCitations(
+  text: string,
+  citations: CitationRef[]
+): { sanitized: string; removedCount: number } {
+  const verifiedSigs = buildVerifiedSignatures(citations);
+  let removedCount = 0;
+  let sanitized = text;
+
+  for (const pat of URN_INLINE_PATTERNS) {
+    sanitized = sanitized.replace(pat, (match, num, year) => {
+      const sig = `${String(num).toLowerCase()}/${String(year).toLowerCase()}`;
+      if (verifiedSigs.has(sig)) return match;
+      removedCount++;
+      return "[riferimento non verificato]";
+    });
+  }
+
+  return { sanitized, removedCount };
 }
 
 export const responseComposerAgent: Agent<ResponseComposerInput, ResponseComposerOutput> = {
@@ -90,13 +129,26 @@ export const responseComposerAgent: Agent<ResponseComposerInput, ResponseCompose
     try {
       const highRisk = detectHighRisk(input.rawText, ctx.userQuery);
 
-      let body = stripUnverifiedCitations(input.rawText, input.citations);
+      const { sanitized: body, removedCount } = stripUnverifiedCitations(
+        input.rawText,
+        input.citations
+      );
       const sources = buildSourceList(input.citations);
       const disclaimer = buildDisclaimer(highRisk, input.channel);
 
-      const finalMarkdown = `${body}${sources}${disclaimer}`.trim();
+      // If we stripped one or more inline references, surface a soft warning
+      // (skip in voice channel — read-aloud disclaimers are noisy).
+      const stripWarning =
+        removedCount > 0 && input.channel !== "voice"
+          ? `\n\n*Nota: ${removedCount} riferiment${removedCount === 1 ? "o" : "i"} non verificat${removedCount === 1 ? "o" : "i"} nel corpus ${removedCount === 1 ? "è stato rimosso" : "sono stati rimossi"} per garantire l'accuratezza.*`
+          : "";
 
-      const summary = highRisk ? "Risposta + flag rischio alto" : "Risposta composta";
+      const finalMarkdown = `${body}${sources}${stripWarning}${disclaimer}`.trim();
+
+      const totalInvalid = (input.invalidCount ?? 0) + removedCount;
+      const summary = highRisk
+        ? `Risposta + flag rischio alto (${removedCount} citazioni rimosse)`
+        : `Risposta composta (${removedCount} citazioni rimosse)`;
       ctx.emit({
         agent: "response-composer",
         state: "done",
@@ -109,7 +161,7 @@ export const responseComposerAgent: Agent<ResponseComposerInput, ResponseCompose
         data: {
           finalMarkdown,
           highRisk,
-          needsHumanReviewSuggested: highRisk,
+          needsHumanReviewSuggested: highRisk || totalInvalid > 0,
         },
       };
     } catch (err) {

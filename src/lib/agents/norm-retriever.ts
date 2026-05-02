@@ -18,54 +18,79 @@ interface NormRetrieverOutput {
 }
 
 /**
+ * Custom error class — distinguishes embedding failures from generic errors so
+ * the orchestrator can degrade gracefully (LLM-only) instead of returning
+ * random chunks via a zero-vector cosine search.
+ */
+export class EmbeddingUnavailableError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message);
+    this.name = "EmbeddingUnavailableError";
+  }
+}
+
+/**
  * Embed the user query with the same model used for normaai_chunks.embedding.
- * Returns a 384-dim vector. Uses FastEmbed bge-small-en-v1.5 served via Hetzner VPS
- * (EMBED_VPS_URL=http://89.167.123.25:8765/embed).
+ * Returns a 384-dim vector (or 1024-dim after Phase 2 RPC switch).
  *
- * Response format: { data: [{ embedding: [0.22, 0.08, ...] }] }
+ * IMPORTANT — anti-hallucination guard:
+ * Previous implementation returned `[0, 0, ..., 0]` on any failure, which made
+ * pgvector cosine similarity rank every chunk by raw norm → effectively
+ * random results presented as authoritative legal answers.
+ *
+ * New behaviour: throw EmbeddingUnavailableError so the agent skips RAG
+ * entirely. Caller decides what to do (graceful LLM-only fallback, or 503).
  */
 async function embedQuery(query: string): Promise<number[]> {
-  // Architettura embedding NormaAI (post-SER-118):
-  // - Corpus attuale: 384-dim bge-small su normaai_chunks.embedding (rollback safe)
-  // - Corpus nuovo: 1024-dim bge-m3 su normaai_chunks.embedding_bgem3 (Phase 2 in corso)
-  // Strategy: usa Infinity bge-m3 OpenAI-compatible API con dimensions=384
-  //   (Matryoshka truncation) per match con corpus attuale.
-  //   Quando Phase 2 finita + nuovo RPC ready, switcha a 1024-dim full.
+  // Provider priority:
+  //   1. Ollama on GEX44 via Tailscale  (OLLAMA_EMBED_URL, e.g. http://100.x.x.x:11434)
+  //      → free, fast, GPU-accelerated, no audit-trail outside our network
+  //   2. Legacy embedding endpoint     (EMBED_VPS_URL — bge-small VPS or Infinity bge-m3)
+  //
+  // Switch to Ollama when re-embedding corpus completes; until then both must
+  // produce dimension-compatible vectors with normaai_chunks.embedding.
+  const ollamaUrl = process.env.OLLAMA_EMBED_URL;
+  const ollamaModel = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
   const endpoint = process.env.EMBED_VPS_URL ?? process.env.EMBED_ENDPOINT_URL;
   const apiKey = process.env.NORMAAI_INTERNAL_API_KEY;
-  const targetDim = parseInt(process.env.EMBED_DIM ?? "384", 10); // 384 ora, 1024 post-Phase2
+  const targetDim = parseInt(process.env.EMBED_DIM ?? "384", 10);
 
-  if (!endpoint) {
-    return new Array(targetDim).fill(0);
+  if (!ollamaUrl && !endpoint) {
+    throw new EmbeddingUnavailableError(
+      "No embedding endpoint configured (set OLLAMA_EMBED_URL or EMBED_VPS_URL) — refusing zero-vector fallback.",
+    );
   }
-  // Endpoint detection:
-  //   - Infinity OpenAI-compat: /embeddings + body {"input":[...], "model":..., "dimensions":N}
-  //   - TEI HF: /embed + body {"inputs":[...]}
-  //   - Legacy FastEmbed VPS attuale: /embed + body {"texts":[...]}
-  const isInfinity = endpoint.includes("embed.normaai.it");
-  const isTei = endpoint.includes("/v1") || isInfinity;
+
+  // Select provider
+  type Provider = "ollama" | "infinity" | "tei" | "legacy";
+  let provider: Provider;
+  let url: string;
+  let body: string;
+  if (ollamaUrl) {
+    provider = "ollama";
+    url = `${ollamaUrl}/api/embeddings`;
+    body = JSON.stringify({ model: ollamaModel, prompt: query });
+  } else if (endpoint!.includes("embed.normaai.it")) {
+    provider = "infinity";
+    url = `${endpoint}/embeddings`;
+    body = JSON.stringify({
+      input: [query],
+      model: "BAAI/bge-m3",
+      dimensions: targetDim,
+    });
+  } else if (endpoint!.includes("/v1")) {
+    provider = "tei";
+    url = `${endpoint}/embed`;
+    body = JSON.stringify({ inputs: [query] });
+  } else {
+    provider = "legacy";
+    url = `${endpoint}/embed`;
+    body = JSON.stringify({ texts: [query] });
+  }
+
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
-
-    let url: string;
-    let body: string;
-    if (isInfinity) {
-      // Infinity OpenAI-compatible
-      url = `${endpoint}/embeddings`;
-      body = JSON.stringify({
-        input: [query],
-        model: "BAAI/bge-m3",
-        dimensions: targetDim,
-      });
-    } else if (isTei) {
-      url = `${endpoint}/embed`;
-      body = JSON.stringify({ inputs: [query] });
-    } else {
-      // Legacy FastEmbed
-      url = `${endpoint}/embed`;
-      body = JSON.stringify({ texts: [query] });
-    }
 
     const res = await fetch(url, {
       method: "POST",
@@ -73,17 +98,48 @@ async function embedQuery(query: string): Promise<number[]> {
       body,
       signal: AbortSignal.timeout(8000),
     });
-    if (!res.ok) throw new Error(`embed ${res.status}`);
-    const j = await res.json() as
+    if (!res.ok) {
+      throw new EmbeddingUnavailableError(`embed ${res.status} ${res.statusText}`);
+    }
+    const j = (await res.json()) as
       | number[][]
-      | { data?: Array<{ embedding: number[] }>; embeddings?: number[][] };
-    // Infinity OpenAI: { data: [{embedding: [...]}] }
-    // TEI: [[...]]
-    // Legacy: { data: [...]} or { embeddings: [[...]] }
-    if (Array.isArray(j)) return j[0] ?? new Array(targetDim).fill(0);
-    return j.data?.[0]?.embedding ?? j.embeddings?.[0] ?? new Array(targetDim).fill(0);
-  } catch {
-    return new Array(targetDim).fill(0);
+      | { data?: Array<{ embedding: number[] }>; embeddings?: number[][] }
+      | { embedding: number[] };
+
+    let vec: number[] | undefined;
+    if (provider === "ollama") {
+      // Ollama native shape: { embedding: [...] }
+      vec = (j as { embedding: number[] }).embedding;
+    } else if (Array.isArray(j)) {
+      vec = j[0];
+    } else {
+      const obj = j as { data?: Array<{ embedding: number[] }>; embeddings?: number[][] };
+      vec = obj.data?.[0]?.embedding ?? obj.embeddings?.[0];
+    }
+
+    if (!vec || vec.length === 0) {
+      throw new EmbeddingUnavailableError("Embedding endpoint returned empty vector");
+    }
+    // For Ollama nomic-embed-text we accept whatever dim the model produces
+    // (768 native). When the corpus is re-embedded with the same model the
+    // dim will match the column. For now, only enforce on legacy providers.
+    if (provider !== "ollama" && vec.length !== targetDim) {
+      throw new EmbeddingUnavailableError(
+        `Embedding dim mismatch: got ${vec.length}, expected ${targetDim}`,
+      );
+    }
+    // Defensive: a vector of all zeros is useless for cosine search
+    const isZeroVec = vec.every((x) => x === 0);
+    if (isZeroVec) {
+      throw new EmbeddingUnavailableError("Embedding endpoint returned zero vector");
+    }
+    return vec;
+  } catch (err) {
+    if (err instanceof EmbeddingUnavailableError) throw err;
+    throw new EmbeddingUnavailableError(
+      err instanceof Error ? err.message : String(err),
+      err,
+    );
   }
 }
 
@@ -167,7 +223,23 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       const topK = input.topK ?? 6;
       // Retrieve 2× topK candidates from RPC, then rerank to topK final.
       const retrievalCount = topK * 2;
-      const embedding = await embedQuery(input.query);
+
+      let embedding: number[];
+      try {
+        embedding = await embedQuery(input.query);
+      } catch (embedErr) {
+        // Embedding service unavailable → SKIP RAG (do NOT fall back to
+        // zero-vector retrieval, which would return random chunks and
+        // cause hallucinated "authoritative" answers).
+        const msg = embedErr instanceof Error ? embedErr.message : String(embedErr);
+        ctx.emit({
+          agent: "norm-retriever",
+          state: "done",
+          durationMs: Date.now() - t0,
+          output: `Embedding non disponibile (${msg}); rispondo senza RAG`,
+        });
+        return { ok: true, data: { chunks: [], ragContext: "" } };
+      }
 
       // pgvector cosine search via RPC match_normaai_chunks (production, 8.3M chunks).
       // HNSW PARTIAL per verticale → fan-out parallel se vertical=null.
@@ -186,7 +258,44 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         similarity: number;
       };
 
+      // Hybrid retrieval (002_fts_hybrid_search.sql) is preferred when the
+      // RPC is deployed. Toggle via env to allow staged rollout.
+      const useHybrid = process.env.HYBRID_RETRIEVAL_ENABLED === "1";
+
       const callRpc = async (verticale: string | null) => {
+        if (useHybrid) {
+          const { data, error } = await sb.rpc("match_normaai_chunks_hybrid", {
+            query_embedding: embedding,
+            query_text: input.query,
+            match_count: retrievalCount,
+            match_threshold: 0.10,
+            filter_verticale: verticale,
+            filter_tipo: null,
+            only_vigente: false,
+          });
+          if (error) {
+            // Hybrid RPC not deployed yet → degrade gracefully to dense-only
+            // (do NOT throw, this happens during rollout).
+            const { data: data2, error: error2 } = await sb.rpc("match_normaai_chunks", {
+              query_embedding: embedding,
+              match_count: retrievalCount,
+              match_threshold: 0.10,
+              filter_verticale: verticale,
+              filter_tipo: null,
+              only_vigente: false,
+            });
+            if (error2) return { rows: [] as ChunkRow[], err: error2 };
+            return { rows: (data2 ?? []) as ChunkRow[], err: null };
+          }
+          // Hybrid returns extra columns (vec_score, lex_score, fused_score);
+          // map fused_score → similarity for backwards compatibility.
+          type HybridRow = ChunkRow & { fused_score: number };
+          const mapped = ((data ?? []) as HybridRow[]).map((r) => ({
+            ...r,
+            similarity: r.fused_score,
+          })) as ChunkRow[];
+          return { rows: mapped, err: null };
+        }
         const { data, error } = await sb.rpc("match_normaai_chunks", {
           query_embedding: embedding,
           match_count: retrievalCount,

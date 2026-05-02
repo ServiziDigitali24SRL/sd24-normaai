@@ -15,7 +15,7 @@ import { runPipeline } from "@/lib/agent-orchestrator";
 import { getSystemPrompt, type SofiaChannel } from "./system-prompts";
 import { guardInput } from "@/lib/guardrails";
 import { encodeAgentEvent, type AgentEvent } from "@/lib/agent-events";
-import { getProvider } from "@/lib/llm/router";
+import { getProvider, classifyComplexity } from "@/lib/llm/router";
 import * as Sentry from "@sentry/nextjs";
 
 export const dynamic = "force-dynamic";
@@ -65,13 +65,34 @@ export async function POST(req: NextRequest) {
           emit,
           callLLM: async (_systemPromptIgnored, ragContext, query) => {
             const sys = getSystemPrompt(channel);
-            const fullSys = ragContext
-              ? `${sys}\n\nCONTESTO NORMATIVO (Norm Retriever):\n${ragContext}`
-              : sys;
+            const dynamicSuffix = ragContext
+              ? `\n\nCONTESTO NORMATIVO (Norm Retriever):\n${ragContext}`
+              : undefined;
 
-            const provider = getProvider(channel);
+            // Complexity-based routing: simple lookup queries → local Ollama
+            // on GEX44 (free, ~100ms TTFF); complex queries → Claude Sonnet.
+            // Estimated routing: ~70% simple / ~30% complex on real traffic.
+            const complexity = classifyComplexity(query);
+            emit({
+              agent: "routing",
+              state: "done",
+              durationMs: 0,
+              output: `routing: ${complexity}`,
+            });
+            const provider = getProvider(channel, complexity);
+            // Cacheable prefix: the channel system prompt is stable across
+            // requests (CHAT_IT_PROMPT, VOICE_IT_PROMPT...), so it qualifies
+            // for Anthropic prompt caching. RAG context is dynamic per query
+            // and stays in the suffix (always re-sent).
+            // Net effect on cache hit: input cost ÷10, TTFF ÷~2.
             const text = await provider.streamTokens(
-              { systemPrompt: fullSys, userMessage: query, maxTokens: channel === "chat" ? 1500 : 800 },
+              {
+                systemPrompt: dynamicSuffix ? sys + dynamicSuffix : sys,  // legacy fallback
+                cacheableSystemPrefix: sys,
+                dynamicSystemSuffix: dynamicSuffix,
+                userMessage: query,
+                maxTokens: channel === "chat" ? 1500 : 800,
+              },
               (tok) => send(`event: token\ndata: ${JSON.stringify({ text: tok })}\n\n`),
             );
             return text;
