@@ -105,9 +105,19 @@ export const AvatarLive = forwardRef<
       },
       async stop() {
         if (!sdkRef.current) return;
+        const sid = sessionIdRef.current;
         try {
           await sdkRef.current.stopAvatar();
         } catch { /* ignore */ }
+        // Release backend session slot (frees LiveAvatar concurrency + stops billing)
+        if (sid) {
+          fetch("/api/avatar/streaming/stop", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sid }),
+            keepalive: true,
+          }).catch(() => {});
+        }
         sdkRef.current = null;
         sessionIdRef.current = null;
         setPhase("idle");
@@ -118,12 +128,36 @@ export const AvatarLive = forwardRef<
 
   useEffect(() => {
     if (autoStart && phase === "idle") void start();
+
+    // Tab close → fire-and-forget stop via keepalive (releases concurrent slot)
+    const onUnload = () => {
+      const sid = sessionIdRef.current;
+      if (!sid) return;
+      try {
+        const blob = new Blob([JSON.stringify({ session_id: sid })], { type: "application/json" });
+        navigator.sendBeacon?.("/api/avatar/streaming/stop", blob);
+      } catch { /* ignore */ }
+    };
+    window.addEventListener("pagehide", onUnload);
+    window.addEventListener("beforeunload", onUnload);
+
     return () => {
-      // best-effort cleanup
+      window.removeEventListener("pagehide", onUnload);
+      window.removeEventListener("beforeunload", onUnload);
       const sdk = sdkRef.current;
+      const sid = sessionIdRef.current;
       if (sdk) {
         sdk.stopAvatar().catch(() => {});
         sdkRef.current = null;
+      }
+      if (sid) {
+        fetch("/api/avatar/streaming/stop", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sid }),
+          keepalive: true,
+        }).catch(() => {});
+        sessionIdRef.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -17,8 +17,34 @@ interface Body {
   greeting?: string;
 }
 
+// In-memory rate limit (per-IP, single instance).
+// LiveAvatar trial = 1 concurrent session + each call burns ~€0.10/min,
+// so we cap to 1 session per IP every 90 seconds.
+const RATE_WINDOW_MS = 90_000;
+const lastStartByIp = new Map<string, number>();
+
+function getClientIp(req: NextRequest): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  const real = req.headers.get("x-real-ip");
+  if (real) return real;
+  return "unknown";
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const now = Date.now();
+    const last = lastStartByIp.get(ip) ?? 0;
+    if (now - last < RATE_WINDOW_MS) {
+      const retryAfter = Math.ceil((RATE_WINDOW_MS - (now - last)) / 1000);
+      return NextResponse.json(
+        { error: "rate_limited", retry_after_sec: retryAfter },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      );
+    }
+    lastStartByIp.set(ip, now);
+
     const body = (await req.json()) as Body;
     const avatarKey = body.avatar ?? "sofia";
     const cfg = AVATARS[avatarKey];
