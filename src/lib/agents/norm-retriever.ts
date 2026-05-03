@@ -258,24 +258,46 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         similarity: number;
       };
 
-      // Hybrid retrieval (002_fts_hybrid_search.sql) is preferred when the
-      // RPC is deployed. Toggle via env to allow staged rollout.
+      // Hybrid retrieval — uses the production `hybrid_search_chunks` RPC
+      // (already deployed: dense vector + Italian FTS, fused 0.7/0.3).
+      // The RPC handles the FTS via to_tsvector('italian', chunk||titolo);
+      // its perf depends on the GIN index from migration 004 — without it,
+      // expect multi-second queries on the 8.3M-row table.
+      //
+      // Toggle: HYBRID_RETRIEVAL_ENABLED=1 → hybrid; else → dense-only legacy.
       const useHybrid = process.env.HYBRID_RETRIEVAL_ENABLED === "1";
+
+      // hybrid_search_chunks shape (from pg_proc): id, chunk, fonte, tipo,
+      // titolo, url, verticale, similarity, hybrid_score.
+      // Note: it does NOT return `data` — we set null. It also already does
+      // its own UNION of dense+sparse internally, so we don't fan out across
+      // verticali manually when using hybrid.
+      type HybridRow = {
+        id: string;
+        chunk: string;
+        fonte: string;
+        tipo: string;
+        titolo: string;
+        url: string | null;
+        verticale: string | null;
+        similarity: number;
+        hybrid_score: number;
+      };
 
       const callRpc = async (verticale: string | null) => {
         if (useHybrid) {
-          const { data, error } = await sb.rpc("match_normaai_chunks_hybrid", {
+          const { data, error } = await sb.rpc("hybrid_search_chunks", {
             query_embedding: embedding,
             query_text: input.query,
+            match_vertical: verticale,
             match_count: retrievalCount,
-            match_threshold: 0.10,
-            filter_verticale: verticale,
-            filter_tipo: null,
-            only_vigente: false,
+            candidate_count: retrievalCount * 3,
+            match_threshold: 0.20,
+            vector_weight: 0.7,
+            fts_weight: 0.3,
           });
           if (error) {
-            // Hybrid RPC not deployed yet → degrade gracefully to dense-only
-            // (do NOT throw, this happens during rollout).
+            // hybrid RPC failed → degrade gracefully to dense-only
             const { data: data2, error: error2 } = await sb.rpc("match_normaai_chunks", {
               query_embedding: embedding,
               match_count: retrievalCount,
@@ -287,13 +309,19 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
             if (error2) return { rows: [] as ChunkRow[], err: error2 };
             return { rows: (data2 ?? []) as ChunkRow[], err: null };
           }
-          // Hybrid returns extra columns (vec_score, lex_score, fused_score);
-          // map fused_score → similarity for backwards compatibility.
-          type HybridRow = ChunkRow & { fused_score: number };
-          const mapped = ((data ?? []) as HybridRow[]).map((r) => ({
-            ...r,
-            similarity: r.fused_score,
-          })) as ChunkRow[];
+          // Map HybridRow → ChunkRow. hybrid_score wins over plain similarity
+          // for ranking; we expose it as `similarity` for backward compat.
+          const mapped: ChunkRow[] = ((data ?? []) as HybridRow[]).map((r) => ({
+            id: r.id,
+            fonte: r.fonte,
+            tipo: r.tipo,
+            titolo: r.titolo,
+            chunk: r.chunk,
+            url: r.url,
+            verticale: r.verticale,
+            data: null,
+            similarity: r.hybrid_score ?? r.similarity,
+          }));
           return { rows: mapped, err: null };
         }
         const { data, error } = await sb.rpc("match_normaai_chunks", {

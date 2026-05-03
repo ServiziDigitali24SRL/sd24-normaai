@@ -2,8 +2,19 @@
 """
 corpus-reembed-dedup.py
 ─────────────────────────────────────────────────────────────────────────────
-Re-embed normaai_chunks (8.3M rows) with nomic-embed-text running on GEX44
-and deduplicate near-identical chunks via cosine similarity > 0.97.
+Re-embed normaai_chunks (8.3M rows) into the existing 1024-dim
+`embedding_bgem3` column using bge-m3 running on GEX44 (Ollama or
+Infinity), and deduplicate near-identical chunks via cosine similarity > 0.97.
+
+NOTE — schema reality check (3 May 2026):
+  • normaai_chunks already has 2 vector columns:
+      - `embedding`         vector(384)   — bge-small (LIVE in production)
+      - `embedding_bgem3`   vector(1024)  — added 2 May 2026, ~68% backfilled
+  • This script writes ONLY to `embedding_bgem3`. The 384-dim `embedding`
+    stays untouched until the new bge-m3 RPC is promoted to production.
+  • Resume: skip rows where `embedding_bgem3 IS NOT NULL` (instead of
+    relying on a separate progress table — saner because someone else
+    is also backfilling concurrently).
 
 WHY:
   - Current embedding: bge-small-en-v1.5, 384d, English-trained, English VPS.
@@ -19,14 +30,14 @@ PROCESS:
   1. Stream rows from normaai_chunks (id, chunk, titolo).
   2. For each batch (size 64), POST to GEX44 Ollama embeddings endpoint.
   3. Hash chunk text → check previous batches (Bloom filter) for exact dup.
-  4. UPSERT into normaai_chunks_v2 (768d column embedding_nomic).
+  4. UPSERT into normaai_chunks_v2 (768d column embedding_bgem3).
   5. After full pass, run DELETE for near-duplicates by cosine > 0.97
      against the last accepted chunk in the same fonte+titolo group.
 
 PRECONDITIONS:
   - GEX44 reachable via Tailscale (OLLAMA_BASE).
   - nomic-embed-text pulled on GEX44: `ollama pull nomic-embed-text`.
-  - Migration 003 applied (adds embedding_nomic vector(768) column).
+  - Migration 003 applied (adds embedding_bgem3 vector(768) column).
   - SUPABASE_SERVICE_ROLE_KEY in env.
 
 USAGE:
@@ -54,7 +65,10 @@ import httpx
 from supabase import create_client, Client
 
 OLLAMA_BASE = os.environ.get("OLLAMA_BASE", "http://localhost:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "nomic-embed-text")
+# Default: bge-m3 (matches embedding_bgem3 column dim 1024). Override via env
+# only if you also know the corpus column expects a different dim.
+OLLAMA_MODEL = os.environ.get("OLLAMA_EMBED_MODEL", "bge-m3")
+EXPECTED_DIM = int(os.environ.get("EXPECTED_DIM", "1024"))
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 DEDUP_THRESHOLD = 0.97  # cosine similarity above this → duplicate
@@ -82,7 +96,11 @@ class Stats:
 def embed_batch(client: httpx.Client, texts: list[str]) -> list[list[float]]:
     """Call Ollama /api/embeddings for each text. Ollama doesn't batch
     natively, so we issue parallel requests via a thread pool elsewhere or
-    just sequentially per batch (a single GPU still saturates this way)."""
+    just sequentially per batch (a single GPU still saturates this way).
+
+    Validates dim matches EXPECTED_DIM — refusing to write a wrong-dim vector
+    is the only way to avoid corrupting the column silently.
+    """
     out: list[list[float]] = []
     for txt in texts:
         r = client.post(
@@ -91,7 +109,13 @@ def embed_batch(client: httpx.Client, texts: list[str]) -> list[list[float]]:
             timeout=30,
         )
         r.raise_for_status()
-        out.append(r.json()["embedding"])
+        vec = r.json()["embedding"]
+        if len(vec) != EXPECTED_DIM:
+            raise RuntimeError(
+                f"embed dim mismatch: model {OLLAMA_MODEL} returned {len(vec)}, "
+                f"expected {EXPECTED_DIM} for column embedding_bgem3"
+            )
+        out.append(vec)
     return out
 
 
@@ -102,10 +126,21 @@ def chunk_hash(text: str) -> str:
 
 
 def stream_rows(sb: Client, batch_size: int, resume_id: str | None) -> Iterable[list[dict]]:
-    """Stream rows in id order. Resumable via cursor on `id`."""
+    """Stream rows in id order, skipping those that already have bge-m3.
+
+    A separate concurrent backfill might be running — we coordinate with it
+    by simply selecting WHERE embedding_bgem3 IS NULL. No progress table
+    needed.
+    """
     last_id = resume_id
     while True:
-        q = sb.table("normaai_chunks").select("id, chunk, titolo, fonte").order("id").limit(batch_size)
+        q = (
+            sb.table("normaai_chunks")
+            .select("id, chunk, titolo, fonte")
+            .is_("embedding_bgem3", "null")
+            .order("id")
+            .limit(batch_size)
+        )
         if last_id:
             q = q.gt("id", last_id)
         rows = q.execute().data
@@ -142,13 +177,12 @@ def main():
     total = sb.table("normaai_chunks").select("id", count="exact").limit(1).execute().count or 0
     print(f"Corpus total: {total:,} chunks")
 
-    # Resume state
+    # No separate progress table — `WHERE embedding_bgem3 IS NULL` does the
+    # job. The optional --resume flag is kept for API compatibility but is
+    # now a no-op (the IS NULL filter automatically skips rows already done).
     resume_id = None
     if args.resume:
-        prog = sb.table("normaai_reembed_progress").select("last_id").eq("id", "default").execute().data
-        if prog:
-            resume_id = prog[0]["last_id"]
-            print(f"Resuming from id > {resume_id}")
+        print("Note: --resume is implicit (skipping rows where embedding_bgem3 IS NOT NULL).")
 
     seen_hashes: set[str] = set()  # exact-dup detection (in-process Bloom-equivalent)
     stats = Stats(started_at=time.time())
@@ -183,24 +217,17 @@ def main():
 
             # Write
             if not args.dry_run:
-                payload = [
-                    {"id": row["id"], "embedding_nomic": vec}
-                    for row, vec in zip(unique_batch, vectors)
-                ]
-                try:
-                    sb.table("normaai_chunks").upsert(payload).execute()
-                    stats.written += len(payload)
-                except Exception as e:
-                    stats.errors += len(payload)
-                    print(f"\n[WARN] upsert failed: {e}", file=sys.stderr)
-                    continue
-
-                # Persist progress (last_id) every batch
-                sb.table("normaai_reembed_progress").upsert({
-                    "id": "default",
-                    "last_id": batch[-1]["id"],
-                    "updated_at": "now()",
-                }).execute()
+                # Use UPDATE per row rather than UPSERT — UPSERT would overwrite
+                # other unrelated columns we didn't select.
+                for row, vec in zip(unique_batch, vectors):
+                    try:
+                        sb.table("normaai_chunks").update(
+                            {"embedding_bgem3": vec}
+                        ).eq("id", row["id"]).execute()
+                        stats.written += 1
+                    except Exception as e:
+                        stats.errors += 1
+                        print(f"\n[WARN] update {row['id']} failed: {e}", file=sys.stderr)
 
             write_progress(stats, total, batch[-1]["id"])
 
