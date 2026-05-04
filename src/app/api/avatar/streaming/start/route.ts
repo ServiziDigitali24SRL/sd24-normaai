@@ -18,9 +18,10 @@ interface Body {
 }
 
 // In-memory rate limit (per-IP, single instance).
-// LiveAvatar trial = 1 concurrent session + each call burns ~€0.10/min,
-// so we cap to 1 session per IP every 90 seconds.
-const RATE_WINDOW_MS = 90_000;
+// LiveAvatar trial = 1 concurrent session + each call burns ~€0.10/min.
+// 10s window: prevents accidental double-tap / hot-reload spam, but does not
+// block legitimate retries after the previous session was correctly stopped.
+const RATE_WINDOW_MS = 10_000;
 const lastStartByIp = new Map<string, number>();
 
 function getClientIp(req: NextRequest): string {
