@@ -46,6 +46,7 @@ export const AvatarLive = forwardRef<
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const roomRef = useRef<Room | null>(null);
   const sessionRef = useRef<SessionState | null>(null);
 
@@ -66,28 +67,43 @@ export const AvatarLive = forwardRef<
       }
       sessionRef.current = { session_id: j.session_id, session_token: j.session_token };
 
-      // Direct LiveKit connection — no SDK middleman.
       const room = new Room({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
+      // Expose for debugging
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__avatarRoom = room;
 
-      room.on(RoomEvent.TrackSubscribed, (track) => {
+      room.on(RoomEvent.TrackSubscribed, (track, _publication, participant) => {
+        console.log("[avatar] TrackSubscribed", track.kind, "from", participant.identity);
         if (track.kind === "video" && videoRef.current) {
           (track as RemoteVideoTrack).attach(videoRef.current);
+          videoRef.current.play().catch((err) => console.warn("[avatar] video.play() failed:", err));
           setPhase("ready");
-        } else if (track.kind === "audio" && videoRef.current) {
-          (track as RemoteAudioTrack).attach(videoRef.current);
+        } else if (track.kind === "audio" && audioRef.current) {
+          (track as RemoteAudioTrack).attach(audioRef.current);
+          audioRef.current.play().catch((err) => console.warn("[avatar] audio.play() failed:", err));
         }
       });
-      room.on(RoomEvent.Disconnected, () => {
+      room.on(RoomEvent.ParticipantConnected, (p) => {
+        console.log("[avatar] ParticipantConnected:", p.identity, "kind=", p.kind);
+      });
+      room.on(RoomEvent.TrackPublished, (pub, p) => {
+        console.log("[avatar] TrackPublished:", pub.kind, "by", p.identity);
+      });
+      room.on(RoomEvent.Disconnected, (reason) => {
+        console.log("[avatar] Disconnected:", reason);
         setPhase("idle");
       });
       room.on(RoomEvent.MediaDevicesError, (e) => {
+        console.error("[avatar] MediaDevicesError:", e);
         setError(String(e));
         setPhase("error");
       });
 
       await room.connect(j.livekit_url, j.livekit_client_token);
+      console.log("[avatar] room.connect OK, participants:", room.remoteParticipants.size);
     } catch (e) {
+      console.error("[avatar] start failed:", e);
       setError(e instanceof Error ? e.message : "unknown");
       setPhase("error");
       roomRef.current = null;
@@ -197,7 +213,7 @@ export const AvatarLive = forwardRef<
         ref={videoRef}
         autoPlay
         playsInline
-        muted={false}
+        muted
         style={{
           width: "100%",
           height: "100%",
@@ -205,6 +221,7 @@ export const AvatarLive = forwardRef<
           display: phase === "ready" || phase === "speaking" ? "block" : "none",
         }}
       />
+      <audio ref={audioRef} autoPlay style={{ display: "none" }} />
     </AvatarShell>
   );
 });
