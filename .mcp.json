@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "superset": {
+      "type": "http",
+      "url": "https://api.superset.sh/api/agent/mcp",
+      "headers": {
+        "Authorization": "Bearer sk_live_WbezNtPTMCnfIkUTTTonfliwtQkxCiHIiBavbZIdtdKrPeiqHfCKJiXvHkOaevBi"
+      }
+    }
+  }
+}

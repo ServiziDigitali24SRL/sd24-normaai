@@ -1,14 +1,17 @@
+// /api/stripe/webhook — handles checkout.session.completed for the 2 flows:
+//   - flow=lead_create  → user paid 9 €, create row in `leads` + notify lawyers
+//   - flow=lead_buy     → lawyer paid 91 €, create row in `lead_purchases`
+//                         (trigger marks lead.status = 'sold' automatically)
+//
+// Idempotency: best-effort via `stripe_processed_events` table (ignored if
+// table not present — safe to skip in dev).
+
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
-import {
-  sendWelcomeEmail,
-  sendSubscriptionConfirmEmail,
-  sendLeadPurchaseConfirmEmail,
-} from "@/lib/email";
+import { sendLeadNotificationEmail, sendLeadPurchaseConfirmEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
-// SER-74: CRITICO — Edge Runtime consuma il body prima di constructEvent → firma fallisce silenziosamente
 export const runtime = "nodejs";
 
 function getStripe() {
@@ -29,201 +32,173 @@ export async function POST(req: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret || !sig) {
-    return NextResponse.json({ error: "Missing webhook secret or signature" }, { status: 400 });
+    return NextResponse.json({ error: "missing_signature" }, { status: 400 });
   }
 
   let event: Stripe.Event;
   try {
-    const stripe = getStripe();
-    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    event = getStripe().webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    console.error("[stripe/webhook] signature verify failed", err);
+    return NextResponse.json({ error: "invalid_signature" }, { status: 400 });
   }
 
   const supabase = getSupabase();
 
-  // CVE-08 fix: idempotency check
+  // Idempotency (best-effort)
   try {
-    const { error: insertErr } = await supabase
+    const { error } = await supabase
       .from("stripe_processed_events")
       .insert({ event_id: event.id, event_type: event.type });
-    if (insertErr && insertErr.code === "23505") {
+    if (error?.code === "23505") {
       return NextResponse.json({ received: true, duplicate: true });
     }
-  } catch {
-    // Tabella non ancora creata o errore transitorio: continua senza idempotency
-  }
+  } catch { /* table may not exist */ }
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const meta = session.metadata ?? {};
-
-        // Consumer paid for "Chiedi a un Professionista" → lead diventa available
-        if (meta.source === "mobile_pay_professional" && meta.lead_id) {
-          await supabase
-            .from("marketplace_leads")
-            .update({
-              status: "available",
-              stripe_payment_id: session.id,
-              paid_at: new Date().toISOString(),
-            })
-            .eq("id", meta.lead_id)
-            .eq("status", "pending_payment");
-          break;
-        }
-
-        // Lead purchase: professionista compra lead dal marketplace
-        if (meta.type === "lead_purchase" && meta.lead_id && meta.professional_id) {
-          const { data: lead } = await supabase
-            .from("marketplace_leads")
-            .select("question_summary, price_cents")
-            .eq("id", meta.lead_id)
-            .single();
-
-          await supabase
-            .from("marketplace_leads")
-            .update({
-              status: "purchased",
-              professional_id: meta.professional_id,
-              stripe_payment_id: session.id,
-              paid_at: new Date().toISOString(),
-            })
-            .eq("id", meta.lead_id);
-
-          const customerEmail = session.customer_email ?? session.customer_details?.email;
-          if (customerEmail && lead) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("full_name")
-              .eq("id", meta.professional_id)
-              .single();
-            await sendLeadPurchaseConfirmEmail(
-              customerEmail,
-              profile?.full_name ?? "Professionista",
-              lead.question_summary ?? "Consulenza richiesta",
-              lead.price_cents ?? 0
-            );
-          }
-          break;
-        }
-
-        // Subscription checkout
-        const userId = meta.userId;
-        if (userId) {
-          const plan = meta.plan ?? "trial";
-          const isImpresaPlan = ["impresa_micro", "impresa_piccola", "impresa_media", "impresa_grande"].includes(plan);
-          const trialDays = isImpresaPlan ? 7 : 14;
-          const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
-
-          await supabase
-            .from("profiles")
-            .update({
-              plan: isImpresaPlan ? "impresa" : plan,
-              stripe_customer_id: session.customer as string,
-              stripe_subscription_id: session.subscription as string,
-              trial_ends_at: trialEndsAt,
-            })
-            .eq("id", userId);
-
-          if (isImpresaPlan) {
-            const QUERY_MAP: Record<string, number> = {
-              impresa_micro: 543, impresa_piccola: 1481, impresa_media: 3731, impresa_grande: 9356,
-            };
-            const month = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" }).slice(0, 7);
-            await supabase
-              .from("company_profiles")
-              .upsert({
-                user_id: userId,
-                piano: plan,
-                stripe_subscription_id: session.subscription as string,
-                query_incluse: QUERY_MAP[plan] ?? 543,
-                query_usate_mese: 0,
-                mese_corrente: month,
-                trial_ends_at: trialEndsAt,
-                stato: "trial",
-              }, { onConflict: "user_id" });
-          }
-
-          const customerEmail = session.customer_email ?? session.customer_details?.email;
-          if (customerEmail) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("full_name")
-              .eq("id", userId)
-              .single();
-            const name = profile?.full_name ?? customerEmail.split("@")[0];
-            await Promise.all([
-              sendWelcomeEmail(customerEmail, name, plan),
-              sendSubscriptionConfirmEmail(customerEmail, name, plan, trialEndsAt),
-            ]);
-          }
-        }
-        break;
-      }
-
-      case "customer.subscription.updated": {
-        const sub = event.data.object as Stripe.Subscription;
-        const customerId = sub.customer as string;
-        const status = sub.status;
-        const subMeta = sub.metadata ?? {};
-        const subPlan = subMeta.plan ?? "";
-        const isImpresaPlan = ["impresa_micro", "impresa_piccola", "impresa_media", "impresa_grande"].includes(subPlan);
-
-        const profilePlan = isImpresaPlan ? "impresa" : (status === "canceled" ? "free" : status === "past_due" || status === "unpaid" ? "paused" : subPlan || "free");
-
-        await supabase
-          .from("profiles")
-          .update({
-            plan: profilePlan,
-            subscription_ends_at:
-              (sub as unknown as { current_period_end?: number }).current_period_end
-                ? new Date(((sub as unknown as { current_period_end: number }).current_period_end) * 1000).toISOString()
-                : null,
-          })
-          .eq("stripe_customer_id", customerId);
-
-        if (isImpresaPlan && status === "active") {
-          await supabase
-            .from("company_profiles")
-            .update({ stato: "attivo" })
-            .eq("stripe_subscription_id", sub.id);
-        }
-        break;
-      }
-
-      case "customer.subscription.deleted": {
-        const sub = event.data.object as Stripe.Subscription;
-        await supabase
-          .from("profiles")
-          .update({ plan: "free", stripe_subscription_id: null })
-          .eq("stripe_subscription_id", sub.id);
-        await supabase
-          .from("company_profiles")
-          .update({ stato: "cancellato" })
-          .eq("stripe_subscription_id", sub.id);
-        break;
-      }
-
-      case "invoice.payment_failed": {
-        const invoice = event.data.object as Stripe.Invoice;
-        const customerId = invoice.customer as string;
-        await supabase
-          .from("profiles")
-          .update({ plan: "paused" })
-          .eq("stripe_customer_id", customerId);
-        await supabase
-          .from("company_profiles")
-          .update({ stato: "sospeso" })
-          .eq("stripe_subscription_id", (invoice as unknown as { subscription?: string }).subscription ?? "");
-        break;
-      }
+    if (event.type !== "checkout.session.completed") {
+      return NextResponse.json({ received: true, ignored: event.type });
     }
-  } catch (err) {
-    console.error("Webhook handler error:", err);
-  }
 
-  return NextResponse.json({ received: true });
+    const session = event.data.object as Stripe.Checkout.Session;
+    const meta = session.metadata ?? {};
+
+    // ── FLOW: lead_create (user paid 9 €) ─────────────────────────────────
+    if (meta.flow === "lead_create" && meta.user_id && meta.conversation_id) {
+      // Fetch conversation summary
+      const { data: conv } = await supabase
+        .from("conversations")
+        .select("summary_text, parere_pdf_url")
+        .eq("id", meta.conversation_id)
+        .maybeSingle();
+
+      const { data: u } = await supabase
+        .from("users")
+        .select("email, display_name")
+        .eq("id", meta.user_id)
+        .maybeSingle();
+
+      // Compute simple score (placeholder — Lead Quality Agent will do better)
+      const score = 60;
+
+      // Create lead row
+      const { data: lead, error: leadErr } = await supabase
+        .from("leads")
+        .insert({
+          user_id: meta.user_id,
+          conversation_id: meta.conversation_id,
+          pdf_url: conv?.parere_pdf_url ?? "",
+          score,
+          vertical: meta.vertical ?? "civile",
+          city: meta.city ?? "ND",
+          summary: (conv?.summary_text ?? "").slice(0, 500) || "Richiesta consulenza legale",
+          contact_name: u?.display_name ?? "",
+          contact_email: u?.email ?? "",
+          contact_phone: meta.contact_phone ?? "",
+          paid_9eur_at: new Date().toISOString(),
+          stripe_session_id: session.id,
+          status: "available",
+        })
+        .select()
+        .single();
+
+      if (leadErr) {
+        console.error("[stripe/webhook] lead insert failed", leadErr);
+        return NextResponse.json({ error: "lead_insert_failed" }, { status: 500 });
+      }
+
+      // Trigger PDF generation (server-side, async — fire-and-forget)
+      const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "https://normaai.it";
+      fetch(`${origin}/api/leads/${lead.id}/pdf`, {
+        method: "POST",
+        headers: { "x-internal-secret": process.env.INTERNAL_SECRET ?? "" },
+      }).catch(() => { /* fire-and-forget */ });
+
+      // Notify matching lawyers (filter by vertical + city)
+      const { data: lawyers } = await supabase
+        .from("lawyers")
+        .select("user_id, city, specializzazioni")
+        .eq("verified", true)
+        .eq("notifications_paused", false);
+
+      const matched = (lawyers ?? []).filter(l =>
+        l.city === lead.city &&
+        Array.isArray(l.specializzazioni) &&
+        l.specializzazioni.some((s: string) =>
+          s.toLowerCase().includes((lead.vertical ?? "").toLowerCase())
+        )
+      );
+
+      for (const law of matched) {
+        const { data: lawyerUser } = await supabase
+          .from("users")
+          .select("email, display_name")
+          .eq("id", law.user_id)
+          .maybeSingle();
+        if (!lawyerUser?.email) continue;
+
+        await sendLeadNotificationEmail(
+          lawyerUser.email,
+          lawyerUser.display_name ?? "Avvocato",
+          `${lead.summary} (${lead.vertical}, ${lead.city})`,
+          lead.id,
+          9100,
+        );
+        await supabase.from("lawyer_notifications").insert({
+          lawyer_id: law.user_id,
+          lead_id: lead.id,
+          channel: "email",
+        });
+      }
+
+      return NextResponse.json({ received: true, lead_id: lead.id, notified: matched.length });
+    }
+
+    // ── FLOW: lead_buy (lawyer paid 91 €) ─────────────────────────────────
+    if (meta.flow === "lead_buy" && meta.lawyer_id && meta.lead_id) {
+      const { data: purchase, error: purErr } = await supabase
+        .from("lead_purchases")
+        .insert({
+          lead_id: meta.lead_id,
+          lawyer_id: meta.lawyer_id,
+          paid_91eur_at: new Date().toISOString(),
+          stripe_session_id: session.id,
+        })
+        .select()
+        .single();
+
+      if (purErr) {
+        console.error("[stripe/webhook] purchase insert failed", purErr);
+        return NextResponse.json({ error: "purchase_insert_failed" }, { status: 500 });
+      }
+
+      // Confirmation email to lawyer
+      const { data: lawyerUser } = await supabase
+        .from("users")
+        .select("email, display_name")
+        .eq("id", meta.lawyer_id)
+        .maybeSingle();
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("summary, contact_name")
+        .eq("id", meta.lead_id)
+        .maybeSingle();
+
+      if (lawyerUser?.email && lead) {
+        await sendLeadPurchaseConfirmEmail(
+          lawyerUser.email,
+          lawyerUser.display_name ?? "Avvocato",
+          lead.summary ?? "",
+          9100,
+        );
+      }
+
+      return NextResponse.json({ received: true, purchase_id: purchase.id });
+    }
+
+    return NextResponse.json({ received: true, unhandled: meta.flow ?? "no_flow" });
+  } catch (err) {
+    console.error("[stripe/webhook] handler error", err);
+    return NextResponse.json({ error: "handler_error" }, { status: 500 });
+  }
 }
