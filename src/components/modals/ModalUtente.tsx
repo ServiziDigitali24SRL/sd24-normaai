@@ -20,7 +20,7 @@ interface Props {
   onClose: () => void;
 }
 
-export default function ModalCittadino({ open, onClose }: Props) {
+export default function ModalUtente({ open, onClose }: Props) {
   const [tab, setTab] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,7 +53,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
       } else {
         onClose();
         router.refresh();
-        router.push("/dashboard-cittadino");
+        router.push("/utente/dashboard");
       }
     } finally {
       setLoading(false);
@@ -132,7 +132,7 @@ export default function ModalCittadino({ open, onClose }: Props) {
         // Piano Privato è gratuito — nessun checkout Stripe
         onClose();
         router.refresh();
-        router.push("/dashboard-cittadino");
+        router.push("/utente/dashboard");
       }
     } finally {
       setLoading(false);

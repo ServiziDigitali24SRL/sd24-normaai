@@ -26,7 +26,7 @@ const PROF_LIST: { id: ProfId; span2?: boolean }[] = [
   { id: "finanziario", span2: true },
 ];
 
-export default function ModalProfessionista({ open, onClose }: Props) {
+export default function ModalAvvocato({ open, onClose }: Props) {
   const [step, setStep] = useState(1);
   const [selected, setSelected] = useState<ProfId | null>(null);
   const [tab, setTab] = useState(0);
@@ -83,7 +83,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
       } else {
         handleClose();
         router.refresh();
-        router.push("/dashboard");
+        router.push("/avvocato/dashboard");
       }
     } finally {
       setLoading(false);
@@ -169,7 +169,7 @@ export default function ModalProfessionista({ open, onClose }: Props) {
         } else {
           handleClose();
           router.refresh();
-          router.push("/dashboard");
+          router.push("/avvocato/dashboard");
         }
       }
     } finally {
