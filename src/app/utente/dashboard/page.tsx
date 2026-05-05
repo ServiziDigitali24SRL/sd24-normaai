@@ -49,7 +49,7 @@ export default function UtenteDashboardPage() {
   return (
     <MainDashboard
       role="utente"
-      demoUser={{ name: user.name, initials: user.initials, subtitle: user.email ?? "Utente" }}
+      user={{ name: user.name, initials: user.initials, email: user.email }}
     />
   );
 }
