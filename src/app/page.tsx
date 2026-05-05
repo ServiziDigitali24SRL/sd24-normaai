@@ -12,6 +12,8 @@ import MainDashboard from "@/components/dashboard/MainDashboard";
 const ModalCittadino      = dynamicImport(() => import("@/components/modals/ModalCittadino"),      { ssr: false });
 const ModalProfessionista = dynamicImport(() => import("@/components/modals/ModalProfessionista"), { ssr: false });
 const ModalImpresa        = dynamicImport(() => import("@/components/modals/ModalImpresa"),        { ssr: false });
+// AvatarLive bundles livekit-client (~200 KB). Lazy-load only when user clicks "Parla con Sofia".
+const AvatarLive          = dynamicImport(() => import("@/components/AvatarLive").then(m => m.AvatarLive), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TabId = '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08';
@@ -166,7 +168,7 @@ function ChatMsg({ role, children }: { role: 'user' | 'assistant'; children: Rea
   );
 }
 
-function ChatScreen({ onCTA, onTrovaProfessionista }: { onCTA: () => void; onTrovaProfessionista?: () => void }) {
+function ChatScreen({ onCTA, onTrovaProfessionista, onParlaConSofia }: { onCTA: () => void; onTrovaProfessionista?: () => void; onParlaConSofia?: () => void }) {
   return (
     <div style={{ display: 'flex', height: '100%', background: T.paper }}>
       {/* Sidebar */}
@@ -240,6 +242,22 @@ function ChatScreen({ onCTA, onTrovaProfessionista }: { onCTA: () => void; onTro
                 </button>
               ))}
             </div>
+            {onParlaConSofia && (
+              <button
+                onClick={onParlaConSofia}
+                style={{
+                  marginTop: 18, padding: '12px 22px',
+                  background: T.v, color: 'white',
+                  border: 'none', borderRadius: 999,
+                  fontSize: 14, fontWeight: 600,
+                  fontFamily: T.sans, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  boxShadow: '0 6px 18px rgba(212,74,42,0.25)',
+                }}
+              >
+                <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, background: 'white', display: 'inline-block' }} /> Parla con Sofia in video
+              </button>
+            )}
           </div>
         </div>
 
@@ -993,6 +1011,16 @@ function DashboardTab({ role, variant, demoUser }: { role: 'cittadino' | 'prof' 
 export default function PreviewPage() {
   const [tab, setTab] = useState<TabId>('01');
   const [authModal, setAuthModal] = useState<null | "cittadino" | "professionista" | "impresa">(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const m = window.matchMedia("(min-width: 1024px)");
+    const upd = () => setIsDesktop(m.matches);
+    upd();
+    m.addEventListener("change", upd);
+    return () => m.removeEventListener("change", upd);
+  }, []);
 
   // If the user is already authenticated, send them to their actual dashboard
   // instead of leaving them on this marketing preview.
@@ -1092,7 +1120,7 @@ export default function PreviewPage() {
 
       {/* ── Content ── */}
       <div style={{ flex: 1, overflow: 'hidden', background: T.paper }}>
-        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('cittadino')} onTrovaProfessionista={() => setAuthModal('professionista')} />}
+        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('cittadino')} onTrovaProfessionista={() => setAuthModal('professionista')} onParlaConSofia={isDesktop ? () => setAvatarOpen(true) : undefined} />}
         {tab === '02' && <OnboardingScreen onComplete={() => setTab('03')} />}
         {tab === '03' && <DashboardTab role="cittadino" demoUser={{ name: 'Marco Rossi', initials: 'MR', subtitle: 'CITTADINO · PIANO GRATUITO' }} />}
         {tab === '04' && <DashboardTab role="prof" variant="avvocato" demoUser={{ name: 'Avv. Giulia Mancini', initials: 'GM', subtitle: 'AVVOCATO · FORO DI ROMA · €29/mese + lead' }} />}
@@ -1106,6 +1134,43 @@ export default function PreviewPage() {
       <ModalCittadino      open={authModal === 'cittadino'}      onClose={() => setAuthModal(null)} />
       <ModalProfessionista open={authModal === 'professionista'} onClose={() => setAuthModal(null)} />
       <ModalImpresa        open={authModal === 'impresa'}        onClose={() => setAuthModal(null)} />
+
+      {/* Sofia avatar live (desktop only) — lazy-loaded LiveAvatar + ElevenLabs Conversational Agent */}
+      {avatarOpen && isDesktop && (
+        <div
+          onClick={() => setAvatarOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(19,17,15,0.78)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative', width: 'min(960px, 100%)',
+              background: T.paper, borderRadius: 16, padding: 24,
+              boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
+            }}
+          >
+            <button
+              onClick={() => setAvatarOpen(false)}
+              aria-label="Chiudi"
+              style={{
+                position: 'absolute', top: 12, right: 12,
+                width: 32, height: 32, borderRadius: 999,
+                border: `1px solid ${T.paperL}`, background: 'white',
+                cursor: 'pointer', fontSize: 16, lineHeight: 1, color: T.ink2,
+              }}
+            >×</button>
+            <div style={{ fontFamily: T.serif, fontSize: 22, marginBottom: 4 }}>Sofia · Avvocato AI in video</div>
+            <div style={{ fontFamily: T.mono, fontSize: 11, color: T.ink4, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16 }}>
+              Conversazione live · ElevenLabs + LiveAvatar
+            </div>
+            <AvatarLive autoStart showSelector={false} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
