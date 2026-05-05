@@ -53,7 +53,9 @@ async function embedQuery(query: string): Promise<number[]> {
   const ollamaModel = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
   const endpoint = process.env.EMBED_VPS_URL ?? process.env.EMBED_ENDPOINT_URL;
   const apiKey = process.env.NORMAAI_INTERNAL_API_KEY;
-  const targetDim = parseInt(process.env.EMBED_DIM ?? "384", 10);
+  // 1024 = bge-m3 native dim. Corpus 8.3M chunks fully re-embedded in
+  // normaai_chunks.embedding_bgem3 (verified 2026-05-05). Phase 2 cutover.
+  const targetDim = parseInt(process.env.EMBED_DIM ?? "1024", 10);
 
   if (!ollamaUrl && !endpoint) {
     throw new EmbeddingUnavailableError(
@@ -73,10 +75,11 @@ async function embedQuery(query: string): Promise<number[]> {
   } else if (endpoint!.includes("embed.normaai.it")) {
     provider = "infinity";
     url = `${endpoint}/embeddings`;
+    // No `dimensions` truncation — bge-m3 returns native 1024 to match
+    // normaai_chunks.embedding_bgem3 (Phase 2 cutover, 2026-05-05).
     body = JSON.stringify({
       input: [query],
       model: "BAAI/bge-m3",
-      dimensions: targetDim,
     });
   } else if (endpoint!.includes("/v1")) {
     provider = "tei";
@@ -286,7 +289,8 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
 
       const callRpc = async (verticale: string | null) => {
         if (useHybrid) {
-          const { data, error } = await sb.rpc("hybrid_search_chunks", {
+          // _v2 RPCs read from embedding_bgem3 (1024-dim bge-m3 native).
+          const { data, error } = await sb.rpc("hybrid_search_chunks_v2", {
             query_embedding: embedding,
             query_text: input.query,
             match_vertical: verticale,
@@ -298,7 +302,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
           });
           if (error) {
             // hybrid RPC failed → degrade gracefully to dense-only
-            const { data: data2, error: error2 } = await sb.rpc("match_normaai_chunks", {
+            const { data: data2, error: error2 } = await sb.rpc("match_normaai_chunks_v2", {
               query_embedding: embedding,
               match_count: retrievalCount,
               match_threshold: 0.10,
@@ -324,7 +328,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
           }));
           return { rows: mapped, err: null };
         }
-        const { data, error } = await sb.rpc("match_normaai_chunks", {
+        const { data, error } = await sb.rpc("match_normaai_chunks_v2", {
           query_embedding: embedding,
           match_count: retrievalCount,
           match_threshold: 0.10,
