@@ -33,6 +33,15 @@ export interface CreateSessionInput {
    * (otherwise it stays idle until first speak).
    */
   greeting?: string;
+  /**
+   * If set, drive conversation via ElevenLabs Conversational AI Agent.
+   * LiveAvatar becomes a pure lip-sync renderer; ElevenLabs handles ASR + LLM + TTS.
+   * Doc: https://elevenlabs.io/docs/eleven-agents/guides/integrations/live-avatar
+   */
+  elevenlabs_agent?: {
+    secret_id: string;
+    agent_id: string;
+  };
 }
 
 export interface SessionToken {
@@ -62,21 +71,29 @@ export async function createSessionToken(input: CreateSessionInput): Promise<Ses
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      // mode: LITE = speak-text mode (we drive LLM/text); FULL = LiveAvatar handles
-      // its own LLM. We use LITE because Sofia/Marco run on our Sonnet/Qwen pipeline.
+      // mode: LITE = speak-text mode. With elevenlabs_agent_config we delegate
+      // ASR+LLM+TTS to an ElevenLabs Conversational Agent and LiveAvatar just
+      // renders lip-sync from the agent's audio output (PCM 24000 required).
       mode: "LITE",
       avatar_id: input.avatar_id,
-      avatar_persona: input.persona ? {
-        voice_id: input.persona.voice_id,
-        context_id: input.persona.context_id,
-        language: input.persona.language ?? "it",
-        voice_settings: input.persona.voice_settings ? {
-          provider: input.persona.voice_settings.provider ?? "elevenlabs",
-          speed: input.persona.voice_settings.speed ?? 1.0,
-          stability: input.persona.voice_settings.stability ?? 0.75,
-          similarity: input.persona.voice_settings.similarity ?? 0.75,
+      ...(input.elevenlabs_agent ? {
+        elevenlabs_agent_config: {
+          secret_id: input.elevenlabs_agent.secret_id,
+          agent_id: input.elevenlabs_agent.agent_id,
+        },
+      } : {
+        avatar_persona: input.persona ? {
+          voice_id: input.persona.voice_id,
+          context_id: input.persona.context_id,
+          language: input.persona.language ?? "it",
+          voice_settings: input.persona.voice_settings ? {
+            provider: input.persona.voice_settings.provider ?? "elevenlabs",
+            speed: input.persona.voice_settings.speed ?? 1.0,
+            stability: input.persona.voice_settings.stability ?? 0.75,
+            similarity: input.persona.voice_settings.similarity ?? 0.75,
+          } : undefined,
         } : undefined,
-      } : undefined,
+      }),
     }),
   });
   if (!r.ok) {

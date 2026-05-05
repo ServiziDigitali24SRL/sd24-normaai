@@ -57,18 +57,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ElevenLabs Conversational Agent integration (preferred):
+    // delegates ASR+LLM+TTS to ElevenLabs; LiveAvatar = pure lip-sync renderer.
+    // Falls back to LITE persona mode if env not configured.
+    const elevenlabsSecretId = process.env.LIVEAVATAR_ELEVENLABS_SECRET_ID;
+    const elevenlabsAgentBySofia: Record<AvatarKey, string | undefined> = {
+      sofia: process.env.ELEVENLABS_AGENT_ID_SOFIA,
+      marco: process.env.ELEVENLABS_AGENT_ID_MARCO,
+    };
+    const agentId = elevenlabsAgentBySofia[avatarKey];
+
     const token = await createSessionToken({
       avatar_id: cfg.id,
-      persona: {
-        voice_id: cfg.voiceId,
-        language: "it",
-        voice_settings: {
-          provider: "elevenlabs",
-          speed: 1.0,
-          stability: 0.75,
-          similarity: 0.75,
+      ...(elevenlabsSecretId && agentId ? {
+        elevenlabs_agent: { secret_id: elevenlabsSecretId, agent_id: agentId },
+      } : {
+        persona: {
+          voice_id: cfg.voiceId,
+          language: "it",
+          voice_settings: {
+            provider: "elevenlabs",
+            speed: 1.0,
+            stability: 0.75,
+            similarity: 0.75,
+          },
         },
-      },
+      }),
       greeting: body.greeting,
     });
 
