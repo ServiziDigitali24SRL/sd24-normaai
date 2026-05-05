@@ -53,8 +53,8 @@ async function embedQuery(query: string): Promise<number[]> {
   const ollamaModel = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
   const endpoint = process.env.EMBED_VPS_URL ?? process.env.EMBED_ENDPOINT_URL;
   const apiKey = process.env.NORMAAI_INTERNAL_API_KEY;
-  // 1024 = bge-m3 native dim. Corpus 8.3M chunks fully re-embedded in
-  // normaai_chunks.embedding_bgem3 (verified 2026-05-05). Phase 2 cutover.
+  // 1024 = bge-m3 native dim. `_v2` RPCs query `embedding_bgem3` column.
+  // Re-embed status tracked: SER-122.
   const targetDim = parseInt(process.env.EMBED_DIM ?? "1024", 10);
 
   if (!ollamaUrl && !endpoint) {
@@ -75,8 +75,7 @@ async function embedQuery(query: string): Promise<number[]> {
   } else if (endpoint!.includes("embed.normaai.it")) {
     provider = "infinity";
     url = `${endpoint}/embeddings`;
-    // No `dimensions` truncation — bge-m3 returns native 1024 to match
-    // normaai_chunks.embedding_bgem3 (Phase 2 cutover, 2026-05-05).
+    // bge-m3 native 1024 to match `embedding_bgem3` column queried by `_v2` RPCs.
     body = JSON.stringify({
       input: [query],
       model: "BAAI/bge-m3",
@@ -227,26 +226,13 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       // Retrieve 2× topK candidates from RPC, then rerank to topK final.
       const retrievalCount = topK * 2;
 
-      let embedding: number[];
-      try {
-        embedding = await embedQuery(input.query);
-      } catch (embedErr) {
-        // Embedding service unavailable → SKIP RAG (do NOT fall back to
-        // zero-vector retrieval, which would return random chunks and
-        // cause hallucinated "authoritative" answers).
-        const msg = embedErr instanceof Error ? embedErr.message : String(embedErr);
-        ctx.emit({
-          agent: "norm-retriever",
-          state: "done",
-          durationMs: Date.now() - t0,
-          output: `Embedding non disponibile (${msg}); rispondo senza RAG`,
-        });
-        return { ok: true, data: { chunks: [], ragContext: "" } };
-      }
-
-      // pgvector cosine search via RPC match_normaai_chunks (production, 8.3M chunks).
-      // HNSW PARTIAL per verticale → fan-out parallel se vertical=null.
-      // Returned schema: id, fonte, tipo, titolo, chunk, url, verticale, data, similarity
+      // SIMPLIFIED RAG (2026-05-05): the dense pgvector path was blocked by
+      // missing global HNSW index on embedding_bgem3 → seq scan + 6s timeout.
+      // We rely on the FTS GIN index (`normaai_chunks_fts_italian_gin`) via
+      // RPC `corpus_simple_fts` which uses bitmap-index-scan + LIMIT 200
+      // candidates + ts_rank_cd → sub-second on 8.3M-row table.
+      // When the global HNSW gets built (offline), reintroduce the dense
+      // path here as a parallel call and fuse scores.
       const sb = createAdminClient();
 
       type ChunkRow = {
@@ -261,112 +247,13 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         similarity: number;
       };
 
-      // Hybrid retrieval — uses the production `hybrid_search_chunks` RPC
-      // (already deployed: dense vector + Italian FTS, fused 0.7/0.3).
-      // The RPC handles the FTS via to_tsvector('italian', chunk||titolo);
-      // its perf depends on the GIN index from migration 004 — without it,
-      // expect multi-second queries on the 8.3M-row table.
-      //
-      // Toggle: HYBRID_RETRIEVAL_ENABLED=1 → hybrid; else → dense-only legacy.
-      const useHybrid = process.env.HYBRID_RETRIEVAL_ENABLED === "1";
+      const { data, error } = await sb.rpc("corpus_simple_fts", {
+        query_text: input.query,
+        match_count: retrievalCount,
+      });
 
-      // hybrid_search_chunks shape (from pg_proc): id, chunk, fonte, tipo,
-      // titolo, url, verticale, similarity, hybrid_score.
-      // Note: it does NOT return `data` — we set null. It also already does
-      // its own UNION of dense+sparse internally, so we don't fan out across
-      // verticali manually when using hybrid.
-      type HybridRow = {
-        id: string;
-        chunk: string;
-        fonte: string;
-        tipo: string;
-        titolo: string;
-        url: string | null;
-        verticale: string | null;
-        similarity: number;
-        hybrid_score: number;
-      };
-
-      const callRpc = async (verticale: string | null) => {
-        if (useHybrid) {
-          // _v2 RPCs read from embedding_bgem3 (1024-dim bge-m3 native).
-          const { data, error } = await sb.rpc("hybrid_search_chunks_v2", {
-            query_embedding: embedding,
-            query_text: input.query,
-            match_vertical: verticale,
-            match_count: retrievalCount,
-            candidate_count: retrievalCount * 3,
-            match_threshold: 0.20,
-            vector_weight: 0.7,
-            fts_weight: 0.3,
-          });
-          if (error) {
-            // hybrid RPC failed → degrade gracefully to dense-only
-            const { data: data2, error: error2 } = await sb.rpc("match_normaai_chunks_v2", {
-              query_embedding: embedding,
-              match_count: retrievalCount,
-              match_threshold: 0.10,
-              filter_verticale: verticale,
-              filter_tipo: null,
-              only_vigente: false,
-            });
-            if (error2) return { rows: [] as ChunkRow[], err: error2 };
-            return { rows: (data2 ?? []) as ChunkRow[], err: null };
-          }
-          // Map HybridRow → ChunkRow. hybrid_score wins over plain similarity
-          // for ranking; we expose it as `similarity` for backward compat.
-          const mapped: ChunkRow[] = ((data ?? []) as HybridRow[]).map((r) => ({
-            id: r.id,
-            fonte: r.fonte,
-            tipo: r.tipo,
-            titolo: r.titolo,
-            chunk: r.chunk,
-            url: r.url,
-            verticale: r.verticale,
-            data: null,
-            similarity: r.hybrid_score ?? r.similarity,
-          }));
-          return { rows: mapped, err: null };
-        }
-        const { data, error } = await sb.rpc("match_normaai_chunks_v2", {
-          query_embedding: embedding,
-          match_count: retrievalCount,
-          match_threshold: 0.10,
-          filter_verticale: verticale,
-          filter_tipo: null,
-          only_vigente: false,
-        });
-        if (error) return { rows: [] as ChunkRow[], err: error };
-        return { rows: (data ?? []) as ChunkRow[], err: null };
-      };
-
-      let allRows: ChunkRow[] = [];
-      let lastError: { code?: string; message?: string } | null = null;
-
-      if (input.vertical) {
-        // Specific vertical → single fast indexed query
-        const r = await callRpc(input.vertical);
-        if (r.err) lastError = r.err;
-        allRows = r.rows;
-      } else {
-        // Fan-out across the 4 main verticals (HNSW index covers each)
-        const verticals = ["lavoro", "edilizia", "avvocato", "commercialista"];
-        const results = await Promise.all(verticals.map((v) => callRpc(v)));
-        for (const r of results) {
-          if (r.err && !lastError) lastError = r.err;
-          allRows.push(...r.rows);
-        }
-        // Sort by similarity desc and dedup by id (keep retrievalCount for reranking)
-        const seen = new Set<string>();
-        allRows = allRows
-          .sort((a, b) => b.similarity - a.similarity)
-          .filter((r) => {
-            if (seen.has(r.id)) return false;
-            seen.add(r.id);
-            return true;
-          })
-          .slice(0, retrievalCount);
-      }
+      const allRows: ChunkRow[] = (data ?? []) as ChunkRow[];
+      const lastError = error ? { code: (error as { code?: string }).code, message: error.message } : null;
 
       if (lastError && allRows.length === 0) {
         // All RPC calls failed → graceful degradation
