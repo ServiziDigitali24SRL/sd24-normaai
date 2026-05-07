@@ -10,16 +10,33 @@ export async function GET() {
     return NextResponse.json({ error: "not_configured" }, { status: 500 });
   }
 
-  const r = await fetch(
-    `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
-    { headers: { "xi-api-key": apiKey } },
-  );
+  const [tokenRes, agentRes] = await Promise.all([
+    fetch(
+      `https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`,
+      { headers: { "xi-api-key": apiKey } },
+    ),
+    fetch(
+      `https://api.elevenlabs.io/v1/convai/agents/${agentId}`,
+      { headers: { "xi-api-key": apiKey } },
+    ),
+  ]);
 
-  if (!r.ok) {
-    const err = await r.text();
-    return NextResponse.json({ error: err.slice(0, 200) }, { status: r.status });
+  if (!tokenRes.ok) {
+    const err = await tokenRes.text();
+    return NextResponse.json({ error: err.slice(0, 200) }, { status: tokenRes.status });
   }
 
-  const { signed_url } = await r.json();
-  return NextResponse.json({ signed_url });
+  const { signed_url } = await tokenRes.json();
+
+  let avatarUrl: string | null = null;
+  if (agentRes.ok) {
+    const agent = await agentRes.json();
+    avatarUrl =
+      agent?.widget?.avatar?.url ??
+      agent?.widget?.avatar?.image_url ??
+      agent?.platform_settings?.widget?.avatar?.url ??
+      null;
+  }
+
+  return NextResponse.json({ signed_url, avatar_url: avatarUrl });
 }
