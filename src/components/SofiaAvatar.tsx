@@ -1,6 +1,6 @@
 "use client";
 
-import { useConversation } from "@11labs/react";
+import { useConversation } from "@elevenlabs/react";
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
 
