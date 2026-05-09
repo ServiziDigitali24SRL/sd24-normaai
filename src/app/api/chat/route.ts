@@ -16,7 +16,14 @@ import { getSystemPrompt, type SofiaChannel } from "./system-prompts";
 import { guardInput } from "@/lib/guardrails";
 import { encodeAgentEvent, type AgentEvent } from "@/lib/agent-events";
 import { getProvider, classifyComplexity } from "@/lib/llm/router";
+import { buildDateFactSystemAddendum } from "@/lib/llm/date-fact-router";
 import * as Sentry from "@sentry/nextjs";
+
+// Soft guard for queries asking time-pegged numbers (aliquote, soglie, year-spec).
+// When DATE_FACT_HINT_ENABLED=1, we prepend a system-prompt addendum telling the
+// LLM not to invent figures and to recommend verifying on official sources.
+// Default off — behaviour identical to today.
+const DATE_FACT_HINT_ENABLED = process.env.DATE_FACT_HINT_ENABLED === "1";
 
 export const dynamic = "force-dynamic";
 
@@ -65,9 +72,22 @@ export async function POST(req: NextRequest) {
           emit,
           callLLM: async (_systemPromptIgnored, ragContext, query) => {
             const sys = getSystemPrompt(channel);
-            const dynamicSuffix = ragContext
+            const dateFactHint = DATE_FACT_HINT_ENABLED
+              ? buildDateFactSystemAddendum(query)
+              : null;
+            const ragBlock = ragContext
               ? `\n\nCONTESTO NORMATIVO (Norm Retriever):\n${ragContext}`
-              : undefined;
+              : "";
+            const factBlock = dateFactHint ? `\n\n${dateFactHint}` : "";
+            const dynamicSuffix = (ragBlock || factBlock) ? `${ragBlock}${factBlock}` : undefined;
+            if (dateFactHint) {
+              emit({
+                agent: "routing",
+                state: "done",
+                durationMs: 0,
+                output: "date-fact pattern matched — soft hint injected",
+              });
+            }
 
             // Complexity-based routing: simple lookup queries → local Ollama
             // on GEX44 (free, ~100ms TTFF); complex queries → Claude Sonnet.
