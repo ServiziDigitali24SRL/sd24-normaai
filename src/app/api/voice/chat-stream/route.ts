@@ -21,9 +21,20 @@ import { transcribe } from "@/lib/asr/voxtral";
 import { streamSynthesize } from "@/lib/tts/elevenlabs-stream";
 import { getProvider } from "@/lib/llm/router";
 import { SOFIA_VOICE_PROMPT } from "@/app/api/chat/system-prompts";
+import { recordVoiceLatency } from "@/lib/observability/voice-metrics";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+// VOICE_FAST_FIRST_CHUNK=1 enables aggressive sentence-boundary cutoffs:
+// - emit on `[.!?:;]` after >=8 chars (default 12)
+// - soft-flush at 80 chars on comma/space (default 120)
+// Trade-off: shorter first audio chunk vs slightly more chopped prosody.
+// Disable (=0 or unset) to fall back to original behaviour with no redeploy.
+const FAST_FIRST_CHUNK = process.env.VOICE_FAST_FIRST_CHUNK === "1";
+const SENTENCE_MIN_LEN = FAST_FIRST_CHUNK ? 8 : 12;
+const SOFT_FLUSH_AT = FAST_FIRST_CHUNK ? 80 : 120;
+const SOFT_FLUSH_MIN = FAST_FIRST_CHUNK ? 20 : 30;
 
 interface HistMsg { role: "user" | "assistant"; content: string }
 
@@ -85,9 +96,15 @@ export async function POST(req: NextRequest) {
       const send = (event: string, data: unknown) =>
         controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
 
+      const requestId = (globalThis.crypto?.randomUUID?.() ?? `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+
       try {
         // Tell client what audio format to expect (PCM int16 LE @ 22050Hz mono)
-        send("meta", { audio: { format: "pcm_int16le", sampleRate: 22050, channels: 1 } });
+        send("meta", {
+          audio: { format: "pcm_int16le", sampleRate: 22050, channels: 1 },
+          requestId,
+          fastChunkMode: FAST_FIRST_CHUNK,
+        });
 
         // ── 1. ASR (blocking) ────────────────────────────────────────
         const tAsr = Date.now();
@@ -180,13 +197,13 @@ export async function POST(req: NextRequest) {
 
             // Look for a complete sentence boundary
             const m = textBuf.match(/^(.*?[.!?:;])(\s+|$)/);
-            if (m && m[1].length > 12) {
+            if (m && m[1].length > SENTENCE_MIN_LEN) {
               enqueueTts(m[1]);
               textBuf = textBuf.slice(m[0].length);
-            } else if (textBuf.length > 120) {
+            } else if (textBuf.length > SOFT_FLUSH_AT) {
               // soft flush at comma to keep audio flowing on long unpunctuated text
               const cut = textBuf.lastIndexOf(", ");
-              if (cut > 30) {
+              if (cut > SOFT_FLUSH_MIN) {
                 enqueueTts(textBuf.slice(0, cut + 1));
                 textBuf = textBuf.slice(cut + 1);
               }
@@ -201,7 +218,21 @@ export async function POST(req: NextRequest) {
         // Wait for all TTS chunks to flush
         await ttsQueue;
 
-        send("done", { fullText, totalMs: Date.now() - tStart });
+        const totalMs = Date.now() - tStart;
+        send("done", { fullText, totalMs });
+
+        recordVoiceLatency({
+          request_id: requestId,
+          ts: Date.now(),
+          asr_ms: tLlm - tStart,
+          llm_first_token_ms: firstTokenMs ?? -1,
+          first_audio_ms: firstAudioMs,
+          total_ms: totalMs,
+          user_text_len: userText.length,
+          full_text_len: fullText.length,
+          fast_chunk_mode: FAST_FIRST_CHUNK,
+        });
+
         controller.close();
       } catch (err) {
         send("error", { message: err instanceof Error ? err.message : "stream_failed" });
