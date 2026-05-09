@@ -13,6 +13,7 @@ import { NextRequest } from 'next/server';
 import { Client as PgClient } from 'pg';
 import {
   PUBLIC_SAFE_EVENT_FILTER,
+  toWirePayload,
   type AgentEventNotifyPayload,
 } from '@/types/sse-events';
 
@@ -99,7 +100,8 @@ export async function GET(req: NextRequest) {
             return; // payload malformato, scarta
           }
           if (!PUBLIC_SAFE_EVENT_FILTER(parsed)) return;
-          safeEnqueue(sseEncode('agent_event', parsed));
+          // Map a wire format Tab 6: {ts, squadron, agent_id, action, status}
+          safeEnqueue(sseEncode('agent_event', toWirePayload(parsed)));
         });
 
         pg.on('error', (err) => {
