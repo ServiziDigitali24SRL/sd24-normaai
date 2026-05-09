@@ -28,7 +28,10 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/voice/transcribe" ||              // voice ASR (Voxtral): freemium pubblico
     pathname === "/api/voice/tts" ||                     // voice TTS (Voxtral): freemium pubblico
     pathname === "/api/voice/chat-turn" ||               // voice loop turn (ASR+LLM+TTS)
-    pathname === "/api/voice/chat-stream"                // voice loop streaming SSE
+    pathname === "/api/voice/chat-stream" ||             // voice loop streaming SSE
+    pathname === "/api/ops/snapshot" ||                  // SQ-OPS public snapshot (/come_ho_costruito_norma)
+    pathname === "/api/ops/stream" ||                    // SQ-OPS public SSE (filtro public-safe interno)
+    pathname === "/api/sentinel/heartbeat"               // sentinel cron (Bearer CRON_SECRET interno)
   );
 }
 
