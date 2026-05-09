@@ -175,7 +175,7 @@ export function LiveEventStream() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.58_0.18_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         07 · cronaca
@@ -200,7 +200,7 @@ export function LiveEventStream() {
           <span
             className={
               mode === 'live'
-                ? 'inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[oklch(0.58_0.18_35)]'
+                ? 'inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[oklch(0.48_0.20_35)]'
                 : 'inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#756C5E]'
             }
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}

@@ -71,7 +71,7 @@ export function HeroHeadline() {
   return (
     <section className="mx-auto flex min-h-[85vh] max-w-5xl flex-col justify-center px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.58_0.18_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         01 · diario
@@ -95,49 +95,53 @@ export function HeroHeadline() {
 
       <hr className="my-16 border-t border-[#D8CFBC]" aria-hidden="true" />
 
-      <dl className="grid grid-cols-1 gap-10 sm:grid-cols-3">
+      <div
+        className="grid grid-cols-1 gap-10 sm:grid-cols-3"
+        role="group"
+        aria-label="Indicatori in tempo reale"
+      >
         <div>
-          <dt className="sr-only">Documenti scaricati</dt>
-          <dd
+          <p
             className="text-[clamp(2.5rem,9vw,3.5rem)] leading-none"
             style={{ fontFamily: 'var(--font-instrument-serif)', fontWeight: 400 }}
             aria-live="polite"
+            aria-label={`${fmtInt.format(totals.documents)} documenti scaricati`}
           >
             <CountUp to={totals.documents} format={(n) => fmtInt.format(Math.round(n))} />
-          </dd>
+          </p>
           <p className="mt-3 text-[13px] uppercase tracking-wide text-[#756C5E]">
             documenti
           </p>
         </div>
 
         <div>
-          <dt className="sr-only">Corpus pulito</dt>
-          <dd
+          <p
             className="text-[clamp(2.5rem,9vw,3.5rem)] leading-none"
             style={{ fontFamily: 'var(--font-instrument-serif)', fontWeight: 400 }}
             aria-live="polite"
+            aria-label={`Corpus pulito: ${fmtDecimal.format(totals.corpusCleanPct)} percento`}
           >
             <CountUp to={totals.corpusCleanPct} format={(n) => `${fmtDecimal.format(n)} %`} />
-          </dd>
+          </p>
           <p className="mt-3 text-[13px] uppercase tracking-wide text-[#756C5E]">
             corpus pulito
           </p>
         </div>
 
         <div>
-          <dt className="sr-only">Costo LLM ultime 24 ore</dt>
-          <dd
+          <p
             className="text-[clamp(2.5rem,9vw,3.5rem)] leading-none"
             style={{ fontFamily: 'var(--font-instrument-serif)', fontWeight: 400 }}
             aria-live="polite"
+            aria-label={`Costo LLM ultime 24 ore: ${fmtMoney.format(totals.llmCost24hUsd)} dollari`}
           >
             <CountUp to={totals.llmCost24hUsd} format={(n) => `$ ${fmtMoney.format(n)}`} />
-          </dd>
+          </p>
           <p className="mt-3 text-[13px] uppercase tracking-wide text-[#756C5E]">
             costo LLM 24h
           </p>
         </div>
-      </dl>
+      </div>
     </section>
   );
 }

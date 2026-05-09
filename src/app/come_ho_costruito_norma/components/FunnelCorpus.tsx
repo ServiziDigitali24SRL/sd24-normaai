@@ -45,7 +45,7 @@ export function FunnelCorpus() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.58_0.18_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         04 · il viaggio del documento
@@ -101,7 +101,7 @@ export function FunnelCorpus() {
             {step.branch && (
               <div className="mt-4 flex items-baseline justify-between border-l-2 border-[#D8CFBC] pl-4 text-[13px] text-[#756C5E]">
                 <span>
-                  <span className="text-[oklch(0.58_0.18_35)]">↳</span> {step.branch.label}
+                  <span className="text-[oklch(0.48_0.20_35)]">↳</span> {step.branch.label}
                 </span>
                 <span
                   className="text-[#756C5E]"

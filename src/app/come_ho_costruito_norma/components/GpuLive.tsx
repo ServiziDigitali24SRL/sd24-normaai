@@ -23,7 +23,7 @@ export function GpuLive() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.58_0.18_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         05 · la macchina
@@ -139,7 +139,7 @@ export function GpuLive() {
             <span
               className={
                 m.status === 'active'
-                  ? 'text-[13px] text-[oklch(0.58_0.18_35)]'
+                  ? 'text-[13px] text-[oklch(0.48_0.20_35)]'
                   : 'text-[13px] italic text-[#756C5E]'
               }
             >
