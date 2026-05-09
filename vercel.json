@@ -2,6 +2,12 @@
   "functions": {
     "src/app/api/chat/route.ts": {
       "maxDuration": 120
+    },
+    "src/app/api/ops/stream/route.ts": {
+      "maxDuration": 250
+    },
+    "src/app/api/sentinel/heartbeat/route.ts": {
+      "maxDuration": 30
     }
   },
   "crons": [
@@ -15,6 +21,10 @@
     },
     {
       "path": "/api/health/voice",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/sentinel/heartbeat",
       "schedule": "*/5 * * * *"
     }
   ]

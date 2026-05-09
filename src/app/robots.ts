@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/admin/", "/dashboard", "/dashboard-impresa", "/onboarding"],
+        disallow: ["/api/", "/admin/", "/utente/", "/avvocato/", "/onboarding"],
       },
     ],
     sitemap: "https://normaai.it/sitemap.xml",

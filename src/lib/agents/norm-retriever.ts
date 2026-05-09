@@ -1,7 +1,7 @@
-// Norm Retriever Agent — RAG dense vector search over normaai_chunks (8.3M rows).
-// SER-108 (1 maggio 2026): switched from corpus_chunks (empty) to normaai_chunks (production).
-// Embedding: FastEmbed bge-small-en-v1.5 via Hetzner VPS (EMBED_VPS_URL).
-// RPC: match_normaai_chunks (existing in production, embedding inline on chunks).
+// Norm Retriever Agent — RAG hybrid (dense + FTS) over normaai_chunks (8.3M rows).
+// SER-157 / SER-162 (9 maggio 2026): re-enabled dense path via hybrid_search_chunks_v2
+// RPC (uses embedding_bgem3 1024d, linear weighted sim*0.7 + fts*0.3 server-side).
+// Fallback: corpus_simple_fts (FTS-only, sub-second on 8.3M rows) when embed unavailable.
 
 import { createAdminClient } from "@/lib/supabase-admin";
 import type { Agent, AgentContext, AgentResult, CitationRef } from "./types";
@@ -53,7 +53,9 @@ async function embedQuery(query: string): Promise<number[]> {
   const ollamaModel = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
   const endpoint = process.env.EMBED_VPS_URL ?? process.env.EMBED_ENDPOINT_URL;
   const apiKey = process.env.NORMAAI_INTERNAL_API_KEY;
-  const targetDim = parseInt(process.env.EMBED_DIM ?? "384", 10);
+  // 1024 = bge-m3 native dim. `_v2` RPCs query `embedding_bgem3` column.
+  // Re-embed status tracked: SER-122.
+  const targetDim = parseInt(process.env.EMBED_DIM ?? "1024", 10);
 
   if (!ollamaUrl && !endpoint) {
     throw new EmbeddingUnavailableError(
@@ -73,10 +75,10 @@ async function embedQuery(query: string): Promise<number[]> {
   } else if (endpoint!.includes("embed.normaai.it")) {
     provider = "infinity";
     url = `${endpoint}/embeddings`;
+    // bge-m3 native 1024 to match `embedding_bgem3` column queried by `_v2` RPCs.
     body = JSON.stringify({
       input: [query],
       model: "BAAI/bge-m3",
-      dimensions: targetDim,
     });
   } else if (endpoint!.includes("/v1")) {
     provider = "tei";
@@ -224,27 +226,12 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       // Retrieve 2× topK candidates from RPC, then rerank to topK final.
       const retrievalCount = topK * 2;
 
-      let embedding: number[];
-      try {
-        embedding = await embedQuery(input.query);
-      } catch (embedErr) {
-        // Embedding service unavailable → SKIP RAG (do NOT fall back to
-        // zero-vector retrieval, which would return random chunks and
-        // cause hallucinated "authoritative" answers).
-        const msg = embedErr instanceof Error ? embedErr.message : String(embedErr);
-        ctx.emit({
-          agent: "norm-retriever",
-          state: "done",
-          durationMs: Date.now() - t0,
-          output: `Embedding non disponibile (${msg}); rispondo senza RAG`,
-        });
-        return { ok: true, data: { chunks: [], ragContext: "" } };
-      }
-
-      // pgvector cosine search via RPC match_normaai_chunks (production, 8.3M chunks).
-      // HNSW PARTIAL per verticale → fan-out parallel se vertical=null.
-      // Returned schema: id, fonte, tipo, titolo, chunk, url, verticale, data, similarity
+      // Hybrid retrieval: try embed with hard timeout; on success call
+      // hybrid_search_chunks_v2 (dense+FTS fused inside Postgres). On any
+      // failure, fall back gracefully to corpus_simple_fts (FTS-only).
+      // No zero-vector fallback — see EmbeddingUnavailableError above.
       const sb = createAdminClient();
+      const dimEnv = parseInt(process.env.EMBED_DIM ?? "1024", 10);
 
       type ChunkRow = {
         id: string;
@@ -258,110 +245,60 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         similarity: number;
       };
 
-      // Hybrid retrieval — uses the production `hybrid_search_chunks` RPC
-      // (already deployed: dense vector + Italian FTS, fused 0.7/0.3).
-      // The RPC handles the FTS via to_tsvector('italian', chunk||titolo);
-      // its perf depends on the GIN index from migration 004 — without it,
-      // expect multi-second queries on the 8.3M-row table.
-      //
-      // Toggle: HYBRID_RETRIEVAL_ENABLED=1 → hybrid; else → dense-only legacy.
-      const useHybrid = process.env.HYBRID_RETRIEVAL_ENABLED === "1";
-
-      // hybrid_search_chunks shape (from pg_proc): id, chunk, fonte, tipo,
-      // titolo, url, verticale, similarity, hybrid_score.
-      // Note: it does NOT return `data` — we set null. It also already does
-      // its own UNION of dense+sparse internally, so we don't fan out across
-      // verticali manually when using hybrid.
-      type HybridRow = {
-        id: string;
-        chunk: string;
-        fonte: string;
-        tipo: string;
-        titolo: string;
-        url: string | null;
-        verticale: string | null;
-        similarity: number;
-        hybrid_score: number;
-      };
-
-      const callRpc = async (verticale: string | null) => {
-        if (useHybrid) {
-          const { data, error } = await sb.rpc("hybrid_search_chunks", {
-            query_embedding: embedding,
-            query_text: input.query,
-            match_vertical: verticale,
-            match_count: retrievalCount,
-            candidate_count: retrievalCount * 3,
-            match_threshold: 0.20,
-            vector_weight: 0.7,
-            fts_weight: 0.3,
-          });
-          if (error) {
-            // hybrid RPC failed → degrade gracefully to dense-only
-            const { data: data2, error: error2 } = await sb.rpc("match_normaai_chunks", {
-              query_embedding: embedding,
-              match_count: retrievalCount,
-              match_threshold: 0.10,
-              filter_verticale: verticale,
-              filter_tipo: null,
-              only_vigente: false,
-            });
-            if (error2) return { rows: [] as ChunkRow[], err: error2 };
-            return { rows: (data2 ?? []) as ChunkRow[], err: null };
-          }
-          // Map HybridRow → ChunkRow. hybrid_score wins over plain similarity
-          // for ranking; we expose it as `similarity` for backward compat.
-          const mapped: ChunkRow[] = ((data ?? []) as HybridRow[]).map((r) => ({
-            id: r.id,
-            fonte: r.fonte,
-            tipo: r.tipo,
-            titolo: r.titolo,
-            chunk: r.chunk,
-            url: r.url,
-            verticale: r.verticale,
-            data: null,
-            similarity: r.hybrid_score ?? r.similarity,
-          }));
-          return { rows: mapped, err: null };
-        }
-        const { data, error } = await sb.rpc("match_normaai_chunks", {
-          query_embedding: embedding,
-          match_count: retrievalCount,
-          match_threshold: 0.10,
-          filter_verticale: verticale,
-          filter_tipo: null,
-          only_vigente: false,
-        });
-        if (error) return { rows: [] as ChunkRow[], err: error };
-        return { rows: (data ?? []) as ChunkRow[], err: null };
-      };
-
       let allRows: ChunkRow[] = [];
       let lastError: { code?: string; message?: string } | null = null;
+      let path: "hybrid" | "fts_only" = "fts_only";
 
-      if (input.vertical) {
-        // Specific vertical → single fast indexed query
-        const r = await callRpc(input.vertical);
-        if (r.err) lastError = r.err;
-        allRows = r.rows;
-      } else {
-        // Fan-out across the 4 main verticals (HNSW index covers each)
-        const verticals = ["lavoro", "edilizia", "avvocato", "commercialista"];
-        const results = await Promise.all(verticals.map((v) => callRpc(v)));
-        for (const r of results) {
-          if (r.err && !lastError) lastError = r.err;
-          allRows.push(...r.rows);
+      let embedding: number[] | null = null;
+      try {
+        embedding = await Promise.race([
+          embedQuery(input.query),
+          new Promise<number[]>((_, rej) =>
+            setTimeout(() => rej(new EmbeddingUnavailableError("embed timeout 2500ms")), 2500),
+          ),
+        ]);
+      } catch (err) {
+        console.warn(
+          "[norm-retriever] embed unavailable, falling back to FTS:",
+          err instanceof Error ? err.message : String(err),
+        );
+        embedding = null;
+      }
+
+      if (embedding && embedding.length === dimEnv) {
+        const { data, error } = await sb.rpc("hybrid_search_chunks_v2", {
+          query_embedding: embedding,
+          query_text: input.query,
+          match_vertical: input.vertical ?? null,
+          match_count: retrievalCount,
+          candidate_count: Math.max(retrievalCount * 3, 30),
+        });
+        if (error) {
+          console.warn("[norm-retriever] hybrid RPC failed, falling back to FTS:", error.message);
+        } else if (data && (data as unknown[]).length > 0) {
+          type HybridRow = {
+            id: string; chunk: string; fonte: string; tipo: string; titolo: string;
+            url: string | null; verticale: string | null;
+            similarity: number; hybrid_score: number;
+          };
+          allRows = (data as HybridRow[]).map((r) => ({
+            id: r.id, fonte: r.fonte, tipo: r.tipo, titolo: r.titolo,
+            chunk: r.chunk, url: r.url, verticale: r.verticale, data: null,
+            similarity: r.hybrid_score,
+          }));
+          path = "hybrid";
         }
-        // Sort by similarity desc and dedup by id (keep retrievalCount for reranking)
-        const seen = new Set<string>();
-        allRows = allRows
-          .sort((a, b) => b.similarity - a.similarity)
-          .filter((r) => {
-            if (seen.has(r.id)) return false;
-            seen.add(r.id);
-            return true;
-          })
-          .slice(0, retrievalCount);
+      }
+
+      if (allRows.length === 0) {
+        const { data, error } = await sb.rpc("corpus_simple_fts", {
+          query_text: input.query,
+          match_count: retrievalCount,
+        });
+        allRows = (data ?? []) as ChunkRow[];
+        lastError = error
+          ? { code: (error as { code?: string }).code, message: error.message }
+          : null;
       }
 
       if (lastError && allRows.length === 0) {
@@ -399,7 +336,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         agent: "norm-retriever",
         state: "done",
         durationMs: Date.now() - t0,
-        output: `${chunks.length} norme trovate`,
+        output: `${chunks.length} norme trovate (path=${path})`,
       });
 
       return { ok: true, data: { chunks, ragContext } };

@@ -1,14 +1,19 @@
-// LiveAvatar (by HeyGen) — real-time WebRTC streaming avatar.
+// LiveAvatar transport — real-time WebRTC streaming avatar via api.liveavatar.com.
+// Backend: ElevenLabs Conversational Agent (ASR+LLM+TTS, agent_id_8201...).
+// LiveAvatar = pure lip-sync renderer over a LiveKit room.
 //
 // Flow:
-//   1. Backend route POST /api/avatar/streaming/start
-//      → calls POST https://api.liveavatar.com/v1/sessions/token
-//      → returns { session_id, session_token } to frontend
-//   2. Frontend LiveAvatar SDK connects via WebRTC using session_token
-//   3. Frontend sends "speak text" events via SDK → avatar speaks in real-time
+//   1. Backend POST /api/avatar/streaming/start
+//      → POST https://api.liveavatar.com/v1/sessions/token
+//        body: { mode: "LITE", avatar_id, elevenlabs_agent_config: {secret_id, agent_id} }
+//      → returns { session_id, session_token }
+//   2. POST /sessions/start with Bearer session_token → LiveKit room creds
+//   3. Frontend connects livekit-client to room → subscribes to video+audio tracks
+//   4. Frontend speak/interrupt → POST /sessions/{task,interrupt} with Bearer
 //
-// Auth: X-API-KEY header.
-// Docs: https://docs.liveavatar.com/api-reference
+// Auth (createSessionToken / stop / keepAlive): X-API-KEY header (LIVEAVATAR_API_KEY)
+// Auth (startSession / task / interrupt): Bearer session_token (short-lived JWT)
+// Doc ref: https://elevenlabs.io/docs/eleven-agents/guides/integrations/live-avatar
 
 const BASE = "https://api.liveavatar.com/v1";
 const API_KEY = process.env.LIVEAVATAR_API_KEY ?? "";
@@ -26,13 +31,22 @@ export interface AvatarPersona {
 }
 
 export interface CreateSessionInput {
-  avatar_id: string;       // LiveAvatar UUID (post-migration da HeyGen)
+  avatar_id: string;       // LIVEAVATAR_AVATAR_ID_SOFIA / _MARCO env
   persona?: AvatarPersona;
   /**
    * Optional initial system message for the avatar
    * (otherwise it stays idle until first speak).
    */
   greeting?: string;
+  /**
+   * If set, drive conversation via ElevenLabs Conversational AI Agent.
+   * LiveAvatar becomes a pure lip-sync renderer; ElevenLabs handles ASR + LLM + TTS.
+   * Doc: https://elevenlabs.io/docs/eleven-agents/guides/integrations/live-avatar
+   */
+  elevenlabs_agent?: {
+    secret_id: string;
+    agent_id: string;
+  };
 }
 
 export interface SessionToken {
@@ -62,21 +76,29 @@ export async function createSessionToken(input: CreateSessionInput): Promise<Ses
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      // mode: LITE = speak-text mode (we drive LLM/text); FULL = LiveAvatar handles
-      // its own LLM. We use LITE because Sofia/Marco run on our Sonnet/Qwen pipeline.
+      // mode: LITE = speak-text mode. With elevenlabs_agent_config we delegate
+      // ASR+LLM+TTS to an ElevenLabs Conversational Agent and LiveAvatar just
+      // renders lip-sync from the agent's audio output (PCM 24000 required).
       mode: "LITE",
       avatar_id: input.avatar_id,
-      avatar_persona: input.persona ? {
-        voice_id: input.persona.voice_id,
-        context_id: input.persona.context_id,
-        language: input.persona.language ?? "it",
-        voice_settings: input.persona.voice_settings ? {
-          provider: input.persona.voice_settings.provider ?? "elevenlabs",
-          speed: input.persona.voice_settings.speed ?? 1.0,
-          stability: input.persona.voice_settings.stability ?? 0.75,
-          similarity: input.persona.voice_settings.similarity ?? 0.75,
+      ...(input.elevenlabs_agent ? {
+        elevenlabs_agent_config: {
+          secret_id: input.elevenlabs_agent.secret_id,
+          agent_id: input.elevenlabs_agent.agent_id,
+        },
+      } : {
+        avatar_persona: input.persona ? {
+          voice_id: input.persona.voice_id,
+          context_id: input.persona.context_id,
+          language: input.persona.language ?? "it",
+          voice_settings: input.persona.voice_settings ? {
+            provider: input.persona.voice_settings.provider ?? "elevenlabs",
+            speed: input.persona.voice_settings.speed ?? 1.0,
+            stability: input.persona.voice_settings.stability ?? 0.75,
+            similarity: input.persona.voice_settings.similarity ?? 0.75,
+          } : undefined,
         } : undefined,
-      } : undefined,
+      }),
     }),
   });
   if (!r.ok) {
@@ -147,7 +169,6 @@ export async function keepAlive(session_id: string): Promise<void> {
 
 /**
  * Avatar IDs configured per NormaAI personas.
- * Da popolare dopo migrazione da HeyGen → LiveAvatar (i UUID cambiano).
  * Override via env: LIVEAVATAR_AVATAR_ID_SOFIA / _MARCO.
  */
 export const AVATARS = {

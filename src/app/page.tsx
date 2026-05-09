@@ -9,18 +9,20 @@ import MainDashboard from "@/components/dashboard/MainDashboard";
 
 // Real Supabase signup/login modals (lazy-loaded). The on-page Onboarding
 // tab is a marketing preview only — these are the actual auth surface.
-const ModalCittadino      = dynamicImport(() => import("@/components/modals/ModalCittadino"),      { ssr: false });
-const ModalProfessionista = dynamicImport(() => import("@/components/modals/ModalProfessionista"), { ssr: false });
-const ModalImpresa        = dynamicImport(() => import("@/components/modals/ModalImpresa"),        { ssr: false });
+const ModalUtente   = dynamicImport(() => import("@/components/modals/ModalUtente"),   { ssr: false });
+const ModalAvvocato = dynamicImport(() => import("@/components/modals/ModalAvvocato"), { ssr: false });
+// AvatarLive bundles livekit-client (~200 KB). Lazy-load only when user clicks "Parla con Sofia".
+const AvatarLive          = dynamicImport(() => import("@/components/AvatarLive").then(m => m.AvatarLive), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type TabId = '01' | '02' | '03' | '04' | '05' | '06' | '07' | '08';
-type AuthModalRole = 'cittadino' | 'professionista' | 'impresa';
+// Pivot/marketplace: solo 5 tab landing.
+// 01 Chat (demo) · 02 Marketplace · 03 Avvocato (login) · 04 API · 05 Su Misura
+type TabId = '01' | '02' | '03' | '04' | '05';
+type AuthModalRole = 'utente' | 'avvocato';
 
 function getRoleForTab(tabId: TabId): AuthModalRole {
-  if (tabId === '04' || tabId === '05') return 'professionista';
-  if (tabId === '06') return 'impresa';
-  return 'cittadino';
+  if (tabId === '03') return 'avvocato';
+  return 'utente';
 }
 interface Sel { macro: string; macroLabel: string; item: string | null }
 
@@ -166,7 +168,7 @@ function ChatMsg({ role, children }: { role: 'user' | 'assistant'; children: Rea
   );
 }
 
-function ChatScreen({ onCTA, onTrovaProfessionista }: { onCTA: () => void; onTrovaProfessionista?: () => void }) {
+function ChatScreen({ onCTA, onTrovaProfessionista, onParlaConSofia }: { onCTA: () => void; onTrovaProfessionista?: () => void; onParlaConSofia?: () => void }) {
   return (
     <div style={{ display: 'flex', height: '100%', background: T.paper }}>
       {/* Sidebar */}
@@ -240,6 +242,22 @@ function ChatScreen({ onCTA, onTrovaProfessionista }: { onCTA: () => void; onTro
                 </button>
               ))}
             </div>
+            {onParlaConSofia && (
+              <button
+                onClick={onParlaConSofia}
+                style={{
+                  marginTop: 18, padding: '12px 22px',
+                  background: T.v, color: 'white',
+                  border: 'none', borderRadius: 999,
+                  fontSize: 14, fontWeight: 600,
+                  fontFamily: T.sans, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  boxShadow: '0 6px 18px rgba(212,74,42,0.25)',
+                }}
+              >
+                <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, background: 'white', display: 'inline-block' }} /> Parla con Sofia in video
+              </button>
+            )}
           </div>
         </div>
 
@@ -654,6 +672,83 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
 }
 
 // ─── Tab 06: API ──────────────────────────────────────────────────────────────
+function MarketplaceScreen({ onCTA }: { onCTA: () => void }) {
+  return (
+    <div style={{ height: '100%', overflow: 'auto', background: T.paper }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '64px 40px 80px' }}>
+        <Stamp color={T.v}>Marketplace · utente ↔ avvocato</Stamp>
+        <h1 style={{ fontFamily: T.serif, fontSize: 56, margin: '20px 0 16px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          Risposta AI gratuita,<br/><em style={{ color: T.v }}>avvocato umano quando serve.</em>
+        </h1>
+        <p style={{ fontSize: 16, color: T.ink3, lineHeight: 1.6, margin: '0 0 32px', maxWidth: 640 }}>
+          Sofia (AI) risponde gratis con riferimenti normativi reali. Quando il caso richiede un parere legale firmato,
+          un avvocato verificato del foro più vicino prende in carico la pratica.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginTop: 24 }}>
+          <div style={{ padding: 28, background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 12 }}>
+            <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: T.ink4, textTransform: 'uppercase' }}>Per l'utente</div>
+            <h3 style={{ fontFamily: T.serif, fontSize: 22, margin: '12px 0 12px', fontStyle: 'italic' }}>Domanda → AI gratis → Avvocato (€)</h3>
+            <ul style={{ paddingLeft: 18, color: T.ink2, fontSize: 14, lineHeight: 1.65, margin: 0 }}>
+              <li>Chat / voice / avatar AI: 10 consultazioni/giorno gratis</li>
+              <li>Acquisto consulenza umana: parere PDF firmato dall'avvocato</li>
+              <li>Avvocati verificati per foro e materia</li>
+            </ul>
+          </div>
+          <div style={{ padding: 28, background: T.ink, color: T.paper, borderRadius: 12 }}>
+            <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: T.ink5, textTransform: 'uppercase' }}>Per l'avvocato</div>
+            <h3 style={{ fontFamily: T.serif, fontSize: 22, margin: '12px 0 12px', fontStyle: 'italic' }}>Lead qualificati a 91€</h3>
+            <ul style={{ paddingLeft: 18, color: '#D8CFBC', fontSize: 14, lineHeight: 1.65, margin: 0 }}>
+              <li>Pratiche pre-istruite dall'AI con tutti i dati raccolti</li>
+              <li>Filtraggio automatico per foro e materia</li>
+              <li>Pagamento solo per lead acquistato (no canone fisso)</li>
+            </ul>
+          </div>
+        </div>
+        <button onClick={onCTA} style={{
+          marginTop: 32, padding: '14px 24px',
+          background: T.v, color: 'white', border: 'none', borderRadius: 8,
+          fontSize: 14.5, fontWeight: 600, fontFamily: T.sans, cursor: 'pointer',
+        }}>Inizia gratis</button>
+      </div>
+    </div>
+  );
+}
+
+function AvvocatoScreen({ onCTA }: { onCTA: () => void }) {
+  return (
+    <div style={{ height: '100%', overflow: 'auto', background: T.paper }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '64px 40px 80px' }}>
+        <Stamp color={T.v}>Per avvocati</Stamp>
+        <h1 style={{ fontFamily: T.serif, fontSize: 56, margin: '20px 0 16px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          Lead qualificati a <em style={{ color: T.v }}>91€</em>.<br/>RAG normativo italiano incluso.
+        </h1>
+        <p style={{ fontSize: 16, color: T.ink3, lineHeight: 1.6, margin: '0 0 32px', maxWidth: 640 }}>
+          Ricevi pratiche pre-istruite dall'AI con tutti i fatti raccolti, foro di competenza e materia identificata.
+          Paghi solo per i lead che acquisti. Niente canone, niente abbonamento.
+        </p>
+        <div style={{ display: 'flex', gap: 28, marginBottom: 32 }}>
+          {[
+            ['91€', 'a lead acquistato'],
+            ['Foro', 'filtrato per competenza territoriale'],
+            ['Materia', 'civile · penale · lavoro · famiglia · …'],
+            ['RAG', '8.3M chunks normattiva inclusi'],
+          ].map(([k, v]) => (
+            <div key={k} style={{ flex: 1 }}>
+              <div style={{ fontFamily: T.serif, fontSize: 28, color: T.ink, fontStyle: 'italic' }}>{k}</div>
+              <div style={{ fontSize: 13, color: T.ink3, marginTop: 4 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onCTA} style={{
+          padding: '14px 24px',
+          background: T.ink, color: T.paper, border: 'none', borderRadius: 8,
+          fontSize: 14.5, fontWeight: 600, fontFamily: T.sans, cursor: 'pointer',
+        }}>Accedi come avvocato</button>
+      </div>
+    </div>
+  );
+}
+
 function ApiScreen() {
   const [email, setEmail] = useState('');
   const [project, setProject] = useState('');
@@ -992,7 +1087,17 @@ function DashboardTab({ role, variant, demoUser }: { role: 'cittadino' | 'prof' 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PreviewPage() {
   const [tab, setTab] = useState<TabId>('01');
-  const [authModal, setAuthModal] = useState<null | "cittadino" | "professionista" | "impresa">(null);
+  const [authModal, setAuthModal] = useState<null | AuthModalRole>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
+
+  useEffect(() => {
+    const m = window.matchMedia("(min-width: 1024px)");
+    const upd = () => setIsDesktop(m.matches);
+    upd();
+    m.addEventListener("change", upd);
+    return () => m.removeEventListener("change", upd);
+  }, []);
 
   // If the user is already authenticated, send them to their actual dashboard
   // instead of leaving them on this marketing preview.
@@ -1011,12 +1116,11 @@ export default function PreviewPage() {
           const { data: p } = await sb.from("profiles").select("role").eq("id", user.id).single();
           role = p?.role as string | undefined;
         }
+        // Post-pivot: solo 2 ruoli — utente, avvocato.
         const dest =
-          role === "impresa"        ? "/dashboard-impresa" :
-          role === "professionista" ? "/dashboard-professionista" :
-          role === "privato" || role === "cittadino" ? "/dashboard-cittadino" :
-          null;
-        if (dest) window.location.replace(dest);
+          role === "avvocato" ? "/avvocato/dashboard" :
+          "/utente/dashboard";
+        window.location.replace(dest);
       } catch { /* not signed in or supabase failure — stay on the preview */ }
     })();
     return () => { cancelled = true; };
@@ -1024,13 +1128,10 @@ export default function PreviewPage() {
 
   const tabs: { id: TabId; label: string }[] = [
     { id: '01', label: 'Chat' },
-    { id: '02', label: 'Onboarding' },
-    { id: '03', label: 'Dash · Cittadino' },
-    { id: '04', label: 'Dash · Avvocato' },
-    { id: '05', label: 'Dash · Libero Prof.' },
-    { id: '06', label: 'Dash · Impresa' },
-    { id: '07', label: 'API' },
-    { id: '08', label: 'Su Misura' },
+    { id: '02', label: 'Marketplace' },
+    { id: '03', label: 'Avvocato' },
+    { id: '04', label: 'API' },
+    { id: '05', label: 'Su Misura' },
   ];
 
   return (
@@ -1059,7 +1160,7 @@ export default function PreviewPage() {
           );
         })}
 
-        {/* Real-auth CTAs pinned right — open ModalCittadino with the right
+        {/* Real-auth CTAs pinned right — open ModalUtente with the right
             initial mode. Wired to Supabase signUp / signInWithPassword. */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
           <button
@@ -1092,20 +1193,53 @@ export default function PreviewPage() {
 
       {/* ── Content ── */}
       <div style={{ flex: 1, overflow: 'hidden', background: T.paper }}>
-        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('cittadino')} onTrovaProfessionista={() => setAuthModal('professionista')} />}
-        {tab === '02' && <OnboardingScreen onComplete={() => setTab('03')} />}
-        {tab === '03' && <DashboardTab role="cittadino" demoUser={{ name: 'Marco Rossi', initials: 'MR', subtitle: 'CITTADINO · PIANO GRATUITO' }} />}
-        {tab === '04' && <DashboardTab role="prof" variant="avvocato" demoUser={{ name: 'Avv. Giulia Mancini', initials: 'GM', subtitle: 'AVVOCATO · FORO DI ROMA · €29/mese + lead' }} />}
-        {tab === '05' && <DashboardTab role="prof" variant="commercialista" demoUser={{ name: 'Dott. Andrea Conti', initials: 'AC', subtitle: 'COMMERCIALISTA · MILANO · €29/mese' }} />}
-        {tab === '06' && <DashboardTab role="impresa" demoUser={{ name: 'Acme SRL', initials: 'AS', subtitle: 'IMPRESA · MEDIA' }} />}
-        {tab === '07' && <ApiScreen />}
-        {tab === '08' && <EnterpriseScreen />}
+        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('utente')} onTrovaProfessionista={() => setAuthModal('utente')} onParlaConSofia={isDesktop ? () => setAvatarOpen(true) : undefined} />}
+        {tab === '02' && <MarketplaceScreen onCTA={() => setAuthModal('utente')} />}
+        {tab === '03' && <AvvocatoScreen onCTA={() => setAuthModal('avvocato')} />}
+        {tab === '04' && <ApiScreen />}
+        {tab === '05' && <EnterpriseScreen />}
       </div>
 
-      {/* ── Real auth modals (Supabase) ── */}
-      <ModalCittadino      open={authModal === 'cittadino'}      onClose={() => setAuthModal(null)} />
-      <ModalProfessionista open={authModal === 'professionista'} onClose={() => setAuthModal(null)} />
-      <ModalImpresa        open={authModal === 'impresa'}        onClose={() => setAuthModal(null)} />
+      {/* ── Real auth modals (Supabase) — solo 2 ruoli pivot ── */}
+      <ModalUtente   open={authModal === 'utente'}   onClose={() => setAuthModal(null)} />
+      <ModalAvvocato open={authModal === 'avvocato'} onClose={() => setAuthModal(null)} />
+
+      {/* Sofia avatar live (desktop only) — lazy-loaded LiveAvatar + ElevenLabs Conversational Agent */}
+      {avatarOpen && isDesktop && (
+        <div
+          onClick={() => setAvatarOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(19,17,15,0.78)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative', width: 'min(960px, 100%)',
+              background: T.paper, borderRadius: 16, padding: 24,
+              boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
+            }}
+          >
+            <button
+              onClick={() => setAvatarOpen(false)}
+              aria-label="Chiudi"
+              style={{
+                position: 'absolute', top: 12, right: 12,
+                width: 32, height: 32, borderRadius: 999,
+                border: `1px solid ${T.paperL}`, background: 'white',
+                cursor: 'pointer', fontSize: 16, lineHeight: 1, color: T.ink2,
+              }}
+            >×</button>
+            <div style={{ fontFamily: T.serif, fontSize: 22, marginBottom: 4 }}>Sofia · Avvocato AI in video</div>
+            <div style={{ fontFamily: T.mono, fontSize: 11, color: T.ink4, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16 }}>
+              Conversazione live · ElevenLabs + LiveAvatar
+            </div>
+            <AvatarLive autoStart showSelector={false} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

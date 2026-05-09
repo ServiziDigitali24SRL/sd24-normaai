@@ -21,13 +21,15 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/leads/preview" ||               // lead preview pubblica
     pathname === "/api/mobile/buy-lead" ||              // mobile: acquisto lead
     pathname === "/api/mobile/pay-professional" ||      // mobile: pagamento professionista
-    pathname === "/api/avatar/generate" ||               // avatar HeyGen: freemium pubblico
-    pathname === "/api/avatar/status" ||                 // avatar HeyGen: poll status
-    pathname.startsWith("/api/avatar/streaming/") ||     // LiveAvatar WebRTC session (freemium)
+    pathname.startsWith("/api/avatar/streaming/") ||     // LiveAvatar WebRTC + ElevenLabs Agent (freemium)
+    pathname === "/api/avatar/corpus-tool" ||            // ElevenLabs Agent tool (Bearer-auth)
     pathname === "/api/voice/transcribe" ||              // voice ASR (Voxtral): freemium pubblico
     pathname === "/api/voice/tts" ||                     // voice TTS (Voxtral): freemium pubblico
     pathname === "/api/voice/chat-turn" ||               // voice loop turn (ASR+LLM+TTS)
-    pathname === "/api/voice/chat-stream"                // voice loop streaming SSE
+    pathname === "/api/voice/chat-stream" ||             // voice loop streaming SSE
+    pathname === "/api/ops/snapshot" ||                  // SQ-OPS public snapshot (/come_ho_costruito_norma)
+    pathname === "/api/ops/stream" ||                    // SQ-OPS public SSE (filtro public-safe interno)
+    pathname === "/api/sentinel/heartbeat"               // sentinel cron (Bearer CRON_SECRET interno)
   );
 }
 
