@@ -1,13 +1,29 @@
 "use client";
-export const dynamic = "force-dynamic";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamicImport from "next/dynamic";
 import DualSidebar from "@/components/dashboard/DualSidebar";
+import type { ProfVariant } from "@/lib/taxonomy";
 import MainDashboard from "@/components/dashboard/MainDashboard";
 
+// Real Supabase signup/login modals (lazy-loaded). The on-page Onboarding
+// tab is a marketing preview only — these are the actual auth surface.
+const ModalUtente   = dynamicImport(() => import("@/components/modals/ModalUtente"),   { ssr: false });
+const ModalAvvocato = dynamicImport(() => import("@/components/modals/ModalAvvocato"), { ssr: false });
+// AvatarLive bundles livekit-client (~200 KB). Lazy-load only when user clicks "Parla con Sofia".
+const AvatarLive          = dynamicImport(() => import("@/components/AvatarLive").then(m => m.AvatarLive), { ssr: false });
+
 // ─── Types ────────────────────────────────────────────────────────────────────
-type TabId = '01' | '02' | '03' | '04' | '05' | '06' | '07';
+// Pivot/marketplace: solo 5 tab landing.
+// 01 Chat (demo) · 02 Marketplace · 03 Avvocato (login) · 04 API · 05 Su Misura
+type TabId = '01' | '02' | '03' | '04' | '05';
+type AuthModalRole = 'utente' | 'avvocato';
+
+function getRoleForTab(tabId: TabId): AuthModalRole {
+  if (tabId === '03') return 'avvocato';
+  return 'utente';
+}
 interface Sel { macro: string; macroLabel: string; item: string | null }
 
 // ─── Primitives ───────────────────────────────────────────────────────────────
@@ -152,59 +168,38 @@ function ChatMsg({ role, children }: { role: 'user' | 'assistant'; children: Rea
   );
 }
 
-function ChatScreen() {
+function ChatScreen({ onCTA, onTrovaProfessionista, onParlaConSofia }: { onCTA: () => void; onTrovaProfessionista?: () => void; onParlaConSofia?: () => void }) {
   return (
     <div style={{ display: 'flex', height: '100%', background: T.paper }}>
       {/* Sidebar */}
       <aside style={{ width: 260, flexShrink: 0, background: T.paperT, borderRight: `1px solid ${T.paperL}`, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '20px 20px 14px' }}><Logo /></div>
         <div style={{ padding: '0 14px' }}>
-          <button style={{ width: '100%', padding: '10px 12px', background: T.ink, color: T.paper, border: 'none', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
+          <button onClick={onCTA} style={{ width: '100%', padding: '10px 12px', background: T.ink, color: T.paper, border: 'none', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
             <Icon name="plus" size={14} /> Nuova consultazione
           </button>
         </div>
         <div style={{ padding: '18px 14px 8px' }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4, paddingLeft: 12, marginBottom: 6 }}>Area personale</div>
-          <NavItem icon={<Icon name="chat" />} label="Chat legale" active />
-          <NavItem icon={<Icon name="archive" />} label="Archivio documenti" badge="12" />
-          <NavItem icon={<Icon name="doc" />} label="Analisi PDF" />
-          <NavItem icon={<Icon name="clock" />} label="Scadenze" badge="3" />
-          <NavItem icon={<Icon name="users" />} label="Trova professionista" />
+          <NavItem icon={<Icon name="chat" />} label="Chat legale" active onClick={onCTA} />
+          <NavItem icon={<Icon name="archive" />} label="Archivio documenti" onClick={onCTA} />
+          <NavItem icon={<Icon name="doc" />} label="Analisi PDF" onClick={onCTA} />
+          <NavItem icon={<Icon name="clock" />} label="Scadenze" onClick={onCTA} />
+          <NavItem icon={<Icon name="users" />} label="Trova professionista" onClick={onTrovaProfessionista ?? onCTA} />
         </div>
         <div style={{ padding: '8px 14px' }}>
           <div style={{ fontFamily: T.mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4, paddingLeft: 12, marginBottom: 6 }}>Conversazioni recenti</div>
-          {[
-            { t: 'Contratto locazione — cedolare secca', d: '2h fa' },
-            { t: 'Licenziamento giusta causa', d: 'Ieri' },
-            { t: 'TFR e trattamento di fine rapporto', d: '3 giorni' },
-            { t: 'Art. 2043 c.c. responsabilità', d: '1 sett.' },
-          ].map((c, i) => (
-            <button key={i} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-              onMouseEnter={e => e.currentTarget.style.background = T.paper2}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-              <div style={{ fontSize: 13, color: T.ink2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.t}</div>
-              <div style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4, marginTop: 2 }}>{c.d}</div>
-            </button>
-          ))}
+          <div style={{ padding: '8px 12px', fontSize: 12.5, color: T.ink4, fontFamily: T.sans, fontStyle: 'italic' }}>
+            Nessuna conversazione ancora.
+          </div>
         </div>
         <div style={{ flex: 1 }} />
         <div style={{ margin: 14, padding: 16, border: `1px solid ${T.paperL}`, borderRadius: 8, background: 'white' }}>
           <Stamp>Piano Gratuito</Stamp>
-          <div style={{ fontSize: 13, color: T.ink2, margin: '10px 0 12px', lineHeight: 1.45 }}>3 di 10 consultazioni mensili utilizzate</div>
-          <div style={{ height: 4, background: T.paper2, borderRadius: 2, marginBottom: 12, overflow: 'hidden' }}>
-            <div style={{ width: '30%', height: '100%', background: T.v }} />
-          </div>
-          <button style={{ width: '100%', padding: '9px 12px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <div style={{ fontSize: 13, color: T.ink2, margin: '10px 0 12px', lineHeight: 1.45 }}>10 consultazioni gratuite al giorno</div>
+          <button onClick={onCTA} style={{ width: '100%', padding: '9px 12px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             Passa a PRO <Icon name="arrow" size={12} />
           </button>
-        </div>
-        <div style={{ padding: '12px 20px', borderTop: `1px solid ${T.paperL}`, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', background: T.ink, color: T.paper, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 500 }}>MR</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 500 }}>Marco Rossi</div>
-            <div style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4 }}>CITTADINO</div>
-          </div>
-          <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: T.ink4 }}><Icon name="settings" size={16} /></button>
         </div>
       </aside>
 
@@ -212,72 +207,73 @@ function ChatScreen() {
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header style={{ display: 'flex', alignItems: 'center', padding: '14px 28px', borderBottom: `1px solid ${T.paperL}`, gap: 16 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: T.ink4 }}>Consultazione · Diritto Civile</div>
-            <div style={{ fontFamily: T.serif, fontSize: 20, marginTop: 2 }}>Contratto di locazione — cedolare secca</div>
+            <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: T.ink4 }}>Nuova consultazione</div>
+            <div style={{ fontFamily: T.serif, fontSize: 20, marginTop: 2 }}>Chiedi a Norma</div>
           </div>
-          <Badge tone="ok"><Icon name="check" size={11} /> Fonti verificate</Badge>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 13, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}><Icon name="download" size={14} /> Esporta</button>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 13, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}><Icon name="paperclip" size={14} /> Allega</button>
         </header>
 
-        <div style={{ flex: 1, overflow: 'auto', padding: '36px 48px' }}>
-          <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <div style={{ marginBottom: 32, textAlign: 'center' }}>
-              <div style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.18em', color: T.ink5, textTransform: 'uppercase' }}>— · — · — &nbsp; 20 aprile 2026, 14:32 &nbsp; — · — · —</div>
+        {/* Empty state — VIRGIN chat. No demo conversation. */}
+        <div style={{ flex: 1, overflow: 'auto', padding: '64px 48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ maxWidth: 540, textAlign: 'center' }}>
+            <div style={{ fontFamily: T.serif, fontSize: 64, fontStyle: 'italic', color: T.ink4, lineHeight: 1, marginBottom: 14 }}>§</div>
+            <h1 style={{ fontFamily: T.serif, fontSize: 28, lineHeight: 1.2, margin: '0 0 12px', color: T.ink, letterSpacing: '-0.01em' }}>
+              Ti posso aiutare per <em style={{ color: T.v }}>multe, sanzioni, citazioni, posto di blocco</em>
+            </h1>
+            <p style={{ fontSize: 14.5, color: T.ink3, lineHeight: 1.6, margin: '0 0 28px' }}>
+              Per qualsiasi cosa, sono qui per te. Fai una domanda e rispondo con i riferimenti normativi.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 420, margin: '0 auto' }}>
+              {[
+                'Mi hanno fatto una multa, posso fare ricorso?',
+                'Cosa devo dire a un posto di blocco?',
+                'Mi è arrivata una citazione: cosa fare?',
+              ].map((q) => (
+                <button key={q} onClick={onCTA} style={{
+                  padding: '11px 14px', background: 'white',
+                  border: `1px solid ${T.paperL}`, borderRadius: 8,
+                  fontSize: 13.5, color: T.ink2, fontFamily: T.sans,
+                  cursor: 'pointer', textAlign: 'left',
+                  transition: 'all 0.15s',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = T.ink5; e.currentTarget.style.background = T.paperT; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = T.paperL; e.currentTarget.style.background = 'white'; }}
+                >
+                  {q}
+                </button>
+              ))}
             </div>
-            <ChatMsg role="user">Sto per affittare un appartamento a Milano. Il proprietario mi propone un contratto 4+4 con cedolare secca al 21%. Mi conviene rispetto al regime ordinario? Cosa rischio se l'inquilino non paga?</ChatMsg>
-            <ChatMsg role="assistant">
-              <div style={{ fontSize: 14.5, lineHeight: 1.65, color: T.ink2 }}>
-                <p style={{ margin: '0 0 14px' }}>La <strong>cedolare secca al 21%</strong> è generalmente conveniente per un contratto 4+4 a uso abitativo, ma dipende dalla Sua aliquota IRPEF marginale.</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, margin: '18px 0', background: T.paperT, border: `1px solid ${T.paperL}`, borderRadius: 6, padding: 14 }}>
-                  <div>
-                    <div style={{ fontFamily: T.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4 }}>Cedolare secca</div>
-                    <div style={{ fontFamily: T.serif, fontSize: 26, marginTop: 2 }}>21<span style={{ fontSize: 16 }}>%</span></div>
-                    <div style={{ fontSize: 12, color: T.ink3 }}>Fissa, su canone lordo</div>
-                  </div>
-                  <div style={{ borderLeft: `1px solid ${T.paperL}`, paddingLeft: 14 }}>
-                    <div style={{ fontFamily: T.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: T.ink4 }}>IRPEF ordinario</div>
-                    <div style={{ fontFamily: T.serif, fontSize: 26, marginTop: 2 }}>23–43<span style={{ fontSize: 16 }}>%</span></div>
-                    <div style={{ fontSize: 12, color: T.ink3 }}>Su 95% canone + addizionali</div>
-                  </div>
-                </div>
-                <p style={{ margin: '14px 0' }}><strong>Sulla morosità</strong>, il regime di cedolare secca le impone di <em>rinunciare all'aggiornamento ISTAT</em> del canone per tutta la durata (art. 3, co. 11, D.Lgs. 23/2011). In caso di mancato pagamento:</p>
-                <ol style={{ margin: '0 0 14px 0', paddingLeft: 20, color: T.ink2 }}>
-                  <li style={{ margin: '6px 0' }}>Dopo <strong>20 giorni</strong> dalla scadenza, può avviare intimazione di sfratto per morosità</li>
-                  <li style={{ margin: '6px 0' }}>La Legge 392/1978 consente la risoluzione dopo <strong>2 canoni non pagati</strong></li>
-                  <li style={{ margin: '6px 0' }}>Il giudice può concedere un <em>termine di grazia</em> fino a 90 giorni</li>
-                </ol>
-                <SectionLabel>Riferimenti normativi</SectionLabel>
-                <CitationCard code="D.Lgs. 23/2011 · art. 3" title="Cedolare secca sugli affitti" snippet="Il canone di locazione relativo ai contratti aventi ad oggetto immobili ad uso abitativo…" />
-                <CitationCard code="L. 431/1998 · art. 2" title="Contratti di locazione 4+4" snippet="Le parti possono stipulare contratti di locazione di durata non inferiore a quattro anni…" />
-                <CitationCard code="L. 392/1978 · art. 5" title="Inadempimento del conduttore" snippet="Il mancato pagamento del canone decorsi venti giorni dalla scadenza costituisce motivo di risoluzione…" />
-                <div style={{ marginTop: 24, padding: 14, background: T.ambraS, borderRadius: 6, display: 'flex', gap: 12 }}>
-                  <Icon name="alert" size={18} />
-                  <div style={{ fontSize: 13, color: T.ink2, lineHeight: 1.5 }}><strong>Nota importante.</strong> Per una valutazione completa del Suo caso specifico Le consigliamo una consulenza con un commercialista o avvocato civilista.</div>
-                </div>
-                <div style={{ marginTop: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {['Approfondisci le tasse', 'Modello di contratto', "Cosa succede se vendo l'immobile?", 'Genera checklist'].map(s => (
-                    <button key={s} style={{ padding: '7px 12px', background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 20, fontSize: 12.5, color: T.ink2, cursor: 'pointer', fontFamily: T.sans }}>↳ {s}</button>
-                  ))}
-                </div>
-              </div>
-            </ChatMsg>
+            {onParlaConSofia && (
+              <button
+                onClick={onParlaConSofia}
+                style={{
+                  marginTop: 18, padding: '12px 22px',
+                  background: T.v, color: 'white',
+                  border: 'none', borderRadius: 999,
+                  fontSize: 14, fontWeight: 600,
+                  fontFamily: T.sans, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  boxShadow: '0 6px 18px rgba(212,74,42,0.25)',
+                }}
+              >
+                <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, background: 'white', display: 'inline-block' }} /> Parla con Sofia in video
+              </button>
+            )}
           </div>
         </div>
 
         <div style={{ padding: '0 48px 28px' }}>
           <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <div style={{ background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 12, padding: 14, boxShadow: T.sh2 }}>
-              <textarea placeholder="Domanda di follow-up, allega un PDF, o cerca una norma…" style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, fontFamily: T.sans, color: T.ink, minHeight: 40, background: 'transparent', lineHeight: 1.5 }} />
+            <div onClick={onCTA} style={{ background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 12, padding: 14, boxShadow: T.sh2, cursor: 'pointer' }}>
+              <textarea placeholder="Domanda di follow-up, allega un PDF, o cerca una norma…" readOnly onClick={onCTA} style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', fontSize: 14.5, fontFamily: T.sans, color: T.ink, minHeight: 40, background: 'transparent', lineHeight: 1.5, cursor: 'pointer' }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                 {[['paperclip','Allega PDF'],['book','Materia'],['spark','Ricerca giurisprudenza']].map(([ic,lb]) => (
-                  <button key={lb} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 12, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}>
+                  <button key={lb} onClick={(e) => { e.stopPropagation(); onCTA(); }} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 12, cursor: 'pointer', color: T.ink2, fontFamily: T.sans }}>
                     <Icon name={ic} size={13} /> {lb}
                   </button>
                 ))}
                 <div style={{ flex: 1 }} />
-                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4 }}>7/10 consultazioni</span>
-                <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
+                <span style={{ fontFamily: T.mono, fontSize: 10, color: T.ink4 }}>10 consultazioni gratis/giorno</span>
+                <button onClick={(e) => { e.stopPropagation(); onCTA(); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.v, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans }}>
                   <Icon name="send" size={13} /> Invia
                 </button>
               </div>
@@ -297,6 +293,9 @@ type OnbRole = 'cittadino' | 'cittadino-pro' | 'avvocato' | 'professionista' | '
 function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<OnbRole>(null);
+  const [dimensione, setDimensione] = useState<string | null>(null);
+  const [impresaForm, setImpresaForm] = useState({ ragione: '', piva: '', email: '', dipendenti: '', referenteNome: '', referenteEmail: '', referenteRuolo: '' });
+  const [stepError, setStepError] = useState('');
   const [profile, setProfile] = useState({ nome: '', email: '', cellulare: '', cap: '', citta: '', regione: '', situazione: '', problemi: [] as string[] });
   const [goal, setGoal] = useState<string | null>(null);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -328,13 +327,20 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   };
 
   const handleNext = () => {
+    setStepError('');
+    if (step === 1 && !role) { setStepError('Scelga un piano per continuare.'); return; }
+    if (isImp && step === 2 && !dimensione) { setStepError('Scelga la dimensione aziendale.'); return; }
+    if (isImp && step === 3) {
+      if (!impresaForm.ragione || impresaForm.ragione.length < 3) { setStepError('Ragione sociale obbligatoria (min. 3 caratteri).'); return; }
+      if (!/^\d{11}$/.test(impresaForm.piva)) { setStepError('P.IVA non valida: inserire 11 cifre.'); return; }
+    }
     if (step < totalSteps) setStep(step + 1);
-    else { try { localStorage.setItem('norma.user', JSON.stringify({ role, registered: true })); } catch {} onComplete(); }
+    else { try { localStorage.setItem('norma.user', JSON.stringify({ role, registered: true })); } catch (e) { console.warn('localStorage error', e); } onComplete(); }
   };
   const handleSkip = () => { if (step < totalSteps) setStep(step + 1); else onComplete(); };
 
   const tiers = [
-    { id: 'cittadino', tag: 'Per iniziare', name: 'Cittadino', price: 'Gratis', priceSub: '10 consult./mese', icon: 'users', features: ['10 consultazioni/mese', 'Riferimenti normativi', 'Archivio base'] },
+    { id: 'cittadino', tag: 'Per iniziare', name: 'Cittadino', price: 'Gratis', priceSub: '10 consult./giorno', icon: 'users', features: ['10 consultazioni al giorno', 'Riferimenti normativi', 'Archivio base'] },
     { id: 'cittadino-pro', tag: 'Più popolare', name: 'Cittadino PRO', price: '€9', priceSub: '/mese', highlight: true, icon: 'star', features: ['Consultazioni illimitate', 'Analisi PDF & contratti', 'Firma digitale'] },
     { id: 'avvocato', tag: 'Foro · Albo', name: 'Avvocato', price: '€29', priceSub: '/mese', icon: 'scale', features: ['Marketplace lead €75/€150', 'Profilo directory pubblico', 'Redazione atti AI'] },
     { id: 'professionista', tag: 'Commercialisti & altri', name: 'Professionista', price: '€29', priceSub: '/mese', icon: 'briefcase', features: ['Profilo pubblico', 'Parcelle & progetti', 'Business plan AI'] },
@@ -393,7 +399,7 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
               {tiers.map(t => {
                 const active = role === t.id;
                 return (
-                  <div key={t.id} onClick={() => setRole(t.id as OnbRole)} style={{ background: active ? 'white' : T.paperT, border: active ? `2px solid ${T.ink}` : `1px solid ${T.paperL}`, margin: active ? 0 : 1, borderRadius: 10, padding: '20px 18px', cursor: 'pointer', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', transform: active ? 'translateY(-4px)' : 'none', boxShadow: active ? T.sh3 : 'none' }}>
+                  <div key={t.id} onClick={() => setRole(prev => prev === t.id ? null : t.id as OnbRole)} style={{ background: active ? 'white' : T.paperT, border: active ? `2px solid ${T.ink}` : `1px solid ${T.paperL}`, margin: active ? 0 : 1, borderRadius: 10, padding: '20px 18px', cursor: 'pointer', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'all 0.2s ease', transform: active ? 'translateY(-4px)' : 'none', boxShadow: active ? T.sh3 : 'none' }}>
                     {'highlight' in t && t.highlight && <div style={{ position: 'absolute', top: -10, right: 14 }}><Stamp color={T.v} rotate={2}>Consigliato</Stamp></div>}
                     <div style={{ color: active ? T.v : T.ink3, marginBottom: 8 }}><Icon name={t.icon} size={22} /></div>
                     <div style={{ fontFamily: T.mono, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: active ? T.vi : T.ink4 }}>{t.tag}</div>
@@ -532,8 +538,8 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                 { id: 'piccola', label: 'PICCOLA', range: '10–49 dipendenti', price: '€79', features: ['GDPR + Sicurezza lavoro', 'Analisi contratti AI', '5 seat inclusi'] },
                 { id: 'media', label: 'MEDIA', range: '50–249 dipendenti', price: '€199', features: ['GDPR + 231 + DPO', 'Audit checklist complete', '15 seat inclusi'] },
               ].map(s => (
-                <div key={s.id} style={{ padding: 24, border: `1px solid ${T.paperL}`, borderRadius: 10, background: 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: T.vi, marginBottom: 6 }}>{s.label}</div>
+                <div key={s.id} onClick={() => setDimensione(prev => prev === s.id ? null : s.id)} style={{ padding: 24, border: dimensione === s.id ? `2px solid ${T.ink}` : `1px solid ${T.paperL}`, margin: dimensione === s.id ? 0 : 1, borderRadius: 10, background: dimensione === s.id ? T.paperT : 'white', cursor: 'pointer', display: 'flex', flexDirection: 'column', boxShadow: dimensione === s.id ? T.sh2 : 'none', transition: 'all 0.15s ease' }}>
+                  <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: dimensione === s.id ? T.ink : T.vi, marginBottom: 6 }}>{s.label} {dimensione === s.id ? '✓' : ''}</div>
                   <div style={{ fontFamily: T.serif, fontSize: 26, lineHeight: 1.1, marginBottom: 10 }}>{s.range}</div>
                   <div style={{ fontFamily: T.serif, fontSize: 38, lineHeight: 1, marginBottom: 4 }}>{s.price}<span style={{ fontFamily: T.sans, fontSize: 13, color: T.ink4 }}>/mese</span></div>
                   <hr style={{ height: 1, background: T.paperL, border: 0, margin: '12px 0' }} />
@@ -603,27 +609,60 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
               {step === 3 ? <>I dati <em style={{ color: T.v }}>della Sua azienda.</em></> : <>Chi gestirà <em style={{ color: T.v }}>la compliance?</em></>}
             </h1>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 32 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <OField label={step === 3 ? 'Ragione sociale' : 'Nome e Cognome'} val="" onChange={() => {}} placeholder={step === 3 ? 'Acme SRL' : 'Es. Laura Bianchi'} />
-                <OField label={step === 3 ? 'P.IVA' : 'Email'} val="" onChange={() => {}} placeholder={step === 3 ? '12345678901' : 'laura@acme.it'} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <OField label={step === 3 ? 'Email aziendale' : 'Ruolo'} val="" onChange={() => {}} placeholder={step === 3 ? 'info@acme.it' : 'Es. Responsabile Legal'} />
-                <OField label={step === 3 ? 'Numero dipendenti' : 'È il DPO?'} val="" onChange={() => {}} placeholder={step === 3 ? 'Es. 25' : ''} />
-              </div>
+              {step === 3 ? (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Ragione sociale" val={impresaForm.ragione} onChange={v => setImpresaForm(f => ({ ...f, ragione: v }))} placeholder="Acme SRL" />
+                    <div>
+                      <OLabel>P.IVA</OLabel>
+                      <div style={{ position: 'relative', marginTop: 8 }}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={11}
+                          value={impresaForm.piva}
+                          onChange={e => setImpresaForm(f => ({ ...f, piva: e.target.value.replace(/\D/g, '').slice(0, 11) }))}
+                          placeholder="12345678901"
+                          style={{ width: '100%', padding: '13px 16px', border: `1px solid ${impresaForm.piva.length === 11 ? T.alloro : impresaForm.piva ? T.ink : T.paperL}`, borderRadius: 6, fontSize: 14, fontFamily: T.sans, background: 'white', outline: 'none', color: T.ink }}
+                        />
+                        {impresaForm.piva.length === 11 && <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: T.alloro }}><Icon name="check" size={14} /></span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Email aziendale" val={impresaForm.email} onChange={v => setImpresaForm(f => ({ ...f, email: v }))} placeholder="info@acme.it" type="email" />
+                    <OField label="Numero dipendenti" val={impresaForm.dipendenti} onChange={v => setImpresaForm(f => ({ ...f, dipendenti: v }))} placeholder="Es. 25" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Nome e Cognome" val={impresaForm.referenteNome} onChange={v => setImpresaForm(f => ({ ...f, referenteNome: v }))} placeholder="Es. Laura Bianchi" />
+                    <OField label="Email" val={impresaForm.referenteEmail} onChange={v => setImpresaForm(f => ({ ...f, referenteEmail: v }))} placeholder="laura@acme.it" type="email" />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <OField label="Ruolo" val={impresaForm.referenteRuolo} onChange={v => setImpresaForm(f => ({ ...f, referenteRuolo: v }))} placeholder="Es. Responsabile Legal" />
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
 
         {/* Navigation */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 40, paddingTop: 28, borderTop: `1px solid ${T.paperL}` }}>
-          <button onClick={() => step > 1 && setStep(step - 1)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 14, cursor: step === 1 ? 'not-allowed' : 'pointer', color: T.ink2, fontFamily: T.sans, opacity: step === 1 ? 0 : 1, pointerEvents: step === 1 ? 'none' : 'auto' }}>
+        {stepError && (
+          <div style={{ marginTop: 16, padding: '10px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 6, color: '#B91C1C', fontSize: 13, fontFamily: T.sans }}>
+            {stepError}
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20, paddingTop: 28, borderTop: `1px solid ${T.paperL}` }}>
+          <button onClick={() => { setStepError(''); step > 1 && setStep(step - 1); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 18px', background: 'transparent', border: `1px solid ${T.paperL}`, borderRadius: 6, fontSize: 14, cursor: step === 1 ? 'not-allowed' : 'pointer', color: T.ink2, fontFamily: T.sans, opacity: step === 1 ? 0 : 1, pointerEvents: step === 1 ? 'none' : 'auto' }}>
             ← Indietro
           </button>
           <div style={{ fontFamily: T.mono, fontSize: 10.5, letterSpacing: '0.12em', color: T.ink4, textTransform: 'uppercase' }}>
             {step === 1 ? 'Scelga il ruolo' : step === totalSteps ? 'Verifica email' : `Passo ${step}`}
           </div>
-          <button onClick={handleNext} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 22px', background: role || step > 1 ? T.v : T.paper2, color: role || step > 1 ? 'white' : T.ink4, border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: T.sans, opacity: role || step > 1 ? 1 : 0.5 }}>
+          <button onClick={handleNext} disabled={step === 1 && !role} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 22px', background: role || step > 1 ? T.v : T.paper2, color: role || step > 1 ? 'white' : T.ink4, border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: step === 1 && !role ? 'not-allowed' : 'pointer', fontFamily: T.sans, opacity: role || step > 1 ? 1 : 0.5 }}>
             {step === totalSteps ? 'Conferma e accedi' : 'Continua'} <Icon name="arrow" size={13} />
           </button>
         </div>
@@ -633,6 +672,83 @@ function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
 }
 
 // ─── Tab 06: API ──────────────────────────────────────────────────────────────
+function MarketplaceScreen({ onCTA }: { onCTA: () => void }) {
+  return (
+    <div style={{ height: '100%', overflow: 'auto', background: T.paper }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '64px 40px 80px' }}>
+        <Stamp color={T.v}>Marketplace · utente ↔ avvocato</Stamp>
+        <h1 style={{ fontFamily: T.serif, fontSize: 56, margin: '20px 0 16px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          Risposta AI gratuita,<br/><em style={{ color: T.v }}>avvocato umano quando serve.</em>
+        </h1>
+        <p style={{ fontSize: 16, color: T.ink3, lineHeight: 1.6, margin: '0 0 32px', maxWidth: 640 }}>
+          Sofia (AI) risponde gratis con riferimenti normativi reali. Quando il caso richiede un parere legale firmato,
+          un avvocato verificato del foro più vicino prende in carico la pratica.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginTop: 24 }}>
+          <div style={{ padding: 28, background: 'white', border: `1px solid ${T.paperL}`, borderRadius: 12 }}>
+            <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: T.ink4, textTransform: 'uppercase' }}>Per l'utente</div>
+            <h3 style={{ fontFamily: T.serif, fontSize: 22, margin: '12px 0 12px', fontStyle: 'italic' }}>Domanda → AI gratis → Avvocato (€)</h3>
+            <ul style={{ paddingLeft: 18, color: T.ink2, fontSize: 14, lineHeight: 1.65, margin: 0 }}>
+              <li>Chat / voice / avatar AI: 10 consultazioni/giorno gratis</li>
+              <li>Acquisto consulenza umana: parere PDF firmato dall'avvocato</li>
+              <li>Avvocati verificati per foro e materia</li>
+            </ul>
+          </div>
+          <div style={{ padding: 28, background: T.ink, color: T.paper, borderRadius: 12 }}>
+            <div style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.14em', color: T.ink5, textTransform: 'uppercase' }}>Per l'avvocato</div>
+            <h3 style={{ fontFamily: T.serif, fontSize: 22, margin: '12px 0 12px', fontStyle: 'italic' }}>Lead qualificati a 91€</h3>
+            <ul style={{ paddingLeft: 18, color: '#D8CFBC', fontSize: 14, lineHeight: 1.65, margin: 0 }}>
+              <li>Pratiche pre-istruite dall'AI con tutti i dati raccolti</li>
+              <li>Filtraggio automatico per foro e materia</li>
+              <li>Pagamento solo per lead acquistato (no canone fisso)</li>
+            </ul>
+          </div>
+        </div>
+        <button onClick={onCTA} style={{
+          marginTop: 32, padding: '14px 24px',
+          background: T.v, color: 'white', border: 'none', borderRadius: 8,
+          fontSize: 14.5, fontWeight: 600, fontFamily: T.sans, cursor: 'pointer',
+        }}>Inizia gratis</button>
+      </div>
+    </div>
+  );
+}
+
+function AvvocatoScreen({ onCTA }: { onCTA: () => void }) {
+  return (
+    <div style={{ height: '100%', overflow: 'auto', background: T.paper }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '64px 40px 80px' }}>
+        <Stamp color={T.v}>Per avvocati</Stamp>
+        <h1 style={{ fontFamily: T.serif, fontSize: 56, margin: '20px 0 16px', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+          Lead qualificati a <em style={{ color: T.v }}>91€</em>.<br/>RAG normativo italiano incluso.
+        </h1>
+        <p style={{ fontSize: 16, color: T.ink3, lineHeight: 1.6, margin: '0 0 32px', maxWidth: 640 }}>
+          Ricevi pratiche pre-istruite dall'AI con tutti i fatti raccolti, foro di competenza e materia identificata.
+          Paghi solo per i lead che acquisti. Niente canone, niente abbonamento.
+        </p>
+        <div style={{ display: 'flex', gap: 28, marginBottom: 32 }}>
+          {[
+            ['91€', 'a lead acquistato'],
+            ['Foro', 'filtrato per competenza territoriale'],
+            ['Materia', 'civile · penale · lavoro · famiglia · …'],
+            ['RAG', '8.3M chunks normattiva inclusi'],
+          ].map(([k, v]) => (
+            <div key={k} style={{ flex: 1 }}>
+              <div style={{ fontFamily: T.serif, fontSize: 28, color: T.ink, fontStyle: 'italic' }}>{k}</div>
+              <div style={{ fontSize: 13, color: T.ink3, marginTop: 4 }}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onCTA} style={{
+          padding: '14px 24px',
+          background: T.ink, color: T.paper, border: 'none', borderRadius: 8,
+          fontSize: 14.5, fontWeight: 600, fontFamily: T.sans, cursor: 'pointer',
+        }}>Accedi come avvocato</button>
+      </div>
+    </div>
+  );
+}
+
 function ApiScreen() {
   const [email, setEmail] = useState('');
   const [project, setProject] = useState('');
@@ -926,7 +1042,7 @@ function EnterpriseScreen() {
 }
 
 // ─── Dashboard wrapper (for tabs 03-05) ───────────────────────────────────────
-function DashboardTab({ role, demoUser }: { role: 'cittadino' | 'prof' | 'impresa'; demoUser: { name: string; initials: string; subtitle: string } }) {
+function DashboardTab({ role, variant, demoUser }: { role: 'cittadino' | 'prof' | 'impresa'; variant?: ProfVariant; demoUser: { name: string; initials: string; subtitle: string } }) {
   const [selection, setSelection] = useState<Sel | null>(null);
   const router = useRouter();
 
@@ -945,7 +1061,7 @@ function DashboardTab({ role, demoUser }: { role: 'cittadino' | 'prof' | 'impres
     <div style={{ display: 'flex', height: '100%', background: 'var(--paper)', overflow: 'hidden' }}>
       <DualSidebar
         role={role}
-        variant={role === 'prof' ? 'avvocato' : undefined}
+        variant={variant ?? (role === 'prof' ? 'avvocato' : undefined)}
         user={demoUser}
         locked={false}
         active={selection ? { macro: selection.macro, item: selection.item } : null}
@@ -971,23 +1087,52 @@ function DashboardTab({ role, demoUser }: { role: 'cittadino' | 'prof' | 'impres
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function PreviewPage() {
   const [tab, setTab] = useState<TabId>('01');
+  const [authModal, setAuthModal] = useState<null | AuthModalRole>(null);
+  const [avatarOpen, setAvatarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(true);
 
-  const tabs: { id: TabId; label: string; locked?: boolean }[] = [
+  useEffect(() => {
+    const m = window.matchMedia("(min-width: 1024px)");
+    const upd = () => setIsDesktop(m.matches);
+    upd();
+    m.addEventListener("change", upd);
+    return () => m.removeEventListener("change", upd);
+  }, []);
+
+  // If the user is already authenticated, send them to their actual dashboard
+  // instead of leaving them on this marketing preview.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { createClient } = await import("@/lib/supabase-browser");
+        const sb = createClient();
+        const { data: { user } } = await sb.auth.getUser();
+        if (cancelled || !user) return;
+        // Mobile width gets the mobile home; desktop goes to role dashboard.
+        if (window.innerWidth < 768) { window.location.replace("/mobile"); return; }
+        let role = (user.user_metadata?.role as string | undefined);
+        if (!role) {
+          const { data: p } = await sb.from("profiles").select("role").eq("id", user.id).single();
+          role = p?.role as string | undefined;
+        }
+        // Post-pivot: solo 2 ruoli — utente, avvocato.
+        const dest =
+          role === "avvocato" ? "/avvocato/dashboard" :
+          "/utente/dashboard";
+        window.location.replace(dest);
+      } catch { /* not signed in or supabase failure — stay on the preview */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const tabs: { id: TabId; label: string }[] = [
     { id: '01', label: 'Chat' },
-    { id: '02', label: 'Onboarding' },
-    { id: '03', label: 'Dash · Cittadino', locked: true },
-    { id: '04', label: 'Dash · Professionista', locked: true },
-    { id: '05', label: 'Dash · Impresa', locked: true },
-    { id: '06', label: 'API', locked: true },
-    { id: '07', label: 'Su Misura', locked: true },
+    { id: '02', label: 'Marketplace' },
+    { id: '03', label: 'Avvocato' },
+    { id: '04', label: 'API' },
+    { id: '05', label: 'Su Misura' },
   ];
-
-  const LockIcon = () => (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <rect x="5" y="11" width="14" height="10" rx="1"/>
-      <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-    </svg>
-  );
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: '#13110F' }}>
@@ -1011,22 +1156,90 @@ export default function PreviewPage() {
             >
               <span style={{ fontFamily: T.mono, fontSize: 10, letterSpacing: '0.08em', color: active ? T.v : '#5a5248', fontWeight: 500 }}>{t.id}</span>
               <span>{t.label}</span>
-              {t.locked && <span style={{ color: '#5a5248', opacity: 0.7 }}><LockIcon /></span>}
             </button>
           );
         })}
+
+        {/* Real-auth CTAs pinned right — open ModalUtente with the right
+            initial mode. Wired to Supabase signUp / signInWithPassword. */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            onClick={() => setAuthModal(getRoleForTab(tab))}
+            style={{
+              padding: '6px 12px', background: 'transparent',
+              border: '1px solid rgba(246,242,234,0.18)', borderRadius: 6,
+              fontFamily: T.sans, fontSize: 12.5,
+              color: '#A89F90', cursor: 'pointer',
+              whiteSpace: 'nowrap', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#F6F2EA'; e.currentTarget.style.borderColor = 'rgba(246,242,234,0.32)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#A89F90'; e.currentTarget.style.borderColor = 'rgba(246,242,234,0.18)'; }}
+          >
+            Accedi
+          </button>
+          <button
+            onClick={() => setAuthModal(getRoleForTab(tab))}
+            style={{
+              padding: '6px 14px', background: T.v,
+              border: 'none', borderRadius: 6,
+              fontFamily: T.sans, fontSize: 12.5, fontWeight: 600,
+              color: 'white', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            Inizia gratis
+          </button>
+        </div>
       </div>
 
       {/* ── Content ── */}
       <div style={{ flex: 1, overflow: 'hidden', background: T.paper }}>
-        {tab === '01' && <ChatScreen />}
-        {tab === '02' && <OnboardingScreen onComplete={() => setTab('03')} />}
-        {tab === '03' && <DashboardTab role="cittadino" demoUser={{ name: 'Marco Rossi', initials: 'MR', subtitle: 'CITTADINO · PIANO GRATUITO' }} />}
-        {tab === '04' && <DashboardTab role="prof" demoUser={{ name: 'Avv. Giulia Mancini', initials: 'GM', subtitle: 'AVVOCATO · FORO DI ROMA' }} />}
-        {tab === '05' && <DashboardTab role="impresa" demoUser={{ name: 'Acme SRL', initials: 'AC', subtitle: 'IMPRESA · MEDIA' }} />}
-        {tab === '06' && <ApiScreen />}
-        {tab === '07' && <EnterpriseScreen />}
+        {tab === '01' && <ChatScreen onCTA={() => setAuthModal('utente')} onTrovaProfessionista={() => setAuthModal('utente')} onParlaConSofia={isDesktop ? () => setAvatarOpen(true) : undefined} />}
+        {tab === '02' && <MarketplaceScreen onCTA={() => setAuthModal('utente')} />}
+        {tab === '03' && <AvvocatoScreen onCTA={() => setAuthModal('avvocato')} />}
+        {tab === '04' && <ApiScreen />}
+        {tab === '05' && <EnterpriseScreen />}
       </div>
+
+      {/* ── Real auth modals (Supabase) — solo 2 ruoli pivot ── */}
+      <ModalUtente   open={authModal === 'utente'}   onClose={() => setAuthModal(null)} />
+      <ModalAvvocato open={authModal === 'avvocato'} onClose={() => setAuthModal(null)} />
+
+      {/* Sofia avatar live (desktop only) — lazy-loaded LiveAvatar + ElevenLabs Conversational Agent */}
+      {avatarOpen && isDesktop && (
+        <div
+          onClick={() => setAvatarOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(19,17,15,0.78)', backdropFilter: 'blur(8px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 32,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative', width: 'min(960px, 100%)',
+              background: T.paper, borderRadius: 16, padding: 24,
+              boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
+            }}
+          >
+            <button
+              onClick={() => setAvatarOpen(false)}
+              aria-label="Chiudi"
+              style={{
+                position: 'absolute', top: 12, right: 12,
+                width: 32, height: 32, borderRadius: 999,
+                border: `1px solid ${T.paperL}`, background: 'white',
+                cursor: 'pointer', fontSize: 16, lineHeight: 1, color: T.ink2,
+              }}
+            >×</button>
+            <div style={{ fontFamily: T.serif, fontSize: 22, marginBottom: 4 }}>Sofia · Avvocato AI in video</div>
+            <div style={{ fontFamily: T.mono, fontSize: 11, color: T.ink4, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16 }}>
+              Conversazione live · ElevenLabs + LiveAvatar
+            </div>
+            <AvatarLive autoStart showSelector={false} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
