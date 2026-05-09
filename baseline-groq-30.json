@@ -1,0 +1,701 @@
+{
+  "run_at": "2026-05-09T15:36:42.574Z",
+  "judge_model": "llama-3.3-70b-versatile",
+  "judge_endpoint": "https://api.groq.com/openai/v1/chat/completions",
+  "generator": "groq via NormaAI prod /api/chat",
+  "normaai_url": "https://normaai.it",
+  "seed": 42,
+  "total": 30,
+  "passed": 27,
+  "failed": 3,
+  "pass_rate": 0.9,
+  "avg_score": 0.8113333333333334,
+  "avg_latency_ms": 9087.9,
+  "by_vertical": {
+    "lavoro": {
+      "avg": 0.8464166666666667,
+      "n": 6
+    },
+    "fisco": {
+      "avg": 0.7911250000000001,
+      "n": 4
+    },
+    "privacy": {
+      "avg": 0.908125,
+      "n": 4
+    },
+    "edilizia": {
+      "avg": 0.8041666666666667,
+      "n": 3
+    },
+    "civile": {
+      "avg": 0.7383333333333333,
+      "n": 3
+    },
+    "appalti": {
+      "avg": 0.6833333333333332,
+      "n": 3
+    },
+    "immobiliare": {
+      "avg": 0.76875,
+      "n": 2
+    },
+    "famiglia": {
+      "avg": 0.755,
+      "n": 2
+    },
+    "consumatori": {
+      "avg": 0.9435000000000001,
+      "n": 1
+    },
+    "penale": {
+      "avg": 0.898,
+      "n": 2
+    }
+  },
+  "by_difficulty": {
+    "medium": {
+      "avg": 0.7974666666666667,
+      "n": 15
+    },
+    "easy": {
+      "avg": 0.8555,
+      "n": 9
+    },
+    "hard": {
+      "avg": 0.7797499999999999,
+      "n": 6
+    }
+  },
+  "results": [
+    {
+      "id": "GS-001",
+      "question": "Quali sono i termini di preavviso per il licenziamento di un operaio con 5 anni di anzianità nel settore metalmeccanico?",
+      "vertical": "lavoro",
+      "difficulty": "medium",
+      "response": "Il termine di preavviso per il licenziamento di un operaio con 5 anni di anzianità nel settore metalmeccanico è di 2 mesi [CERTO]. \n\nSecondo l'art. 2118 c.c. e il CCNL metalmeccanici, il preavviso deve essere di almeno 2 mesi per i lavoratori con più di 5 anni di anzianità [Fonte 1] CCNL Metalmeccanici, art. 48.\n\n**Cosa fare adesso**:\n1. Verifica il contratto collettivo di lavoro applicato (CCNL) per confermare il termine di preavviso.\n2. Controlla se ci sono altre condizioni specifiche nel cont",
+      "scores": {
+        "accuracy": 0.9,
+        "citation_quality": 0.8,
+        "completeness": 0.85,
+        "safety": 0.95,
+        "overall": 0.8775
+      },
+      "issues": [
+        "mancanza di riferimento esplicito al D.Lgs. 23/2015 e alla L. 604/1966",
+        "necessità di approfondire ulteriormente le condizioni specifiche del contratto individuale o aziendale"
+      ],
+      "passed": true,
+      "latency_ms": 10527
+    },
+    {
+      "id": "GS-002",
+      "question": "Un lavoratore può essere licenziato durante il periodo di malattia?",
+      "vertical": "lavoro",
+      "difficulty": "easy",
+      "response": "[CERTO] Sì, ma con alcune limitazioni. Il lavoratore non può essere licenziato durante il periodo di malattia se la malattia è dovuta a un infortunio sul lavoro o a una malattia professionale. Inoltre, il lavoratore non può essere licenziato se la malattia è dovuta a una patologia grave che richiede un trattamento continuativo, come ad esempio il cancro o l'HIV.\n\n[PROBABILE] Se la malattia non rientra in queste categorie, il lavoratore può essere licenziato, ma il datore di lavoro deve rispettar",
+      "scores": {
+        "accuracy": 0.85,
+        "citation_quality": 0.9,
+        "completeness": 0.8,
+        "safety": 1,
+        "overall": 0.89
+      },
+      "issues": [
+        "La risposta non menziona espressamente il D.Lgs. 23/2015 e il CCNL, che sono rilevanti per la disciplina del licenziamento",
+        "La risposta potrebbe essere più completa nella trattazione del 'periodo di comporto' e della 'tutela malattia'",
+        "La risposta non fornisce esempi concreti di 'licenziamento nullo' in relazione alla malattia"
+      ],
+      "passed": true,
+      "latency_ms": 11169
+    },
+    {
+      "id": "GS-003",
+      "question": "Come funziona il contratto a tempo determinato dopo il Decreto Dignità?",
+      "vertical": "lavoro",
+      "difficulty": "medium",
+      "response": "[CERTO] Il Decreto Dignità (D.L. 87/2018) ha introdotto limiti ai contratti a tempo determinato. Ora, il numero massimo di rinnovi è 4 e la durata massima è di 24 mesi.\n\n[PROBABILE] Se superi i 24 mesi o fai più di 4 rinnovi, il contratto si considera a tempo indeterminato. Tuttavia, ci sono eccezioni per i contratti stagionali o quelli per attività di sostituzione.\n\n[CERTO] L'art. 19 del D.Lgs. 81/2015 richiede una causale per il contratto a tempo determinato, che deve essere specificata per is",
+      "scores": {
+        "accuracy": 0.92,
+        "citation_quality": 0.95,
+        "completeness": 0.9,
+        "safety": 1,
+        "overall": 0.9435000000000001
+      },
+      "issues": [
+        "La risposta potrebbe essere più dettagliata sulle eccezioni per i contratti stagionali o di sostituzione",
+        "Non è stato menzionato il requisito della forma scritta per il contratto a tempo determinato"
+      ],
+      "passed": true,
+      "latency_ms": 11070
+    },
+    {
+      "id": "GS-004",
+      "question": "Qual è la differenza tra lavoro subordinato e partita IVA monocommittente?",
+      "vertical": "lavoro",
+      "difficulty": "hard",
+      "response": "La differenza tra lavoro subordinato e partita IVA monocommittente è sostanziale.\n\n[CERTO] Il lavoro subordinato è un rapporto di lavoro dove il lavoratore è soggetto all'autorità e al controllo del datore di lavoro, riceve un salario fisso e ha diritto a ferie, malattia e previdenza. [Fonte 1] L'art. 2094 c.c. definisce il lavoro subordinato come \"il rapporto di lavoro dove il lavoratore si obbliga a prestare la propria attività lavorativa alle dipendenze e sotto la direzione del datore di lavo",
+      "scores": {
+        "accuracy": 0.85,
+        "citation_quality": 0.6,
+        "completeness": 0.7,
+        "safety": 0.9,
+        "overall": 0.77
+      },
+      "issues": [
+        "mancanza di citazione del D.Lgs. 81/2015 art. 2",
+        "assenza di riferimenti specifici alla Cass. sez. lav.",
+        "trattazione parziale dell'argomento etero-organizzazione",
+        "necessità di approfondire ulteriormente la distinzione tra lavoro subordinato e autonomo"
+      ],
+      "passed": true,
+      "latency_ms": 8375
+    },
+    {
+      "id": "GS-005",
+      "question": "Quali sono le aliquote IRPEF 2024?",
+      "vertical": "fisco",
+      "difficulty": "easy",
+      "response": "[CERTO] Le aliquote IRPEF per il 2024 sono le seguenti: \n- 23% per redditi fino a 15.000 euro,\n- 25% per redditi tra 15.001 e 28.000 euro,\n- 35% per redditi tra 28.001 e 55.000 euro,\n- 43% per redditi tra 55.001 e 75.000 euro,\n- 45% per redditi oltre 75.000 euro.\n\n[PROBABILE] Potrebbero esserci ulteriori detrazioni o esenzioni a seconda della specifica situazione del contribuente.\n\nPer una risposta più precisa, qual è il tuo reddito annuo?",
+      "scores": {
+        "accuracy": 0.9,
+        "citation_quality": 0,
+        "completeness": 0.8,
+        "safety": 0.9,
+        "overall": 0.655
+      },
+      "issues": [
+        "mancanza di citazioni legislative",
+        "assenza di riferimenti specifici al TUIR art. 11 e alla L. 207/2024",
+        "presenza di una domanda aggiuntiva non richiesta"
+      ],
+      "passed": false,
+      "latency_ms": 10817
+    },
+    {
+      "id": "GS-006",
+      "question": "Come funziona la cedolare secca sugli affitti?",
+      "vertical": "fisco",
+      "difficulty": "easy",
+      "response": "La cedolare secca sugli affitti è un regime fiscale facoltativo per i proprietari di immobili locati a uso abitativo. [CERTO] Consiste in una tassazione del 21% sul canone di locazione, senza possibilità di dedurre spese o perdite.\n\n[CERTO] Il proprietario può optare per questo regime al momento della registrazione del contratto di locazione. [PROBABILE] La scelta è irrevocabile per tutto il periodo di validità del contratto.\n\n[CERTO] I requisiti per optare per la cedolare secca sono: \n1. l'immo",
+      "scores": {
+        "accuracy": 0.92,
+        "citation_quality": 0.8,
+        "completeness": 0.9,
+        "safety": 1,
+        "overall": 0.906
+      },
+      "issues": [
+        "Mancanza di citazione diretta del D.Lgs. 23/2011 e TUIR art. 3 all'interno del testo",
+        "Non è stato menzionato il contratto agevolato al 10% come richiesto"
+      ],
+      "passed": true,
+      "latency_ms": 6152
+    },
+    {
+      "id": "GS-007",
+      "question": "Quando scatta l'obbligo di fatturazione elettronica per i forfettari?",
+      "vertical": "fisco",
+      "difficulty": "medium",
+      "response": "[CERTO] L'obbligo di fatturazione elettronica per i forfettari è scattato il 1° gennaio 2022, ma solo per le fatture emesse nei confronti della PA (Pubblica Amministrazione) o per le operazioni verso soggetti che hanno sede, residenza o domicilio in Paesi diversi da quelli membri dell'UE. \n\n[PROBABILE] Per le fatture emesse tra privati, l'obbligo di fatturazione elettronica per i forfettari potrebbe essere esteso in futuro, ma al momento non ci sono disposizioni in tal senso.\n\n[Fonte 1] D.Lgs. 1",
+      "scores": {
+        "accuracy": 0.6,
+        "citation_quality": 0.8,
+        "completeness": 0.4,
+        "safety": 0.8,
+        "overall": 0.66
+      },
+      "issues": [
+        "La risposta non menziona la data del 1 luglio 2022 come inizio dell'obbligo di fatturazione elettronica per i forfettari",
+        "Mancanza di riferimento alla soglia di 25.000 euro",
+        "Non è menzionata la data del 1 gennaio 2024 come termine per l'estensione dell'obbligo di fatturazione elettronica a tutti",
+        "La citazione della L. 197/2022 art. 1 co. 54 è assente"
+      ],
+      "passed": false,
+      "latency_ms": 8749
+    },
+    {
+      "id": "GS-008",
+      "question": "Quali dati personali sono considerati categorie particolari ai sensi del GDPR?",
+      "vertical": "privacy",
+      "difficulty": "easy",
+      "response": "[CERTO] Ai sensi del GDPR, le categorie particolari di dati personali includono: \n- dati che rivelano l'origine razziale o etnica\n- dati che rivelano le opinioni politiche\n- dati che rivelano le convinzioni religiose o filosofiche\n- dati che rivelano l'appartenenza sindacale\n- dati genetici\n- dati biometrici\n- dati relativi alla salute\n- dati relativi alla vita sessuale o all'orientamento sessuale.\n\n[Fonte 1] Regolamento UE 2016/679, art. 9.\n\nPer trattare questi dati, servono condizioni specific",
+      "scores": {
+        "accuracy": 0.95,
+        "citation_quality": 0.95,
+        "completeness": 0.95,
+        "safety": 1,
+        "overall": 0.9624999999999999
+      },
+      "issues": [
+        "La risposta potrebbe essere migliorata con ulteriori dettagli sulle condizioni specifiche per il trattamento dei dati particolari"
+      ],
+      "passed": true,
+      "latency_ms": 7337
+    },
+    {
+      "id": "GS-009",
+      "question": "Entro quanto tempo bisogna notificare un data breach al Garante?",
+      "vertical": "privacy",
+      "difficulty": "easy",
+      "response": "[CERTO] Entro 72 ore dalla scoperta della violazione.\n \n [Fonte 1] Regolamento UE 2016/679, art. 33 prevede l'obbligo di notificare al Garante per la protezione dei dati personali ogni violazione di dati personali entro 72 ore dal momento in cui ne è venuto a conoscenza.\n\n **Cosa fare adesso**:\n1. Valuta la gravità del data breach\n2. Notifica al Garante entro 72 ore\n3. Comunica l'accaduto agli interessati se il breach presenta un alto rischio per i loro diritti\n\nHai subito un data breach? Quando",
+      "scores": {
+        "accuracy": 0.95,
+        "citation_quality": 0.95,
+        "completeness": 0.9,
+        "safety": 1,
+        "overall": 0.9525
+      },
+      "issues": [
+        "La risposta potrebbe essere migliorata con ulteriori dettagli sulle procedure di notifica",
+        "Non sono presenti riferimenti a possibili eccezioni o casi particolari"
+      ],
+      "passed": true,
+      "latency_ms": 4875
+    },
+    {
+      "id": "GS-010",
+      "question": "Un datore di lavoro può monitorare le email dei dipendenti?",
+      "vertical": "privacy",
+      "difficulty": "hard",
+      "response": "[CERTO] Sì, il datore di lavoro può monitorare le email dei dipendenti, ma deve rispettare le norme sulla privacy e sulla protezione dei dati personali. \n\n[PROBABILE] Il monitoraggio delle email deve essere proporzionato e necessario per ragioni legittime, come ad esempio la tutela della proprietà intellettuale o la prevenzione di attività illecite. \n\n[PROBABILE] Il datore di lavoro deve anche informare i dipendenti del monitoraggio e ottenere il loro consenso, se necessario. \n\n[Fonte 1] Il Gara",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.7,
+        "safety": 0.9,
+        "overall": 0.755
+      },
+      "issues": [
+        "mancanza di riferimenti specifici alla L. 300/1970 art. 4",
+        "assenza di citazioni della Cass. sez. lav.",
+        "incompleta trattazione dell'accordo sindacale e dell'informativa",
+        "necessità di approfondire il concetto di proporzionalità nel monitoraggio delle email"
+      ],
+      "passed": true,
+      "latency_ms": 7228
+    },
+    {
+      "id": "GS-011",
+      "question": "Cosa serve per la CILA semplificata?",
+      "vertical": "edilizia",
+      "difficulty": "easy",
+      "response": "Per la CILA (Comunicazione di Inizio di Lavori Asseverata) semplificata, servono i seguenti documenti:\n1. Una copia del titolo di proprietà dell'immobile o del contratto di locazione.\n2. Una planimetria dell'immobile con l'indicazione delle parti interessate dai lavori.\n3. Una relazione asseverata da un tecnico abilitato che attesti la conformità dei lavori alle norme di sicurezza e alle prescrizioni urbanistiche.\n4. La documentazione fotografica dell'immobile prima dell'inizio dei lavori.\n5. La",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.9,
+        "safety": 0.95,
+        "overall": 0.8075000000000001
+      },
+      "issues": [
+        "mancanza di citazioni dirette del D.P.R. 380/2001 art. 6-bis e del D.L. 76/2020",
+        "necessità di chiarire meglio le differenze tra CILA semplificata e procedimenti più complessi",
+        "assenza di riferimenti specifici alle norme urbanistiche e di sicurezza"
+      ],
+      "passed": true,
+      "latency_ms": 7359
+    },
+    {
+      "id": "GS-012",
+      "question": "Quali interventi rientrano nella manutenzione straordinaria leggera?",
+      "vertical": "edilizia",
+      "difficulty": "medium",
+      "response": "La manutenzione straordinaria leggera include interventi di riparazione o sostituzione di parti che non richiedono grandi lavori di ristrutturazione o sostanziali modifiche alla struttura dell'immobile. \n\n[CERTO] Sono considerati interventi di manutenzione straordinaria leggera quelli elencati nell'art. 3, comma 1, lettera b) del D.P.R. 380/2001, come ad esempio la sostituzione di infissi, la riparazione di muri e solai, l'installazione di nuovi impianti di riscaldamento o condizionamento.\n\n[PRO",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.8,
+        "completeness": 0.6,
+        "safety": 0.9,
+        "overall": 0.785
+      },
+      "issues": [
+        "mancanza di riferimenti diretti alla CILA",
+        "non sono stati trattati gli elementi strutturali",
+        "il frazionamento non è stato menzionato",
+        "la risposta non fornisce una definizione chiara di manutenzione straordinaria leggera"
+      ],
+      "passed": true,
+      "latency_ms": 11117
+    },
+    {
+      "id": "GS-013",
+      "question": "Quali sono i termini di prescrizione per i contratti di appalto privato?",
+      "vertical": "civile",
+      "difficulty": "medium",
+      "response": "[CERTO] I termini di prescrizione per i contratti di appalto privato sono disciplinati dal Codice Civile. \n\nIl termine di prescrizione per le controversie relative ai contratti di appalto privato è di 10 anni per quanto riguarda il pagamento del prezzo e 5 anni per le altre obbligazioni, come ad esempio il risarcimento dei danni. \n\n[PROBABILE] Tuttavia, è importante notare che il termine di prescrizione può variare a seconda delle specifiche condizioni del contratto e delle leggi applicabili. \n\n",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.6,
+        "safety": 0.9,
+        "overall": 0.735
+      },
+      "issues": [
+        "mancanza di citazioni specifiche richieste (art. 2226 c.c. e art. 2946 c.c.)",
+        "non copre tutti gli argomenti richiesti (ad esempio, decorrenza del termine di prescrizione)",
+        "non fornisce informazioni precise sui 2 anni per i vizi"
+      ],
+      "passed": true,
+      "latency_ms": 10688
+    },
+    {
+      "id": "GS-014",
+      "question": "Come si calcola il risarcimento del danno non patrimoniale?",
+      "vertical": "civile",
+      "difficulty": "hard",
+      "response": "Il risarcimento del danno non patrimoniale, noto anche come danno morale, è una componente del risarcimento del danno che tiene conto delle sofferenze fisiche e psichiche subite da una persona a seguito di un evento dannoso.\n\n[CERTO] La legge italiana prevede che il risarcimento del danno non patrimoniale sia calcolato in base alle disposizioni dell'art. 2059 del Codice Civile, che stabilisce che il danno non patrimoniale deve essere valutato dal giudice con equità.\n\n[PROBABILE] La giurisprudenz",
+      "scores": {
+        "accuracy": 0.85,
+        "citation_quality": 0.4,
+        "completeness": 0.6,
+        "safety": 0.9,
+        "overall": 0.7
+      },
+      "issues": [
+        "mancanza di citazioni attese (art. 2059 c.c., Corte Cost. n. 233/2003, Cass. S.U. n. 26972/2008)",
+        "argomenti richiesti non completamente coperti (tabella Milano, personalizzazione, danno biologico)",
+        "necessità di approfondimento su aspetti specifici del danno non patrimoniale"
+      ],
+      "passed": true,
+      "latency_ms": 9788
+    },
+    {
+      "id": "GS-015",
+      "question": "Qual è la soglia per gli appalti sotto-soglia comunitaria per i lavori nel 2024?",
+      "vertical": "appalti",
+      "difficulty": "medium",
+      "response": "La soglia per gli appalti sotto-soglia comunitaria per i lavori nel 2024 è di 214.000 euro [CERTO] ai sensi dell'art. 36 del D. Lgs. 50/2016. \n\nPer appalti di importo inferiore a tale soglia, le stazioni appaltanti possono procedere con affidamenti diretti o procedure semplificate.\n\nHai un appalto specifico in mente? Di che tipo di lavori si tratta?",
+      "scores": {
+        "accuracy": 0.6,
+        "citation_quality": 0.4,
+        "completeness": 0.4,
+        "safety": 0.8,
+        "overall": 0.56
+      },
+      "issues": [
+        "La risposta non cita il D.Lgs. 36/2023 come richiesto",
+        "La risposta non menziona la Dir. 2014/24/UE come richiesta",
+        "La soglia di 214.000 euro non è confermata come aggiornata per il 2024",
+        "La risposta non menziona la soglia di 5.538.000 euro come argomento richiesto",
+        "La risposta potrebbe essere considerata allucinante per la mancanza di informazioni precise sulle soglie comunitarie"
+      ],
+      "passed": false,
+      "latency_ms": 6372
+    },
+    {
+      "id": "GS-016",
+      "question": "Cos'è il subappalto a cascata nel nuovo codice degli appalti?",
+      "vertical": "appalti",
+      "difficulty": "hard",
+      "response": "Il subappalto a cascata è una pratica in cui l'appaltatore principale subappalta una parte dei lavori a un altro soggetto, che a sua volta subappalta a un altro, e così via, creando una catena di subappalti.\n\n[CERTO] Il nuovo codice degli appalti (D.Lgs. 50/2016) prevede che il subappalto sia possibile solo se espressamente autorizzato dal committente e se il subappaltatore è qualificato per l'esecuzione dei lavori.\n\n[PROBABILE] La legge prevede che il subappalto a cascata sia limitato al 30% de",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.7,
+        "safety": 0.9,
+        "overall": 0.755
+      },
+      "issues": [
+        "mancanza di citazione specifica del D.Lgs. 36/2023 art. 119",
+        "non è chiaro se il limite del 30% sia effettivamente previsto dalla legge",
+        "la risposta non approfondisce a sufficienza il tema della responsabilità solidale"
+      ],
+      "passed": true,
+      "latency_ms": 9954
+    },
+    {
+      "id": "GS-017",
+      "question": "Quali sono le imposte sull'acquisto della prima casa?",
+      "vertical": "immobiliare",
+      "difficulty": "easy",
+      "response": "[CERTO] L'acquisto della prima casa è soggetto a imposte ridotte. \n\n[PROBABILE] La registrazione dell'atto di compravendita comporta il pagamento dell'imposta di registro, che per la prima casa è dell'2% del prezzo di acquisto. \n\n[PROBABILE] Inoltre, è dovuta l'imposta ipotecaria e l'imposta catastale, che ammontano a 50 euro ciascuna.\n\n[CERTO] Per poter beneficiare di queste aliquote ridotte, devi soddisfare determinate condizioni: \n1. l'immobile deve essere ubicato nel territorio dello Stato;\n",
+      "scores": {
+        "accuracy": 0.85,
+        "citation_quality": 0.6,
+        "completeness": 0.8,
+        "safety": 0.95,
+        "overall": 0.8025
+      },
+      "issues": [
+        "Mancanza di citazioni dirette a supporto delle affermazioni",
+        "Nessuna menzione specifica del D.P.R. 131/1986 e della L. 728/1972",
+        "Informazioni generali corrette, ma necessità di approfondimento"
+      ],
+      "passed": true,
+      "latency_ms": 10754
+    },
+    {
+      "id": "GS-018",
+      "question": "Cosa si intende per usufrutto e come si calcola?",
+      "vertical": "immobiliare",
+      "difficulty": "medium",
+      "response": "L'usufrutto è un diritto reale su una cosa altrui, che consente al titolare di godere della cosa e di trarne tutti i frutti, senza poter disporne della sostanza. \n\n[CERTO] L'art. 981 del Codice Civile definisce l'usufrutto come il diritto di godere di una cosa mobile o immobile altrui, con l'obbligo di conservarne la sostanza.\n\nIl calcolo dell'usufrutto dipende dal tipo di bene su cui è costituito e dal valore del bene stesso. \n\n[PROBABILE] In generale, il valore dell'usufrutto può essere calcol",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.6,
+        "safety": 0.9,
+        "overall": 0.735
+      },
+      "issues": [
+        "mancanza di citazione dell'art. 978 c.c.",
+        "mancanza di citazione del DPR 131/1986 art. 46",
+        "argomenti come 'nuda proprietà' e 'prospetto ANCE' non trattati a sufficienza",
+        "formula per il calcolo dell'usufrutto non del tutto precisa"
+      ],
+      "passed": true,
+      "latency_ms": 12664
+    },
+    {
+      "id": "GS-019",
+      "question": "Come funziona l'assegno di mantenimento per i figli in caso di separazione?",
+      "vertical": "famiglia",
+      "difficulty": "medium",
+      "response": "L'assegno di mantenimento per i figli in caso di separazione è regolato dal Codice Civile e dalle norme di diritto di famiglia. [CERTO] L'art. 148 del Codice Civile stabilisce che entrambi i genitori hanno l'obbligo di mantenere i figli, anche in caso di separazione o divorzio.\n\nIl giudice, in base alle condizioni economiche dei genitori e alle esigenze dei figli, può disporre che uno dei genitori versi un assegno periodico all'altro per il mantenimento dei figli. [PROBABILE] L'importo dell'asse",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.7,
+        "safety": 0.9,
+        "overall": 0.755
+      },
+      "issues": [
+        "mancanza di citazioni specifiche come l'art. 337-ter c.c. e la Cass. sez. I",
+        "criteri di calcolo dell'assegno di mantenimento non approfonditi",
+        "reddito dei genitori e tenore di vita non trattati in modo dettagliato"
+      ],
+      "passed": true,
+      "latency_ms": 12459
+    },
+    {
+      "id": "GS-020",
+      "question": "Quali sono i diritti del consumatore in caso di prodotto difettoso acquistato online?",
+      "vertical": "consumatori",
+      "difficulty": "easy",
+      "response": "[CERTO] Il consumatore ha diritto a una garanzia legale di conformità del prodotto di 2 anni dalla consegna. [Fonte 1] D.Lgs. 206/2005, art. 130 prevede che il venditore sia responsabile per i difetti di conformità del prodotto.\n\n[PROBABILE] Il consumatore può chiedere al venditore la riparazione o la sostituzione del prodotto, a sua scelta. Se ciò non è possibile, può chiedere una riduzione del prezzo o la risoluzione del contratto.\n\n[CERTO] Il consumatore deve denunciare il difetto di conformi",
+      "scores": {
+        "accuracy": 0.92,
+        "citation_quality": 0.95,
+        "completeness": 0.9,
+        "safety": 1,
+        "overall": 0.9435000000000001
+      },
+      "issues": [
+        "La risposta potrebbe essere migliorata con una citazione più esplicita della Dir. 2019/771/UE",
+        "La procedura per la denuncia del difetto potrebbe essere descritta in modo più dettagliato"
+      ],
+      "passed": true,
+      "latency_ms": 11031
+    },
+    {
+      "id": "GS-021",
+      "question": "Come funziona la cassa integrazione ordinaria (CIGO)?",
+      "vertical": "lavoro",
+      "difficulty": "medium",
+      "response": "La cassa integrazione ordinaria (CIGO) è un istituto di welfare italiano che prevede l'erogazione di un trattamento economico ai lavoratori dipendenti che subiscono una riduzione o sospensione dell'attività lavorativa a causa di crisi aziendali o di mercato.\n\n[CERTO] La CIGO è regolata dal Decreto Legislativo 14 settembre 2015, n. 148, e successive modifiche. Il trattamento economico è erogato dall'INPS e consiste in un importo che va dal 60% al 100% della retribuzione lorda del lavoratore, a se",
+      "scores": {
+        "accuracy": 0.85,
+        "citation_quality": 0.9,
+        "completeness": 0.6,
+        "safety": 0.95,
+        "overall": 0.8374999999999999
+      },
+      "issues": [
+        "La risposta non menziona espressamente le 13 settimane",
+        "Non è chiaro se il massimale dell'integrazione salariale sia dell'80%",
+        "Mancanza di dettagli sul massimale",
+        "La citazione del D.Lgs. 148/2015 è presente ma potrebbe essere più dettagliata"
+      ],
+      "passed": true,
+      "latency_ms": 11482
+    },
+    {
+      "id": "GS-022",
+      "question": "Cosa si intende per abuso del diritto fiscale?",
+      "vertical": "fisco",
+      "difficulty": "hard",
+      "response": "L'abuso del diritto fiscale si riferisce a situazioni in cui un contribuente utilizza strumenti o tecniche giuridiche per ridurre o evitare il pagamento di imposte in modo non conforme allo spirito della legge, anche se formalmente le norme vengono rispettate. \n\n[CERTO] L'art. 10-bis della L. 212/2000 (Statuto dei diritti del contribuente) introduce il principio dell'abuso del diritto, che consente all'amministrazione finanziaria di disconoscere gli effetti fiscali di operazioni che, pur essendo",
+      "scores": {
+        "accuracy": 0.92,
+        "citation_quality": 0.95,
+        "completeness": 0.9,
+        "safety": 1,
+        "overall": 0.9435000000000001
+      },
+      "issues": [
+        "La risposta potrebbe essere migliorata con ulteriori dettagli sulle conseguenze dell'abuso del diritto fiscale",
+        "Sarebbe utile fornire esempi concreti di operazioni che possono essere considerate abuso del diritto"
+      ],
+      "passed": true,
+      "latency_ms": 10908
+    },
+    {
+      "id": "GS-023",
+      "question": "Cos'è il reato di autoriciclaggio?",
+      "vertical": "penale",
+      "difficulty": "medium",
+      "response": "Il reato di autoriciclaggio è stato introdotto nel nostro ordinamento giuridico con la legge n. 186 del 2014, che ha modificato il codice penale aggiungendo l'articolo 648-ter, intitolato \"Autoriciclaggio\".\n\n[CERTO] Secondo questo articolo, il reato di autoriciclaggio consiste nell'impiegare, sostituire, trasferire, in qualunque modo, denaro, beni o utilità di cui si ha la disponibilità, al fine di ostacolare l'identificazione della loro provenienza delittuosa, quando essi provengono da un delit",
+      "scores": {
+        "accuracy": 0.92,
+        "citation_quality": 0.8,
+        "completeness": 0.9,
+        "safety": 1,
+        "overall": 0.906
+      },
+      "issues": [
+        "mancanza di riferimenti specifici alla giurisprudenza",
+        "necessità di approfondire gli aspetti processuali"
+      ],
+      "passed": true,
+      "latency_ms": 8000
+    },
+    {
+      "id": "GS-024",
+      "question": "Quando scatta la responsabilità 231 per le imprese?",
+      "vertical": "penale",
+      "difficulty": "medium",
+      "response": "La responsabilità 231 scatta quando un'impresa commette un reato previsto dal Decreto Legislativo 8 giugno 2001, n. 231, e tale reato è stato commesso da un suo rappresentante o dipendente nell'interesse o a vantaggio dell'impresa.\n\n[CERTO] L'art. 5 del D.Lgs. 231/2001 prevede che l'impresa sia responsabile quando il reato sia stato commesso da una persona che riveste una posizione apicale (come un amministratore o un dirigente) o da un dipendente che abbia agito sotto la direzione o la supervis",
+      "scores": {
+        "accuracy": 0.85,
+        "citation_quality": 0.9,
+        "completeness": 0.8,
+        "safety": 1,
+        "overall": 0.89
+      },
+      "issues": [
+        "La risposta non menziona esplicitamente l'Organismo di Vigilanza (OdV) come elemento fondamentale per la prevenzione dei reati",
+        "Non fornisce una lista esaustiva dei reati presupposto del D.Lgs. 231/2001",
+        "La spiegazione sulla sanzione pecuniaria è assente"
+      ],
+      "passed": true,
+      "latency_ms": 10734
+    },
+    {
+      "id": "GS-025",
+      "question": "Quando è obbligatoria la nomina del DPO?",
+      "vertical": "privacy",
+      "difficulty": "medium",
+      "response": "[CERTO] La nomina del DPO (Data Protection Officer) è obbligatoria in tre casi specifici: \n1. quando il titolare del trattamento è un'autorità pubblica o un organismo pubblico (ad esclusione delle autorità giurisdizionali quando esercitano le loro funzioni giurisdizionali);\n2. quando le attività principali del titolare del trattamento o del responsabile del trattamento consistono in operazioni di trattamento che, per loro natura, ambito di applicazione e/o finalità, richiedono il monitoraggio re",
+      "scores": {
+        "accuracy": 0.95,
+        "citation_quality": 0.95,
+        "completeness": 0.95,
+        "safety": 1,
+        "overall": 0.9624999999999999
+      },
+      "issues": [],
+      "passed": true,
+      "latency_ms": 4184
+    },
+    {
+      "id": "GS-026",
+      "question": "Cosa si intende per mora del debitore?",
+      "vertical": "civile",
+      "difficulty": "easy",
+      "response": "La mora del debitore è una situazione in cui il debitore non adempie alla sua obbligazione di pagare un debito entro il termine stabilito. [CERTO] Secondo l'art. 2934 del Codice Civile, la mora del debitore si verifica quando il debitore non esegue la prestazione dovuta nel termine stabilito e il creditore lo richiede espressamente.\n\n[CERTO] La mora del debitore può essere di due tipi: mora debitorum (mora del debitore) e mora creditoris (mora del creditore). La mora debitorum si verifica quando",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.7,
+        "completeness": 0.7,
+        "safety": 0.9,
+        "overall": 0.7799999999999999
+      },
+      "issues": [
+        "mancanza di citazione dell'art. 1219 c.c. per la costituzione in mora",
+        "mancanza di approfondimento sulla differenza tra mora debitorum e mora creditoris",
+        "citazione parziale dell'art. 1224 c.c. senza riferimento alla costituzione in mora",
+        "assenza di una trattazione dettagliata sull'intimazione come mezzo per costituire in mora il debitore"
+      ],
+      "passed": true,
+      "latency_ms": 11315
+    },
+    {
+      "id": "GS-027",
+      "question": "Il superbonus 110% è ancora applicabile nel 2025?",
+      "vertical": "edilizia",
+      "difficulty": "medium",
+      "response": "[CERTO] Il superbonus 110% è stato prorogato fino al 2025, ma con alcune limitazioni. \n[PROBABILE] La proroga è stata introdotta dalla Legge di Bilancio 2024 e prevede che il superbonus 110% sia applicabile fino al 31 dicembre 2025, ma solo per le spese sostenute entro tale data e a condizione che i lavori siano stati iniziati prima del 1 gennaio 2023.\n[PROBABILE] Inoltre, la legge prevede che il superbonus 110% sia applicabile solo per le spese sostenute per interventi di riqualificazione energ",
+      "scores": {
+        "accuracy": 0.85,
+        "citation_quality": 0.8,
+        "completeness": 0.7,
+        "safety": 0.9,
+        "overall": 0.82
+      },
+      "issues": [
+        "mancanza di citazione diretta della L. 234/2021",
+        "non è chiaro se la risposta copre tutti gli aspetti dell'aliquota ridotta",
+        "la risposta non menziona esplicitamente la cessione del credito",
+        "la risposta potrebbe essere migliorata con una maggiore precisione sulle scadenze"
+      ],
+      "passed": true,
+      "latency_ms": 5213
+    },
+    {
+      "id": "GS-028",
+      "question": "Cosa prevede il welfare aziendale dal punto di vista fiscale?",
+      "vertical": "lavoro",
+      "difficulty": "medium",
+      "response": "[CERTO] Il welfare aziendale prevede una serie di agevolazioni fiscali per le aziende e per i dipendenti. In particolare, le somme erogate dal datore di lavoro per il welfare aziendale sono escluse dalla formazione del reddito di lavoro dipendente del lavoratore e non sono soggette a contributi previdenziali e assistenziali, fino a un massimale di 3.000 euro lordi annui per lavoratore, come previsto dall'art. 51, comma 2, del TUIR (Testo Unico delle Imposte sul Reddito) [Fonte 1] D.Lgs. 446/1997",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.7,
+        "completeness": 0.6,
+        "safety": 0.9,
+        "overall": 0.7599999999999999
+      },
+      "issues": [
+        "mancanza di riferimento alla L. 208/2015",
+        "assenza di menzione della soglia di 1000 euro",
+        "non sono stati trattati tutti i tipi di beni e servizi esclusi",
+        "la citazione del TUIR art. 51 co. 2 è parziale"
+      ],
+      "passed": true,
+      "latency_ms": 7976
+    },
+    {
+      "id": "GS-029",
+      "question": "Come funziona il criterio dell'offerta economicamente più vantaggiosa (OEPV)?",
+      "vertical": "appalti",
+      "difficulty": "medium",
+      "response": "Il criterio dell'offerta economicamente più vantaggiosa (OEPV) è un metodo di valutazione utilizzato nelle procedure di appalto pubblico per selezionare l'offerta migliore tra quelle presentate dai concorrenti. \n\n[CERTO] L'art. 95 del D.Lgs. 50/2016 (Codice dei Contratti Pubblici) disciplina il criterio dell'OEPV, che tiene conto di vari fattori come il prezzo, la qualità, le caratteristiche tecniche, i servizi aggiuntivi e gli aspetti ambientali e sociali.\n\n[PROBABILE] La valutazione dell'OEPV ",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.6,
+        "safety": 0.9,
+        "overall": 0.735
+      },
+      "issues": [
+        "mancanza di citazione del D.Lgs. 36/2023 art. 108",
+        "argomenti richiesti non completamente coperti (criteri qualitativi, ponderazione, soglia anomalia)",
+        "necessità di approfondimento sul processo di valutazione dell'OEPV"
+      ],
+      "passed": true,
+      "latency_ms": 3950
+    },
+    {
+      "id": "GS-030",
+      "question": "Cosa prevede il patto di famiglia per le imprese familiari?",
+      "vertical": "famiglia",
+      "difficulty": "hard",
+      "response": "Il patto di famiglia è un accordo che consente alle imprese familiari di trasferire la proprietà e il controllo dell'impresa ai discendenti, riducendo gli oneri fiscali. \n\n[CERTO] La legge prevede che il patto di famiglia debba essere stipulato per atto pubblico e debba essere registrato presso l'Agenzia delle Entrate. \n\n[PROBABILE] Il patto di famiglia può essere utilizzato per trasferire la proprietà dell'impresa ai discendenti, escludendo gli altri eredi, e può anche essere utilizzato per reg",
+      "scores": {
+        "accuracy": 0.8,
+        "citation_quality": 0.6,
+        "completeness": 0.7,
+        "safety": 0.9,
+        "overall": 0.755
+      },
+      "issues": [
+        "mancanza di riferimento esplicito all'art. 768-bis c.c.",
+        "non è stato trattato in modo approfondito l'argomento dei legittimari",
+        "la liquidazione non è stata menzionata nella risposta"
+      ],
+      "passed": true,
+      "latency_ms": 10390
+    }
+  ],
+  "ci_passed": true
+}
