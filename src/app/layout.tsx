@@ -1,8 +1,40 @@
 import type { Metadata } from "next";
+import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import CookieBanner from "@/components/CookieBanner";
 import PlausibleAnalytics from "@/components/PlausibleAnalytics";
 import SessionGuard from "@/components/SessionGuard";
+
+// Brand fonts NormaAI cream/serif legal-warm — esposti come CSS variables
+// per essere usati da homepage, /come_ho_costruito_norma, /studio e route future
+// via `style={{ fontFamily: 'var(--font-instrument-serif)' }}` o tailwind
+// arbitrary values. preload:true sul serif primario per LCP del hero.
+const instrumentSerif = Instrument_Serif({
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+  variable: "--font-instrument-serif",
+  display: "swap",
+  preload: true,
+  fallback: ["Iowan Old Style", "Georgia", "serif"],
+  adjustFontFallback: true,
+});
+
+const interTight = Inter_Tight({
+  subsets: ["latin"],
+  variable: "--font-inter-tight",
+  display: "swap",
+  preload: true,
+  fallback: ["system-ui", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+  preload: false,
+  fallback: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+});
 
 export const metadata: Metadata = {
   title: "NormaAI — La norma è uguale per tutti.",
@@ -53,7 +85,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" suppressHydrationWarning>
+    <html
+      lang="it"
+      suppressHydrationWarning
+      className={`${instrumentSerif.variable} ${interTight.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
         <script
           type="application/ld+json"
