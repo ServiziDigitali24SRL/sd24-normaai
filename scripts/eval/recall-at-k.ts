@@ -1,25 +1,44 @@
 #!/usr/bin/env tsx
 /**
- * recall@k baseline — ITA-CASEHOLD gold set against hybrid_search_chunks_v2.
+ * recall@k baseline — ITA-CASEHOLD gold against hybrid_search_chunks_v2 (PROD retriever).
  *
- * Tab 2 is ingesting `eval.itacasehold_gold` (~1101 TAR/CdS docs full text).
- * This script computes recall@k at multiple k values for the production
- * retriever (hybrid_search_chunks_v2 RPC) so we have a baseline before any
- * SQ-RAG agent improvements land.
+ * Real schema of eval.itacasehold_gold (Tab 2 verified 2026-05-09):
+ *   id            bigint     primary key
+ *   split         text       train / val / test
+ *   url           text       canonical URL of the original sentence (TAR/CdS)
+ *   title         text       sentence title (e.g. "TAR Lazio sez. III 2024-...")
+ *   doc           text       full document text
+ *   summary       text       canonical legal "holding" / massima
+ *   materia       text       legal vertical
+ *   source_dataset text      provenance
+ *   license       text       license string
+ *   inserted_at   timestamptz
  *
- * Schema assumption (verify with Tab 2 once table is live):
- *   eval.itacasehold_gold
- *     - id            text         primary key
- *     - query_text    text         the legal question
- *     - gold_doc_ids  text[]       relevant chunk/doc ids
- *     - vertical      text         legal vertical (optional)
- *     - source_url    text         original TAR/CdS URL (optional)
+ * NOTE: schema is dataset-only (no query+gold_doc_ids fields). To compute
+ * recall@k we need a query↔gold mapping. Two strategies, both implemented:
  *
- * If the schema differs, adjust the SELECT in `loadGold()` and the join/match
- * logic in `evaluate()`. Re-run when ready.
+ *   1. --query=summary  : use `summary` (legal holding) as the query. Hit if
+ *                         any top-k chunk has the SAME `url` as the gold row.
+ *                         Coverage requires Tab 2 to have ingested these docs
+ *                         into normaai_chunks with `url` = gold.url. Verified
+ *                         pre-run via a count query.
+ *   2. --query=title    : use `title` as the query. Same hit definition.
+ *
+ * If normaai_chunks does NOT have url-matching rows for the gold set, recall
+ * is structurally 0; we exit with an error message pointing at the missing
+ * coverage rather than emit a meaningless 0.0 score.
+ *
+ * Pre-requisite (blocker as of 2026-05-09):
+ *   PostgREST default config exposes only {public, storage, graphql_public,
+ *   studio}. To run this script, schema `eval` must be exposed (Supabase
+ *   dashboard Settings > API > Exposed Schemas) OR a public view created:
+ *     CREATE VIEW public.itacasehold_gold_view AS
+ *       SELECT id, split, url, title, summary, materia FROM eval.itacasehold_gold;
+ *   Coordinate with Tab 2 — they own this surface.
  *
  * Usage:
- *   tsx scripts/eval/recall-at-k.ts --k 5,10,20 --limit 100 --output recall-baseline.json
+ *   SUPABASE_SERVICE_ROLE_KEY=... EMBED_API_KEY=... \
+ *     tsx scripts/eval/recall-at-k.ts --k 5,10,20 --limit 100 --query summary
  */
 
 const SUPA_URL = process.env.SUPABASE_URL ?? "https://rjwaegzdfsdlnbijkark.supabase.co";
@@ -29,26 +48,25 @@ const EMBED_KEY = process.env.EMBED_API_KEY ?? "";
 const EMBED_DIM = parseInt(process.env.EMBED_DIM ?? "1024", 10);
 
 interface GoldRow {
-  id: string;
-  query_text: string;
-  gold_doc_ids: string[];
-  vertical: string | null;
+  id: number;
+  split: string | null;
+  url: string | null;
+  title: string | null;
+  summary: string | null;
+  materia: string | null;
 }
 
-async function supabase(method: string, path: string, body?: unknown): Promise<unknown> {
+async function supaGet(path: string, schema: string = "public"): Promise<unknown[]> {
   const r = await fetch(`${SUPA_URL}/rest/v1${path}`, {
-    method,
     headers: {
       apikey: SUPA_KEY,
       Authorization: `Bearer ${SUPA_KEY}`,
+      "Accept-Profile": schema,
       "Content-Type": "application/json",
-      "Accept-Profile": "eval", // ← schema=eval
-      "Content-Profile": "eval",
     },
-    body: body ? JSON.stringify(body) : undefined,
   });
-  if (!r.ok) throw new Error(`supabase ${method} ${path} ${r.status} ${await r.text().catch(() => "")}`);
-  return r.json();
+  if (!r.ok) throw new Error(`supabase GET ${path} ${r.status} ${await r.text().catch(() => "")}`);
+  return r.json() as Promise<unknown[]>;
 }
 
 async function rpc(name: string, args: Record<string, unknown>): Promise<unknown[]> {
@@ -68,73 +86,86 @@ async function rpc(name: string, args: Record<string, unknown>): Promise<unknown
 async function embedQuery(text: string): Promise<number[]> {
   const r = await fetch(`${EMBED_URL}/embeddings`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${EMBED_KEY}`,
-    },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${EMBED_KEY}` },
     body: JSON.stringify({ input: [text], model: "BAAI/bge-m3" }),
     signal: AbortSignal.timeout(8000),
   });
   if (!r.ok) throw new Error(`embed ${r.status}`);
   const j = (await r.json()) as { data?: { embedding: number[] }[]; embeddings?: number[][] };
   const vec = j.data?.[0]?.embedding ?? j.embeddings?.[0];
-  if (!vec || vec.length !== EMBED_DIM) {
-    throw new Error(`embed dim ${vec?.length} != ${EMBED_DIM}`);
-  }
+  if (!vec || vec.length !== EMBED_DIM) throw new Error(`embed dim ${vec?.length} != ${EMBED_DIM}`);
   return vec;
 }
 
 async function loadGold(limit?: number): Promise<GoldRow[]> {
   const lim = limit ? `&limit=${limit}` : "";
-  const data = (await supabase("GET", `/itacasehold_gold?select=id,query_text,gold_doc_ids,vertical&order=id.asc${lim}`)) as GoldRow[];
+  const data = (await supaGet(
+    `/itacasehold_gold?select=id,split,url,title,summary,materia&order=id.asc${lim}`,
+    "eval",
+  )) as GoldRow[];
   return data;
 }
 
-interface EvalRow {
-  id: string;
-  query: string;
-  vertical: string | null;
-  gold_n: number;
-  retrieved_ids: string[];
-  hits_at_k: Record<string, number>;
-  recall_at_k: Record<string, number>;
+async function checkCorpusCoverage(goldUrls: string[]): Promise<number> {
+  if (goldUrls.length === 0) return 0;
+  // Count rows in normaai_chunks whose url matches any gold url.
+  // PostgREST in.() with many strings can be slow; sample 50.
+  const sample = goldUrls.slice(0, 50);
+  const inList = sample.map((u) => `"${u.replace(/"/g, "")}"`).join(",");
+  try {
+    const r = (await supaGet(
+      `/normaai_chunks?select=count&url=in.(${encodeURIComponent(inList)})`,
+    )) as { count: number }[];
+    return r[0]?.count ?? 0;
+  } catch {
+    return 0;
+  }
 }
 
-async function evaluate(rows: GoldRow[], ks: number[]): Promise<EvalRow[]> {
+interface EvalRow {
+  gold_id: number;
+  gold_url: string | null;
+  query: string;
+  vertical: string | null;
+  retrieved_urls: string[];
+  hits_at_k: Record<string, 0 | 1>;
+}
+
+async function evaluate(rows: GoldRow[], ks: number[], queryField: "summary" | "title"): Promise<EvalRow[]> {
   const maxK = Math.max(...ks);
   const results: EvalRow[] = [];
   for (let i = 0; i < rows.length; i++) {
     const g = rows[i];
-    process.stdout.write(`[${i + 1}/${rows.length}] ${g.id} ... `);
+    const queryText = queryField === "summary" ? (g.summary ?? g.title ?? "") : (g.title ?? "");
+    if (!queryText || !g.url) {
+      console.log(`  [${i + 1}/${rows.length}] gold_id=${g.id} skipped (missing ${queryField} or url)`);
+      continue;
+    }
+    process.stdout.write(`  [${i + 1}/${rows.length}] id=${g.id} ... `);
     try {
-      const emb = await embedQuery(g.query_text);
+      const emb = await embedQuery(queryText);
       const ret = (await rpc("hybrid_search_chunks_v2", {
         query_embedding: emb,
-        query_text: g.query_text,
-        match_vertical: g.vertical,
+        query_text: queryText,
+        match_vertical: g.materia,
         match_count: maxK,
         candidate_count: Math.max(maxK * 3, 30),
-      })) as { id: string }[];
-      const retrievedIds = ret.map((r) => r.id);
-      const goldSet = new Set(g.gold_doc_ids ?? []);
-      const hits_at_k: Record<string, number> = {};
-      const recall_at_k: Record<string, number> = {};
+      })) as { url: string | null }[];
+      const retrievedUrls = ret.map((r) => r.url).filter((u): u is string => Boolean(u));
+      const hits_at_k: Record<string, 0 | 1> = {};
       for (const k of ks) {
-        const topk = retrievedIds.slice(0, k);
-        const hits = topk.filter((id) => goldSet.has(id)).length;
-        hits_at_k[`@${k}`] = hits;
-        recall_at_k[`@${k}`] = goldSet.size > 0 ? hits / goldSet.size : 0;
+        const topk = retrievedUrls.slice(0, k);
+        hits_at_k[`@${k}`] = topk.includes(g.url) ? 1 : 0;
       }
       results.push({
-        id: g.id,
-        query: g.query_text.slice(0, 100),
-        vertical: g.vertical,
-        gold_n: goldSet.size,
-        retrieved_ids: retrievedIds.slice(0, maxK),
+        gold_id: g.id,
+        gold_url: g.url,
+        query: queryText.slice(0, 100),
+        vertical: g.materia,
+        retrieved_urls: retrievedUrls.slice(0, maxK),
         hits_at_k,
-        recall_at_k,
       });
-      console.log(ks.map((k) => `r@${k}=${recall_at_k[`@${k}`].toFixed(2)}`).join(" "));
+      console.log(ks.map((k) => `@${k}=${hits_at_k[`@${k}`]}`).join(" "));
     } catch (err) {
       console.log(`ERR ${(err as Error).message}`);
     }
@@ -145,7 +176,7 @@ async function evaluate(rows: GoldRow[], ks: number[]): Promise<EvalRow[]> {
 function aggregate(results: EvalRow[], ks: number[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const k of ks) {
-    const vals = results.map((r) => r.recall_at_k[`@${k}`]).filter((v) => typeof v === "number");
+    const vals = results.map((r) => r.hits_at_k[`@${k}`]);
     out[`recall@${k}`] = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
   }
   return out;
@@ -159,33 +190,52 @@ async function main() {
     .map((s) => parseInt(s.trim(), 10))
     .filter((n) => n > 0);
   const limit = idx("--limit") >= 0 ? parseInt(args[idx("--limit") + 1], 10) : undefined;
+  const queryField = (idx("--query") >= 0 ? args[idx("--query") + 1] : "summary") as "summary" | "title";
   const outFile = idx("--output") >= 0 ? args[idx("--output") + 1] : "recall-at-k-baseline.json";
 
-  if (!SUPA_KEY) {
-    console.error("ERROR: SUPABASE_SERVICE_ROLE_KEY missing");
+  if (!SUPA_KEY || !EMBED_KEY) {
+    console.error("ERROR: SUPABASE_SERVICE_ROLE_KEY and EMBED_API_KEY required");
     process.exit(1);
   }
 
+  console.log(`recall@${ks.join(",")} on eval.itacasehold_gold (query=${queryField}) vs hybrid_search_chunks_v2`);
+
   const gold = await loadGold(limit);
   if (gold.length === 0) {
-    console.error("eval.itacasehold_gold is empty (Tab 2 ingestion not landed yet?). Run again when populated.");
+    console.error("\n  eval.itacasehold_gold is empty (Tab 2 ingestion not landed yet). Re-run when populated.");
     process.exit(2);
   }
-  console.log(`recall@${ks.join(",")} on ${gold.length} ITA-CASEHOLD gold queries (hybrid_search_chunks_v2)\n`);
+  console.log(`  loaded ${gold.length} gold rows`);
 
-  const results = await evaluate(gold, ks);
+  const goldUrls = gold.map((g) => g.url).filter((u): u is string => Boolean(u));
+  const coverage = await checkCorpusCoverage(goldUrls);
+  console.log(`  normaai_chunks rows whose url matches a gold url (sample 50): ${coverage}`);
+  if (coverage === 0) {
+    console.error(
+      "\n  No url-match between gold set and normaai_chunks. Either Tab 2 has not yet\n" +
+      "  ingested these docs into the chunked corpus, or the join key is not `url`.\n" +
+      "  Coordinate with Tab 2 on the doc -> chunks linkage before re-running.",
+    );
+    process.exit(3);
+  }
+
+  const results = await evaluate(gold, ks, queryField);
   const agg = aggregate(results, ks);
 
+  const fs = await import("fs");
   const report = {
     run_at: new Date().toISOString(),
     retriever: "hybrid_search_chunks_v2 (linear weighted sim*0.7+fts*0.3)",
     embedder: "bge-m3 1024d via embed.normaai.it",
+    query_field: queryField,
     n_queries: results.length,
+    n_gold: gold.length,
+    coverage_sample_50: coverage,
     ks,
     aggregate: agg,
     results,
   };
-  await import("fs").then((fs) => fs.writeFileSync(outFile, JSON.stringify(report, null, 2)));
+  fs.writeFileSync(outFile, JSON.stringify(report, null, 2));
 
   console.log(`\n${"-".repeat(60)}`);
   console.log("Aggregate recall:");
