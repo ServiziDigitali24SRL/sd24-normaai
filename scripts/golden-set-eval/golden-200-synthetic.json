@@ -1,0 +1,3101 @@
+{
+  "_meta": {
+    "version": "synth-1.0.0",
+    "generated_at": "2026-05-09T17:52:00.583Z",
+    "model": "llama-3.3-70b-versatile",
+    "description": "Synthetic golden set, 8 verticals × 25 stratified, generated to UNBLOCK baseline-200 ahead of manual triage.",
+    "target_per_vertical": 25,
+    "target_difficulty_mix": {
+      "easy": 8,
+      "medium": 10,
+      "hard": 7
+    },
+    "total": 200,
+    "verticals": [
+      "lavoro",
+      "fisco",
+      "privacy",
+      "civile",
+      "edilizia",
+      "appalti",
+      "penale",
+      "famiglia"
+    ]
+  },
+  "queries": [
+    {
+      "id": "SYN-LAV-001",
+      "vertical": "lavoro",
+      "question": "Che cosa si intende per contratto di lavoro?",
+      "expected_citations": [
+        "art. 2094 c.c."
+      ],
+      "required_topics": [
+        "contratto di lavoro",
+        "tipologie di contratto"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-002",
+      "vertical": "lavoro",
+      "question": "Quali sono i diritti dei lavoratori in caso di licenziamento?",
+      "expected_citations": [
+        "art. 2118 c.c.",
+        "D.Lgs. 23/2015"
+      ],
+      "required_topics": [
+        "licenziamento",
+        "tutela del lavoratore"
+      ],
+      "forbidden_hallucinations": [
+        "licenziamento senza giusta causa"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-003",
+      "vertical": "lavoro",
+      "question": "Come si calcola il trattamento di fine rapporto?",
+      "expected_citations": [
+        "art. 2120 c.c."
+      ],
+      "required_topics": [
+        "trattamento di fine rapporto",
+        "calcolo TFR"
+      ],
+      "forbidden_hallucinations": [
+        "calcolo errato"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-004",
+      "vertical": "lavoro",
+      "question": "Quali sono le norme per la sicurezza sul lavoro?",
+      "expected_citations": [
+        "D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "sicurezza sul lavoro",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "disattenzione per la sicurezza"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-005",
+      "vertical": "lavoro",
+      "question": "Che cosa si intende per assenza giustificata?",
+      "expected_citations": [
+        "art. 2110 c.c."
+      ],
+      "required_topics": [
+        "assenza giustificata",
+        "permessi"
+      ],
+      "forbidden_hallucinations": [
+        "assenza ingiustificata"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-006",
+      "vertical": "lavoro",
+      "question": "Come si disciplina il lavoro a tempo parziale?",
+      "expected_citations": [
+        "D.Lgs. 81/2015"
+      ],
+      "required_topics": [
+        "lavoro a tempo parziale",
+        "disciplina"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con lavoro a tempo pieno"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-007",
+      "vertical": "lavoro",
+      "question": "Quali sono i requisiti per la instaurazione di un rapporto di lavoro?",
+      "expected_citations": [
+        "art. 2094 c.c."
+      ],
+      "required_topics": [
+        "rapporto di lavoro",
+        "requisiti"
+      ],
+      "forbidden_hallucinations": [
+        "mancanza di forma scritta"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-008",
+      "vertical": "lavoro",
+      "question": "Che cosa si intende per mansione?",
+      "expected_citations": [
+        "art. 2103 c.c."
+      ],
+      "required_topics": [
+        "mansione",
+        "classificazione"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con categoria"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-009",
+      "vertical": "lavoro",
+      "question": "Come si disciplina il lavoro notturno?",
+      "expected_citations": [
+        "D.Lgs. 66/2003"
+      ],
+      "required_topics": [
+        "lavoro notturno",
+        "disciplina"
+      ],
+      "forbidden_hallucinations": [
+        "disattenzione per la salute"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-010",
+      "vertical": "lavoro",
+      "question": "Quali sono i diritti dei lavoratori in caso di trasferimento?",
+      "expected_citations": [
+        "art. 2103 c.c.",
+        "D.Lgs. 23/2015"
+      ],
+      "required_topics": [
+        "trasferimento",
+        "tutela del lavoratore"
+      ],
+      "forbidden_hallucinations": [
+        "trasferimento senza giusta causa"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-011",
+      "vertical": "lavoro",
+      "question": "Come si calcola il congedo parentale?",
+      "expected_citations": [
+        "D.Lgs. 151/2001"
+      ],
+      "required_topics": [
+        "congedo parentale",
+        "calcolo"
+      ],
+      "forbidden_hallucinations": [
+        "calcolo errato"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-012",
+      "vertical": "lavoro",
+      "question": "Quali sono le norme per la tutela della salute sul lavoro?",
+      "expected_citations": [
+        "D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "tutela della salute",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "disattenzione per la salute"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-013",
+      "vertical": "lavoro",
+      "question": "Che cosa si intende per demansionamento?",
+      "expected_citations": [
+        "art. 2103 c.c."
+      ],
+      "required_topics": [
+        "demansionamento",
+        "classificazione"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con declassamento"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-014",
+      "vertical": "lavoro",
+      "question": "Come si disciplina il lavoro domestico?",
+      "expected_citations": [
+        "D.Lgs. 81/2015"
+      ],
+      "required_topics": [
+        "lavoro domestico",
+        "disciplina"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con lavoro familiare"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-015",
+      "vertical": "lavoro",
+      "question": "Quali sono i requisiti per la instaurazione di un rapporto di lavoro con un minore?",
+      "expected_citations": [
+        "art. 1 D.Lgs. 345/1999"
+      ],
+      "required_topics": [
+        "rapporto di lavoro con minore",
+        "requisiti"
+      ],
+      "forbidden_hallucinations": [
+        "mancanza di autorizzazione"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-016",
+      "vertical": "lavoro",
+      "question": "Che cosa si intende per lavoro somministrato?",
+      "expected_citations": [
+        "art. 20 D.Lgs. 276/2003"
+      ],
+      "required_topics": [
+        "lavoro somministrato",
+        "tipologie di contratto"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con lavoro interinale"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-017",
+      "vertical": "lavoro",
+      "question": "Come si disciplina il lavoro a termine?",
+      "expected_citations": [
+        "D.Lgs. 81/2015"
+      ],
+      "required_topics": [
+        "lavoro a termine",
+        "disciplina"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con lavoro a tempo indeterminato"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-018",
+      "vertical": "lavoro",
+      "question": "Quali sono i diritti dei lavoratori in caso di trasferimento d'azienda?",
+      "expected_citations": [
+        "art. 2112 c.c.",
+        "D.Lgs. 23/2015"
+      ],
+      "required_topics": [
+        "trasferimento d'azienda",
+        "tutela del lavoratore"
+      ],
+      "forbidden_hallucinations": [
+        "trasferimento senza giusta causa"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-019",
+      "vertical": "lavoro",
+      "question": "Come si calcola la retribuzione per il lavoro straordinario?",
+      "expected_citations": [
+        "art. 2108 c.c."
+      ],
+      "required_topics": [
+        "lavoro straordinario",
+        "calcolo retribuzione"
+      ],
+      "forbidden_hallucinations": [
+        "calcolo errato"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-020",
+      "vertical": "lavoro",
+      "question": "Quali sono le norme per la tutela della privacy sul lavoro?",
+      "expected_citations": [
+        "D.Lgs. 196/2003"
+      ],
+      "required_topics": [
+        "tutela della privacy",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "disattenzione per la privacy"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-021",
+      "vertical": "lavoro",
+      "question": "Che cosa si intende per lavoro nero?",
+      "expected_citations": [
+        "art. 3 D.Lgs. 276/2003"
+      ],
+      "required_topics": [
+        "lavoro nero",
+        "tipologie di contratto"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con lavoro somministrato"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-LAV-022",
+      "vertical": "lavoro",
+      "question": "Come si disciplina il lavoro a progetto?",
+      "expected_citations": [
+        "D.Lgs. 81/2015"
+      ],
+      "required_topics": [
+        "lavoro a progetto",
+        "disciplina"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con lavoro a tempo determinato"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-LAV-023",
+      "vertical": "lavoro",
+      "question": "Quali sono i requisiti per la instaurazione di un rapporto di lavoro con un lavoratore extracomunitario?",
+      "expected_citations": [
+        "D.Lgs. 286/1998"
+      ],
+      "required_topics": [
+        "rapporto di lavoro con lavoratore extracomunitario",
+        "requisiti"
+      ],
+      "forbidden_hallucinations": [
+        "mancanza di permesso di soggiorno"
+      ],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-LAV-024",
+      "vertical": "lavoro",
+      "question": "Che cosa si intende per orientamento giurisprudenziale sulla nozione di subordinazione?",
+      "expected_citations": [
+        "Cass. sez. lav."
+      ],
+      "required_topics": [
+        "subordinazione",
+        "orientamento giurisprudenziale"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con nozione di autonomia"
+      ],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-LAV-025",
+      "vertical": "lavoro",
+      "question": "Come si disciplina il lavoro agile?",
+      "expected_citations": [
+        "D.Lgs. 81/2015",
+        "Legge 81/2017"
+      ],
+      "required_topics": [
+        "lavoro agile",
+        "disciplina"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con lavoro a distanza"
+      ],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-001",
+      "vertical": "fisco",
+      "question": "Cosa si intende per reddito imponibile?",
+      "expected_citations": [
+        "art. 6 TUIR"
+      ],
+      "required_topics": [
+        "reddito imponibile",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FIS-002",
+      "vertical": "fisco",
+      "question": "Quali sono le aliquote dell'imposta sul reddito delle persone fisiche?",
+      "expected_citations": [
+        "art. 11 TUIR"
+      ],
+      "required_topics": [
+        "aliquote",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FIS-003",
+      "vertical": "fisco",
+      "question": "Come si calcola l'imposta sul reddito delle società?",
+      "expected_citations": [
+        "art. 75 TUIR"
+      ],
+      "required_topics": [
+        "imposta sul reddito",
+        "società"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FIS-004",
+      "vertical": "fisco",
+      "question": "Cosa si intende per IVA e come funziona?",
+      "expected_citations": [
+        "D.Lgs. 471/1997"
+      ],
+      "required_topics": [
+        "IVA",
+        "imposta sul valore aggiunto"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FIS-005",
+      "vertical": "fisco",
+      "question": "Quali sono le soglie di esenzione dall'imposta sul reddito?",
+      "expected_citations": [
+        "art. 13 TUIR"
+      ],
+      "required_topics": [
+        "soglie di esenzione",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FIS-006",
+      "vertical": "fisco",
+      "question": "Come si richiede la detrazione per le spese sanitarie?",
+      "expected_citations": [
+        "art. 15 TUIR"
+      ],
+      "required_topics": [
+        "detrazione",
+        "spese sanitarie"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-007",
+      "vertical": "fisco",
+      "question": "Quali sono le procedure per la presentazione della dichiarazione dei redditi?",
+      "expected_citations": [
+        "D.M. 24 novembre 2014"
+      ],
+      "required_topics": [
+        "dichiarazione dei redditi",
+        "presentazione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-008",
+      "vertical": "fisco",
+      "question": "Come si calcola l'imposta sul reddito per i lavoratori dipendenti?",
+      "expected_citations": [
+        "art. 51 TUIR"
+      ],
+      "required_topics": [
+        "imposta sul reddito",
+        "lavoratori dipendenti"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-009",
+      "vertical": "fisco",
+      "question": "Cosa si intende per accertamento dell'imposta sul reddito?",
+      "expected_citations": [
+        "art. 38 D.P.R. 600/1973"
+      ],
+      "required_topics": [
+        "accertamento",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-010",
+      "vertical": "fisco",
+      "question": "Quali sono le sanzioni per la tardiva presentazione della dichiarazione dei redditi?",
+      "expected_citations": [
+        "art. 1 D.Lgs. 471/1997"
+      ],
+      "required_topics": [
+        "sanzioni",
+        "dichiarazione dei redditi"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-011",
+      "vertical": "fisco",
+      "question": "Come si richiede la rimborso dell'imposta sul reddito?",
+      "expected_citations": [
+        "art. 38 D.P.R. 600/1973"
+      ],
+      "required_topics": [
+        "rimborso",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-012",
+      "vertical": "fisco",
+      "question": "Quali sono le regole per la conservazione della documentazione fiscale?",
+      "expected_citations": [
+        "art. 22 D.P.R. 600/1973"
+      ],
+      "required_topics": [
+        "conservazione",
+        "documentazione fiscale"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-013",
+      "vertical": "fisco",
+      "question": "Cosa si intende per fattura elettronica e come funziona?",
+      "expected_citations": [
+        "D.Lgs. 127/2015"
+      ],
+      "required_topics": [
+        "fattura elettronica",
+        "IVA"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-014",
+      "vertical": "fisco",
+      "question": "Come si calcola l'imposta sul reddito per i lavoratori autonomi?",
+      "expected_citations": [
+        "art. 53 TUIR"
+      ],
+      "required_topics": [
+        "imposta sul reddito",
+        "lavoratori autonomi"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FIS-015",
+      "vertical": "fisco",
+      "question": "Quali sono le regole per la determinazione del reddito d'impresa?",
+      "expected_citations": [
+        "art. 66 TUIR"
+      ],
+      "required_topics": [
+        "reddito d'impresa",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-016",
+      "vertical": "fisco",
+      "question": "Cosa si intende per gruppo fiscale e come funziona?",
+      "expected_citations": [
+        "art. 117 TUIR"
+      ],
+      "required_topics": [
+        "gruppo fiscale",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-017",
+      "vertical": "fisco",
+      "question": "Come si calcola l'imposta sul reddito per i soggetti non residenti?",
+      "expected_citations": [
+        "art. 23 TUIR"
+      ],
+      "required_topics": [
+        "imposta sul reddito",
+        "soggetti non residenti"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-018",
+      "vertical": "fisco",
+      "question": "Quali sono le regole per la tassazione dei redditi di capitale?",
+      "expected_citations": [
+        "art. 44 TUIR"
+      ],
+      "required_topics": [
+        "redditi di capitale",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-019",
+      "vertical": "fisco",
+      "question": "Cosa si intende per regime forfettario e come funziona?",
+      "expected_citations": [
+        "art. 1 D.L. 98/2011"
+      ],
+      "required_topics": [
+        "regime forfettario",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-020",
+      "vertical": "fisco",
+      "question": "Come si calcola l'imposta sul reddito per i soggetti che svolgono attività di impresa?",
+      "expected_citations": [
+        "art. 55 TUIR"
+      ],
+      "required_topics": [
+        "imposta sul reddito",
+        "attività di impresa"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-021",
+      "vertical": "fisco",
+      "question": "Quali sono le regole per la tassazione dei redditi di lavoro dipendente?",
+      "expected_citations": [
+        "art. 51 TUIR"
+      ],
+      "required_topics": [
+        "redditi di lavoro dipendente",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-022",
+      "vertical": "fisco",
+      "question": "Cosa si intende per accertamento con adesione e come funziona?",
+      "expected_citations": [
+        "art. 5 D.Lgs. 218/1997"
+      ],
+      "required_topics": [
+        "accertamento con adesione",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-023",
+      "vertical": "fisco",
+      "question": "Come si calcola l'imposta sul reddito per i soggetti che svolgono attività di lavoro autonomo?",
+      "expected_citations": [
+        "art. 53 TUIR"
+      ],
+      "required_topics": [
+        "imposta sul reddito",
+        "lavoro autonomo"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-024",
+      "vertical": "fisco",
+      "question": "Quali sono le regole per la tassazione dei redditi di natura finanziaria?",
+      "expected_citations": [
+        "art. 44 TUIR"
+      ],
+      "required_topics": [
+        "redditi di natura finanziaria",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FIS-025",
+      "vertical": "fisco",
+      "question": "Cosa si intende per ravvedimento operoso e come funziona?",
+      "expected_citations": [
+        "art. 13 D.Lgs. 472/1997"
+      ],
+      "required_topics": [
+        "ravvedimento operoso",
+        "imposta sul reddito"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-001",
+      "vertical": "privacy",
+      "question": "Cosa si intende per dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679"
+      ],
+      "required_topics": [
+        "Definizione dati personali",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PRI-002",
+      "vertical": "privacy",
+      "question": "Quali sono le condizioni per il trattamento dei dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 6"
+      ],
+      "required_topics": [
+        "Condizioni trattamento dati",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PRI-003",
+      "vertical": "privacy",
+      "question": "Cosa si intende per consenso dei dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 4"
+      ],
+      "required_topics": [
+        "Definizione consenso",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PRI-004",
+      "vertical": "privacy",
+      "question": "Quali sono i diritti degli interessati?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, artt. 15-22"
+      ],
+      "required_topics": [
+        "Diritti interessati",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PRI-005",
+      "vertical": "privacy",
+      "question": "Cosa si intende per violazione dei dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 4"
+      ],
+      "required_topics": [
+        "Definizione violazione",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PRI-006",
+      "vertical": "privacy",
+      "question": "Come si deve procedere in caso di violazione dei dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 33"
+      ],
+      "required_topics": [
+        "Procedura violazione",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-007",
+      "vertical": "privacy",
+      "question": "Quali sono le sanzioni per la violazione del Regolamento UE 2016/679?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 83"
+      ],
+      "required_topics": [
+        "Sanzioni Regolamento UE",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-008",
+      "vertical": "privacy",
+      "question": "Cosa si intende per Data Protection Officer (DPO)?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 37"
+      ],
+      "required_topics": [
+        "Definizione DPO",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PRI-009",
+      "vertical": "privacy",
+      "question": "Quando è necessario designare un Data Protection Officer (DPO)?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 37"
+      ],
+      "required_topics": [
+        "Designazione DPO",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-010",
+      "vertical": "privacy",
+      "question": "Quali sono le funzioni del Data Protection Officer (DPO)?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 39"
+      ],
+      "required_topics": [
+        "Funzioni DPO",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-011",
+      "vertical": "privacy",
+      "question": "Come si deve gestire il registro delle attività di trattamento?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 30"
+      ],
+      "required_topics": [
+        "Registro attività trattamento",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-012",
+      "vertical": "privacy",
+      "question": "Quali sono le modalità per esercitare il diritto di accesso ai propri dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 15"
+      ],
+      "required_topics": [
+        "Diritto accesso",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-013",
+      "vertical": "privacy",
+      "question": "Come si deve procedere per la cancellazione dei dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 17"
+      ],
+      "required_topics": [
+        "Cancellazione dati",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-014",
+      "vertical": "privacy",
+      "question": "Quali sono le condizioni per il trasferimento dei dati personali verso paesi terzi?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 44"
+      ],
+      "required_topics": [
+        "Trasferimento dati paesi terzi",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-015",
+      "vertical": "privacy",
+      "question": "Come si deve valutare l'impatto sulla protezione dei dati?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 35"
+      ],
+      "required_topics": [
+        "Valutazione impatto",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-016",
+      "vertical": "privacy",
+      "question": "Quali sono le caratteristiche della pseudonimizzazione dei dati?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 4"
+      ],
+      "required_topics": [
+        "Definizione pseudonimizzazione",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-017",
+      "vertical": "privacy",
+      "question": "Come si deve garantire la sicurezza dei dati personali?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 32"
+      ],
+      "required_topics": [
+        "Sicurezza dati",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PRI-018",
+      "vertical": "privacy",
+      "question": "Quali sono le conseguenze della mancata adozione delle misure di sicurezza?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 83"
+      ],
+      "required_topics": [
+        "Sanzioni mancata adozione misure sicurezza",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-019",
+      "vertical": "privacy",
+      "question": "Come si deve gestire il rapporto tra il titolare del trattamento e il responsabile del trattamento?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 28"
+      ],
+      "required_topics": [
+        "Rapporto titolare-responsabile",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-020",
+      "vertical": "privacy",
+      "question": "Quali sono le condizioni per il trasferimento dei dati personali all'interno di un gruppo di imprese?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 47"
+      ],
+      "required_topics": [
+        "Trasferimento dati gruppo imprese",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-021",
+      "vertical": "privacy",
+      "question": "Come si deve valutare l'impatto della protezione dei dati nel caso di trattamento di dati sensibili?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 35"
+      ],
+      "required_topics": [
+        "Valutazione impatto trattamento dati sensibili",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-022",
+      "vertical": "privacy",
+      "question": "Quali sono le conseguenze della mancata designazione del Data Protection Officer (DPO)?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 83"
+      ],
+      "required_topics": [
+        "Sanzioni mancata designazione DPO",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-023",
+      "vertical": "privacy",
+      "question": "Come si deve gestire il rapporto tra il titolare del trattamento e l'autorità di controllo?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 55"
+      ],
+      "required_topics": [
+        "Rapporto titolare-autorità controllo",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-024",
+      "vertical": "privacy",
+      "question": "Quali sono le condizioni per il trasferimento dei dati personali a un paese terzo in assenza di una decisione di adeguatezza?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 49"
+      ],
+      "required_topics": [
+        "Trasferimento dati paese terzo senza decisione adeguatezza",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PRI-025",
+      "vertical": "privacy",
+      "question": "Come si deve gestire il caso di un soggetto che esercita il diritto di opposizione al trattamento?",
+      "expected_citations": [
+        "Regolamento (UE) 2016/679, art. 21"
+      ],
+      "required_topics": [
+        "Diritto opposizione trattamento",
+        "Regolamento UE 2016/679"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-EDI-001",
+      "vertical": "edilizia",
+      "question": "Cos'è il permesso di costruire e quando è necessario?",
+      "expected_citations": [
+        "D.P.R. 380/2001",
+        "art. 10 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "permesso di costruire",
+        "attività edilizia",
+        "comune"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-EDI-002",
+      "vertical": "edilizia",
+      "question": "Quali sono le sanzioni per l'esecuzione di lavori senza permesso di costruire?",
+      "expected_citations": [
+        "art. 44 D.P.R. 380/2001",
+        "art. 31 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "sanzioni",
+        "permesso di costruire",
+        "lavori abusivi"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-003",
+      "vertical": "edilizia",
+      "question": "Come si calcola il volume di un edificio?",
+      "expected_citations": [
+        "D.M. 2 agosto 1969"
+      ],
+      "required_topics": [
+        "volume",
+        "edificio",
+        "calcolo"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-EDI-004",
+      "vertical": "edilizia",
+      "question": "Cos'è il certificato di abitabilità e quando è necessario?",
+      "expected_citations": [
+        "art. 24 D.P.R. 380/2001",
+        "art. 80 D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "certificato di abitabilità",
+        "abitabilità",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-005",
+      "vertical": "edilizia",
+      "question": "Quali sono le norme per la sicurezza nei cantieri edili?",
+      "expected_citations": [
+        "D.Lgs. 81/2008",
+        "art. 15 D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "sicurezza",
+        "cantiere edile",
+        "norme"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-006",
+      "vertical": "edilizia",
+      "question": "Cos'è il progetto esecutivo e cosa contiene?",
+      "expected_citations": [
+        "art. 24 D.P.R. 380/2001",
+        "art. 17 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "progetto esecutivo",
+        "contenuto",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-EDI-007",
+      "vertical": "edilizia",
+      "question": "Quali sono le procedure per la denuncia di inizio attività?",
+      "expected_citations": [
+        "art. 22 D.P.R. 380/2001",
+        "art. 23 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "denuncia di inizio attività",
+        "procedura",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-008",
+      "vertical": "edilizia",
+      "question": "Cos'è il piano urbanistico e cosa disciplina?",
+      "expected_citations": [
+        "art. 3 D.P.R. 380/2001",
+        "art. 4 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "piano urbanistico",
+        "disciplina",
+        "urbanistica"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-EDI-009",
+      "vertical": "edilizia",
+      "question": "Quali sono le norme per la tutela del paesaggio?",
+      "expected_citations": [
+        "art. 136 D.Lgs. 42/2004",
+        "art. 137 D.Lgs. 42/2004"
+      ],
+      "required_topics": [
+        "tutela del paesaggio",
+        "norme",
+        "paesaggio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-010",
+      "vertical": "edilizia",
+      "question": "Cos'è il certificato di conformità e quando è necessario?",
+      "expected_citations": [
+        "art. 24 D.P.R. 380/2001",
+        "art. 17 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "certificato di conformità",
+        "conformità",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-011",
+      "vertical": "edilizia",
+      "question": "Quali sono le procedure per la risoluzione delle controversie in materia di appalti?",
+      "expected_citations": [
+        "art. 240 D.Lgs. 50/2016",
+        "art. 241 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "procedura",
+        "controversie",
+        "appalti"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-EDI-012",
+      "vertical": "edilizia",
+      "question": "Cos'è il collaudo statico e quando è necessario?",
+      "expected_citations": [
+        "art. 67 D.P.R. 380/2001",
+        "art. 65 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "collaudo statico",
+        "statica",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-013",
+      "vertical": "edilizia",
+      "question": "Quali sono le norme per la sicurezza antincendio negli edifici?",
+      "expected_citations": [
+        "D.M. 30 novembre 1983",
+        "art. 3 D.M. 30 novembre 1983"
+      ],
+      "required_topics": [
+        "sicurezza antincendio",
+        "norme",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-014",
+      "vertical": "edilizia",
+      "question": "Cos'è il progetto preliminare e cosa contiene?",
+      "expected_citations": [
+        "art. 17 D.P.R. 380/2001",
+        "art. 16 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "progetto preliminare",
+        "contenuto",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-EDI-015",
+      "vertical": "edilizia",
+      "question": "Quali sono le procedure per la presentazione di una istanza di condono?",
+      "expected_citations": [
+        "art. 31 D.P.R. 380/2001",
+        "art. 32 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "istanza di condono",
+        "procedura",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-016",
+      "vertical": "edilizia",
+      "question": "Cos'è il certificato di destinazione urbanistica e quando è necessario?",
+      "expected_citations": [
+        "art. 10 D.P.R. 380/2001",
+        "art. 12 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "certificato di destinazione urbanistica",
+        "destinazione urbanistica",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-017",
+      "vertical": "edilizia",
+      "question": "Quali sono le norme per la tutela dell'ambiente?",
+      "expected_citations": [
+        "D.Lgs. 152/2006",
+        "art. 3 D.Lgs. 152/2006"
+      ],
+      "required_topics": [
+        "tutela dell'ambiente",
+        "norme",
+        "ambiente"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-018",
+      "vertical": "edilizia",
+      "question": "Cos'è il piano di sicurezza e di coordinamento e quando è necessario?",
+      "expected_citations": [
+        "art. 100 D.Lgs. 81/2008",
+        "art. 101 D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "piano di sicurezza e di coordinamento",
+        "sicurezza",
+        "cantiere edile"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-019",
+      "vertical": "edilizia",
+      "question": "Quali sono le procedure per la risoluzione delle controversie in materia di diritti reali?",
+      "expected_citations": [
+        "art. 2932 c.c.",
+        "art. 2933 c.c."
+      ],
+      "required_topics": [
+        "procedura",
+        "controversie",
+        "diritti reali"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-EDI-020",
+      "vertical": "edilizia",
+      "question": "Cos'è il certificato di agibilità e quando è necessario?",
+      "expected_citations": [
+        "art. 24 D.P.R. 380/2001",
+        "art. 80 D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "certificato di agibilità",
+        "agibilità",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-021",
+      "vertical": "edilizia",
+      "question": "Quali sono le norme per la sicurezza sul lavoro negli edifici?",
+      "expected_citations": [
+        "D.Lgs. 81/2008",
+        "art. 15 D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "sicurezza sul lavoro",
+        "norme",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-022",
+      "vertical": "edilizia",
+      "question": "Cos'è il progetto definitivo e cosa contiene?",
+      "expected_citations": [
+        "art. 17 D.P.R. 380/2001",
+        "art. 18 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "progetto definitivo",
+        "contenuto",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-EDI-023",
+      "vertical": "edilizia",
+      "question": "Quali sono le procedure per la presentazione di una istanza di autorizzazione?",
+      "expected_citations": [
+        "art. 10 D.P.R. 380/2001",
+        "art. 12 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "istanza di autorizzazione",
+        "procedura",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-024",
+      "vertical": "edilizia",
+      "question": "Cos'è il certificato di idoneità e quando è necessario?",
+      "expected_citations": [
+        "art. 80 D.Lgs. 81/2008",
+        "art. 24 D.P.R. 380/2001"
+      ],
+      "required_topics": [
+        "certificato di idoneità",
+        "idoneità",
+        "edificio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-EDI-025",
+      "vertical": "edilizia",
+      "question": "Quali sono le norme per la tutela del patrimonio culturale?",
+      "expected_citations": [
+        "D.Lgs. 42/2004",
+        "art. 3 D.Lgs. 42/2004"
+      ],
+      "required_topics": [
+        "tutela del patrimonio culturale",
+        "norme",
+        "patrimonio culturale"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PEN-001",
+      "vertical": "penale",
+      "question": "Cos'è il reato di omicidio volontario?",
+      "expected_citations": [
+        "art. 575 c.p."
+      ],
+      "required_topics": [
+        "omicidio volontario",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-002",
+      "vertical": "penale",
+      "question": "Quali sono le caratteristiche del reato di furto?",
+      "expected_citations": [
+        "art. 624 c.p."
+      ],
+      "required_topics": [
+        "furto",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-003",
+      "vertical": "penale",
+      "question": "Cos'è la prescrizione del reato?",
+      "expected_citations": [
+        "art. 157 c.p."
+      ],
+      "required_topics": [
+        "prescrizione",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-004",
+      "vertical": "penale",
+      "question": "Quali sono le differenze tra reato e illecito amministrativo?",
+      "expected_citations": [
+        "art. 17 legge 689/1981"
+      ],
+      "required_topics": [
+        "reato",
+        "illecito amministrativo"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-005",
+      "vertical": "penale",
+      "question": "Cos'è la responsabilità oggettiva?",
+      "expected_citations": [
+        "art. 42 c.p."
+      ],
+      "required_topics": [
+        "responsabilità oggettiva",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-006",
+      "vertical": "penale",
+      "question": "Quali sono le condizioni per la sospensione condizionale della pena?",
+      "expected_citations": [
+        "art. 163 c.p."
+      ],
+      "required_topics": [
+        "sospensione condizionale",
+        "pena"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-007",
+      "vertical": "penale",
+      "question": "Come funziona la procedura di ricorso in Cassazione?",
+      "expected_citations": [
+        "art. 606 c.p.p."
+      ],
+      "required_topics": [
+        "ricorso",
+        "Cassazione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-008",
+      "vertical": "penale",
+      "question": "Quali sono le differenze tra processo penale e processo civile?",
+      "expected_citations": [
+        "art. 1 c.p.p."
+      ],
+      "required_topics": [
+        "processo penale",
+        "processo civile"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-009",
+      "vertical": "penale",
+      "question": "Cos'è la pena accessoria?",
+      "expected_citations": [
+        "art. 19 c.p."
+      ],
+      "required_topics": [
+        "pena accessoria",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-010",
+      "vertical": "penale",
+      "question": "Quali sono le condizioni per la liberazione condizionale?",
+      "expected_citations": [
+        "art. 176 c.p."
+      ],
+      "required_topics": [
+        "liberazione condizionale",
+        "pena"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-011",
+      "vertical": "penale",
+      "question": "Come funziona la procedura di incidente di esecuzione?",
+      "expected_citations": [
+        "art. 666 c.p.p."
+      ],
+      "required_topics": [
+        "incidente di esecuzione",
+        "pena"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-012",
+      "vertical": "penale",
+      "question": "Quali sono le differenze tra reato continuato e reato continuato ex art. 81 c.p.?",
+      "expected_citations": [
+        "art. 81 c.p."
+      ],
+      "required_topics": [
+        "reato continuato",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-013",
+      "vertical": "penale",
+      "question": "Cos'è la causa di non punibilità?",
+      "expected_citations": [
+        "art. 129 c.p."
+      ],
+      "required_topics": [
+        "causa di non punibilità",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-014",
+      "vertical": "penale",
+      "question": "Quali sono le condizioni per la riabilitazione?",
+      "expected_citations": [
+        "art. 179 c.p."
+      ],
+      "required_topics": [
+        "riabilitazione",
+        "pena"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-015",
+      "vertical": "penale",
+      "question": "Come funziona la procedura di applicazione della pena su richiesta?",
+      "expected_citations": [
+        "art. 444 c.p.p."
+      ],
+      "required_topics": [
+        "applicazione della pena su richiesta",
+        "pena"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-016",
+      "vertical": "penale",
+      "question": "Quali sono le differenze tra reato e contravvenzione?",
+      "expected_citations": [
+        "art. 39 c.p."
+      ],
+      "required_topics": [
+        "reato",
+        "contravvenzione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-017",
+      "vertical": "penale",
+      "question": "Cos'è la legge speciale?",
+      "expected_citations": [
+        "art. 1 c.p."
+      ],
+      "required_topics": [
+        "legge speciale",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-018",
+      "vertical": "penale",
+      "question": "Quali sono le condizioni per la sospensione della pena?",
+      "expected_citations": [
+        "art. 163 c.p."
+      ],
+      "required_topics": [
+        "sospensione della pena",
+        "pena"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-019",
+      "vertical": "penale",
+      "question": "Come funziona la procedura di ricorso per cassazione?",
+      "expected_citations": [
+        "art. 606 c.p.p."
+      ],
+      "required_topics": [
+        "ricorso per cassazione",
+        "Cassazione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-PEN-020",
+      "vertical": "penale",
+      "question": "Quali sono le differenze tra reato e delitto?",
+      "expected_citations": [
+        "art. 39 c.p."
+      ],
+      "required_topics": [
+        "reato",
+        "delitto"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-021",
+      "vertical": "penale",
+      "question": "Cos'è la legge penale?",
+      "expected_citations": [
+        "art. 1 c.p."
+      ],
+      "required_topics": [
+        "legge penale",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-PEN-022",
+      "vertical": "penale",
+      "question": "Quali sono le condizioni per la revoca della libertà condizionale?",
+      "expected_citations": [
+        "art. 177 c.p."
+      ],
+      "required_topics": [
+        "revoca della libertà condizionale",
+        "pena"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PEN-023",
+      "vertical": "penale",
+      "question": "Come funziona la procedura di applicazione della legge penale?",
+      "expected_citations": [
+        "art. 1 c.p."
+      ],
+      "required_topics": [
+        "applicazione della legge penale",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PEN-024",
+      "vertical": "penale",
+      "question": "Quali sono le differenze tra reato e illecito civile?",
+      "expected_citations": [
+        "art. 17 legge 689/1981"
+      ],
+      "required_topics": [
+        "reato",
+        "illecito civile"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-PEN-025",
+      "vertical": "penale",
+      "question": "Cos'è la giurisprudenza penale?",
+      "expected_citations": [
+        "Cass. sez. pen."
+      ],
+      "required_topics": [
+        "giurisprudenza penale",
+        "reato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-CIV-001",
+      "vertical": "civile",
+      "question": "Cos'è il contratto di locazione e quali sono i suoi principali elementi?",
+      "expected_citations": [
+        "art. 1571 c.c.",
+        "art. 1572 c.c."
+      ],
+      "required_topics": [
+        "contratto di locazione",
+        "obbligazioni del locatore",
+        "obbligazioni del conduttore"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-002",
+      "vertical": "civile",
+      "question": "In che modo si può risolvere un contratto di compravendita per inadempimento?",
+      "expected_citations": [
+        "art. 1453 c.c.",
+        "art. 1454 c.c."
+      ],
+      "required_topics": [
+        "contratto di compravendita",
+        "inadempimento",
+        "risoluzione del contratto"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la risoluzione per eccessiva onerosità"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-003",
+      "vertical": "civile",
+      "question": "Quali sono i diritti e gli obblighi del proprietario di un immobile?",
+      "expected_citations": [
+        "art. 812 c.c.",
+        "art. 814 c.c."
+      ],
+      "required_topics": [
+        "proprietà",
+        "diritti del proprietario",
+        "obbligazioni del proprietario"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-004",
+      "vertical": "civile",
+      "question": "Come si può ottenere la divisione di un bene in comproprietà?",
+      "expected_citations": [
+        "art. 1111 c.c.",
+        "art. 1113 c.c."
+      ],
+      "required_topics": [
+        "comproprietà",
+        "divisione del bene",
+        "procedura di divisione"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la divisione di un'eredità"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-005",
+      "vertical": "civile",
+      "question": "Cos'è l'usucapione e come si può acquistare un bene attraverso di essa?",
+      "expected_citations": [
+        "art. 1158 c.c.",
+        "art. 1161 c.c."
+      ],
+      "required_topics": [
+        "usucapione",
+        "acquisto del bene",
+        "prescrizione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-006",
+      "vertical": "civile",
+      "question": "In che modo si può impugnare un testamento?",
+      "expected_citations": [
+        "art. 618 c.c.",
+        "art. 620 c.c."
+      ],
+      "required_topics": [
+        "testamento",
+        "impugnazione",
+        "invalidità del testamento"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la contestazione di un'eredità"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-007",
+      "vertical": "civile",
+      "question": "Quali sono i requisiti per la validità di un contratto di donazione?",
+      "expected_citations": [
+        "art. 769 c.c.",
+        "art. 771 c.c."
+      ],
+      "required_topics": [
+        "donazione",
+        "requisiti di validità",
+        "forma del contratto"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-008",
+      "vertical": "civile",
+      "question": "Come si può ottenere la risoluzione di un contratto per eccessiva onerosità?",
+      "expected_citations": [
+        "art. 1467 c.c.",
+        "art. 1468 c.c."
+      ],
+      "required_topics": [
+        "contratto",
+        "eccessiva onerosità",
+        "risoluzione del contratto"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la risoluzione per inadempimento"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-009",
+      "vertical": "civile",
+      "question": "Cos'è la prescrizione e come si può interrompere?",
+      "expected_citations": [
+        "art. 2934 c.c.",
+        "art. 2935 c.c."
+      ],
+      "required_topics": [
+        "prescrizione",
+        "interruzione della prescrizione",
+        "sospensione della prescrizione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-010",
+      "vertical": "civile",
+      "question": "In che modo si può ottenere la separazione personale dei coniugi?",
+      "expected_citations": [
+        "art. 150 c.c.",
+        "art. 151 c.c."
+      ],
+      "required_topics": [
+        "separazione personale",
+        "procedura di separazione",
+        "effetti della separazione"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con il divorzio"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-011",
+      "vertical": "civile",
+      "question": "Quali sono i diritti e gli obblighi dei genitori nei confronti dei figli?",
+      "expected_citations": [
+        "art. 147 c.c.",
+        "art. 148 c.c."
+      ],
+      "required_topics": [
+        "potestà genitoriale",
+        "diritti dei genitori",
+        "obbligazioni dei genitori"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-012",
+      "vertical": "civile",
+      "question": "Come si può ottenere la tutela dei minori?",
+      "expected_citations": [
+        "art. 337 c.c.",
+        "art. 338 c.c."
+      ],
+      "required_topics": [
+        "tutela dei minori",
+        "procedura di tutela",
+        "effetti della tutela"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la curatela"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-013",
+      "vertical": "civile",
+      "question": "Cos'è l'interdizione e come si può ottenere?",
+      "expected_citations": [
+        "art. 415 c.c.",
+        "art. 416 c.c."
+      ],
+      "required_topics": [
+        "interdizione",
+        "procedura di interdizione",
+        "effetti dell'interdizione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-014",
+      "vertical": "civile",
+      "question": "In che modo si può ottenere la curatela?",
+      "expected_citations": [
+        "art. 425 c.c.",
+        "art. 426 c.c."
+      ],
+      "required_topics": [
+        "curatela",
+        "procedura di curatela",
+        "effetti della curatela"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la tutela"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-015",
+      "vertical": "civile",
+      "question": "Quali sono i requisiti per la validità di un contratto di affitto di azienda?",
+      "expected_citations": [
+        "art. 2561 c.c.",
+        "art. 2562 c.c."
+      ],
+      "required_topics": [
+        "affitto di azienda",
+        "requisiti di validità",
+        "forma del contratto"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-016",
+      "vertical": "civile",
+      "question": "Come si può ottenere la risoluzione di un contratto di agenzia?",
+      "expected_citations": [
+        "art. 1751 c.c.",
+        "art. 1752 c.c."
+      ],
+      "required_topics": [
+        "contratto di agenzia",
+        "risoluzione del contratto",
+        "inadempimento"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la risoluzione per eccessiva onerosità"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-017",
+      "vertical": "civile",
+      "question": "Cos'è la rappresentanza e come si può esercitare?",
+      "expected_citations": [
+        "art. 1387 c.c.",
+        "art. 1388 c.c."
+      ],
+      "required_topics": [
+        "rappresentanza",
+        "potere di rappresentanza",
+        "limiti della rappresentanza"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-018",
+      "vertical": "civile",
+      "question": "In che modo si può ottenere la risoluzione di un contratto di appalto?",
+      "expected_citations": [
+        "art. 1671 c.c.",
+        "art. 1672 c.c."
+      ],
+      "required_topics": [
+        "contratto di appalto",
+        "risoluzione del contratto",
+        "inadempimento"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la risoluzione per eccessiva onerosità"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-019",
+      "vertical": "civile",
+      "question": "Quali sono i diritti e gli obblighi dei soci in una società di persone?",
+      "expected_citations": [
+        "art. 2257 c.c.",
+        "art. 2258 c.c."
+      ],
+      "required_topics": [
+        "società di persone",
+        "diritti dei soci",
+        "obbligazioni dei soci"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-020",
+      "vertical": "civile",
+      "question": "Come si può ottenere la liquidazione di una società?",
+      "expected_citations": [
+        "art. 2484 c.c.",
+        "art. 2485 c.c."
+      ],
+      "required_topics": [
+        "liquidazione della società",
+        "procedura di liquidazione",
+        "effetti della liquidazione"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la cessazione della società"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-021",
+      "vertical": "civile",
+      "question": "Cos'è il concordato preventivo e come si può ottenere?",
+      "expected_citations": [
+        "art. 160 c.c.",
+        "art. 161 c.c."
+      ],
+      "required_topics": [
+        "concordato preventivo",
+        "procedura di concordato",
+        "effetti del concordato"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-022",
+      "vertical": "civile",
+      "question": "In che modo si può ottenere la dichiarazione di fallimento?",
+      "expected_citations": [
+        "art. 5 legge fall.",
+        "art. 6 legge fall."
+      ],
+      "required_topics": [
+        "fallimento",
+        "procedura di fallimento",
+        "effetti del fallimento"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la liquidazione della società"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-023",
+      "vertical": "civile",
+      "question": "Quali sono i requisiti per la validità di un contratto di transazione?",
+      "expected_citations": [
+        "art. 1965 c.c.",
+        "art. 1966 c.c."
+      ],
+      "required_topics": [
+        "contratto di transazione",
+        "requisiti di validità",
+        "forma del contratto"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-CIV-024",
+      "vertical": "civile",
+      "question": "Come si può ottenere la risoluzione di un contratto di franchising?",
+      "expected_citations": [
+        "art. 2557 c.c.",
+        "art. 2558 c.c."
+      ],
+      "required_topics": [
+        "contratto di franchising",
+        "risoluzione del contratto",
+        "inadempimento"
+      ],
+      "forbidden_hallucinations": [
+        "confusione con la risoluzione per eccessiva onerosità"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-CIV-025",
+      "vertical": "civile",
+      "question": "Cos'è la clausola penale e come si può applicare?",
+      "expected_citations": [
+        "art. 1382 c.c.",
+        "art. 1383 c.c."
+      ],
+      "required_topics": [
+        "clausola penale",
+        "applicazione della clausola",
+        "limiti della clausola"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-APP-001",
+      "vertical": "appalti",
+      "question": "Che cosa si intende per appalto di lavori?",
+      "expected_citations": [
+        "art. 1669 c.c."
+      ],
+      "required_topics": [
+        "appalto di lavori",
+        "contratto",
+        "lavori pubblici"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-APP-002",
+      "vertical": "appalti",
+      "question": "Quali sono le principali norme che regolano gli appalti pubblici in Italia?",
+      "expected_citations": [
+        "D.Lgs. 50/2016",
+        "D.Lgs. 18 aprile 2016, n. 50"
+      ],
+      "required_topics": [
+        "appalti pubblici",
+        "normativa",
+        "codice dei contratti"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-APP-003",
+      "vertical": "appalti",
+      "question": "Come si calcola il valore dell'appalto per determinare la soglia di applicazione del codice dei contratti?",
+      "expected_citations": [
+        "art. 35 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "valore dell'appalto",
+        "soglia di applicazione",
+        "codice dei contratti"
+      ],
+      "forbidden_hallucinations": [
+        "considerare solo il prezzo"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-004",
+      "vertical": "appalti",
+      "question": "Quali sono i requisiti per partecipare a una gara d'appalto?",
+      "expected_citations": [
+        "art. 80 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "requisiti di partecipazione",
+        "gara d'appalto",
+        "operatori economici"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che i requisiti siano solo di natura economica"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-005",
+      "vertical": "appalti",
+      "question": "Che cosa si intende per subappalto e quali sono le relative norme?",
+      "expected_citations": [
+        "art. 105 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "subappalto",
+        "appalto",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "confondere subappalto con appalto"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-006",
+      "vertical": "appalti",
+      "question": "Come si procede in caso di risoluzione del contratto d'appalto?",
+      "expected_citations": [
+        "art. 112 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "risoluzione del contratto",
+        "appalto",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che la risoluzione sia sempre automatica"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-007",
+      "vertical": "appalti",
+      "question": "Quali sono le sanzioni per il mancato rispetto delle norme sugli appalti?",
+      "expected_citations": [
+        "art. 21 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "sanzioni",
+        "appalti",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "credere che le sanzioni siano solo di natura amministrativa"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-008",
+      "vertical": "appalti",
+      "question": "Che cosa si intende per affidamento diretto e quali sono le relative condizioni?",
+      "expected_citations": [
+        "art. 36 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "affidamento diretto",
+        "appalto",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che l'affidamento diretto sia sempre possibile"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-APP-009",
+      "vertical": "appalti",
+      "question": "Come si procede per la scelta del contraente nei servizi di ingegneria e architettura?",
+      "expected_citations": [
+        "art. 24 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "scelta del contraente",
+        "servizi di ingegneria",
+        "architettura"
+      ],
+      "forbidden_hallucinations": [
+        "credere che la scelta sia sempre basata sul prezzo"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-010",
+      "vertical": "appalti",
+      "question": "Quali sono i principi generali per la gestione dei conflitti di interesse negli appalti pubblici?",
+      "expected_citations": [
+        "art. 42 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "conflitti di interesse",
+        "appalti pubblici",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che i conflitti di interesse siano sempre facili da risolvere"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-011",
+      "vertical": "appalti",
+      "question": "Come si procede per la valutazione delle offerte nelle procedure di appalto?",
+      "expected_citations": [
+        "art. 97 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "valutazione delle offerte",
+        "procedure di appalto",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "credere che la valutazione sia sempre basata sul prezzo"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-012",
+      "vertical": "appalti",
+      "question": "Quali sono le norme relative alla trasparenza e alla pubblicità degli appalti pubblici?",
+      "expected_citations": [
+        "art. 29 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "trasparenza",
+        "pubblicità",
+        "appalti pubblici"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che la trasparenza sia sempre garantita"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-013",
+      "vertical": "appalti",
+      "question": "Che cosa si intende per avvalimento e quali sono le relative condizioni?",
+      "expected_citations": [
+        "art. 89 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "avvalimento",
+        "appalto",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "confondere avvalimento con subappalto"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-014",
+      "vertical": "appalti",
+      "question": "Come si procede per la gestione dei ritardi e dei danni negli appalti pubblici?",
+      "expected_citations": [
+        "art. 113 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "ritardi",
+        "danni",
+        "appalti pubblici"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che i ritardi siano sempre imputabili al contraente"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-015",
+      "vertical": "appalti",
+      "question": "Quali sono le norme relative alla sicurezza e alla salute sui luoghi di lavoro negli appalti pubblici?",
+      "expected_citations": [
+        "D.Lgs. 81/2008"
+      ],
+      "required_topics": [
+        "sicurezza",
+        "salute",
+        "luoghi di lavoro"
+      ],
+      "forbidden_hallucinations": [
+        "credere che la sicurezza sia sempre garantita"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-016",
+      "vertical": "appalti",
+      "question": "Che cosa si intende per appalto di servizi e quali sono le relative norme?",
+      "expected_citations": [
+        "art. 3 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "appalto di servizi",
+        "normativa",
+        "servizi"
+      ],
+      "forbidden_hallucinations": [
+        "confondere appalto di servizi con appalto di lavori"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-APP-017",
+      "vertical": "appalti",
+      "question": "Come si procede per la risoluzione delle controversie negli appalti pubblici?",
+      "expected_citations": [
+        "art. 211 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "risoluzione delle controversie",
+        "appalti pubblici",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che la risoluzione sia sempre possibile attraverso la negoziazione"
+      ],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-APP-018",
+      "vertical": "appalti",
+      "question": "Quali sono le norme relative alla tutela della concorrenza negli appalti pubblici?",
+      "expected_citations": [
+        "art. 41 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "tutela della concorrenza",
+        "appalti pubblici",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "credere che la concorrenza sia sempre garantita"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-019",
+      "vertical": "appalti",
+      "question": "Come si procede per la valutazione dell'offerta economicamente più vantaggiosa?",
+      "expected_citations": [
+        "art. 95 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "valutazione dell'offerta",
+        "offerta economicamente più vantaggiosa",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "credere che la valutazione sia sempre basata sul prezzo"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-020",
+      "vertical": "appalti",
+      "question": "Quali sono le norme relative alla responsabilità del contraente negli appalti pubblici?",
+      "expected_citations": [
+        "art. 102 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "responsabilità del contraente",
+        "appalti pubblici",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che la responsabilità sia sempre limitata"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-021",
+      "vertical": "appalti",
+      "question": "Come si procede per la gestione dei cambiamenti negli appalti pubblici?",
+      "expected_citations": [
+        "art. 106 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "gestione dei cambiamenti",
+        "appalti pubblici",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "credere che i cambiamenti siano sempre facili da gestire"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-022",
+      "vertical": "appalti",
+      "question": "Quali sono le norme relative alla durata degli appalti pubblici?",
+      "expected_citations": [
+        "art. 51 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "durata degli appalti",
+        "appalti pubblici",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che la durata sia sempre fissa"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-APP-023",
+      "vertical": "appalti",
+      "question": "Come si procede per la risoluzione del contratto d'appalto in caso di inadempimento?",
+      "expected_citations": [
+        "art. 112 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "risoluzione del contratto",
+        "inadempimento",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "credere che la risoluzione sia sempre automatica"
+      ],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-APP-024",
+      "vertical": "appalti",
+      "question": "Quali sono le norme relative alla tutela dei diritti dei lavoratori negli appalti pubblici?",
+      "expected_citations": [
+        "art. 30 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "tutela dei diritti dei lavoratori",
+        "appalti pubblici",
+        "normativa"
+      ],
+      "forbidden_hallucinations": [
+        "pensare che la tutela sia sempre garantita"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-APP-025",
+      "vertical": "appalti",
+      "question": "Come si procede per la gestione dei rapporti tra committente e contraente negli appalti pubblici?",
+      "expected_citations": [
+        "art. 23 D.Lgs. 50/2016"
+      ],
+      "required_topics": [
+        "gestione dei rapporti",
+        "committente",
+        "contraente"
+      ],
+      "forbidden_hallucinations": [
+        "credere che i rapporti siano sempre facili da gestire"
+      ],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FAM-001",
+      "vertical": "famiglia",
+      "question": "Cos'è il matrimonio civile e quali sono i requisiti per contrarlo?",
+      "expected_citations": [
+        "art. 143 c.c.",
+        "art. 144 c.c."
+      ],
+      "required_topics": [
+        "matrimonio civile",
+        "requisiti"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FAM-002",
+      "vertical": "famiglia",
+      "question": "Quali sono i diritti e doveri dei genitori nei confronti dei figli?",
+      "expected_citations": [
+        "art. 147 c.c.",
+        "art. 148 c.c."
+      ],
+      "required_topics": [
+        "diritti dei genitori",
+        "doveri dei genitori"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FAM-003",
+      "vertical": "famiglia",
+      "question": "Come si ottiene l'affidamento condiviso dei figli in caso di separazione?",
+      "expected_citations": [
+        "art. 155 c.c.",
+        "art. 156 c.c."
+      ],
+      "required_topics": [
+        "affidamento condiviso",
+        "separazione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-004",
+      "vertical": "famiglia",
+      "question": "Qual è la differenza tra adozione nazionale e adozione internazionale?",
+      "expected_citations": [
+        "art. 25 legge 184/1983",
+        "art. 29 legge 184/1983"
+      ],
+      "required_topics": [
+        "adozione nazionale",
+        "adozione internazionale"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-005",
+      "vertical": "famiglia",
+      "question": "Come si procede per il riconoscimento di un figlio naturale?",
+      "expected_citations": [
+        "art. 250 c.c.",
+        "art. 251 c.c."
+      ],
+      "required_topics": [
+        "riconoscimento figlio naturale",
+        "procedura"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-006",
+      "vertical": "famiglia",
+      "question": "Quali sono le conseguenze dell'abbandono del tetto coniugale?",
+      "expected_citations": [
+        "art. 146 c.c.",
+        "art. 151 c.c."
+      ],
+      "required_topics": [
+        "abbandono del tetto coniugale",
+        "conseguenze"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-007",
+      "vertical": "famiglia",
+      "question": "Come si calcola l'assegno di mantenimento per i figli?",
+      "expected_citations": [
+        "art. 155 c.c.",
+        "art. 156 c.c."
+      ],
+      "required_topics": [
+        "assegno di mantenimento",
+        "calcolo"
+      ],
+      "forbidden_hallucinations": [
+        "considerare solo il reddito del genitore obbligato"
+      ],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-008",
+      "vertical": "famiglia",
+      "question": "Cos'è la potestà genitoriale e come si esercita?",
+      "expected_citations": [
+        "art. 147 c.c.",
+        "art. 148 c.c."
+      ],
+      "required_topics": [
+        "potestà genitoriale",
+        "esercizio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FAM-009",
+      "vertical": "famiglia",
+      "question": "Quali sono i diritti del figlio adottato?",
+      "expected_citations": [
+        "art. 27 legge 184/1983",
+        "art. 30 legge 184/1983"
+      ],
+      "required_topics": [
+        "diritti figlio adottato",
+        "adozione"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-010",
+      "vertical": "famiglia",
+      "question": "Come si procede per la modifica dell'assegno di mantenimento?",
+      "expected_citations": [
+        "art. 156 c.c.",
+        "art. 710 c.p.c."
+      ],
+      "required_topics": [
+        "modifica assegno di mantenimento",
+        "procedura"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-011",
+      "vertical": "famiglia",
+      "question": "Qual è la differenza tra separazione personale e divorzio?",
+      "expected_citations": [
+        "art. 143 c.c.",
+        "art. 1 legge 898/1970"
+      ],
+      "required_topics": [
+        "separazione personale",
+        "divorzio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FAM-012",
+      "vertical": "famiglia",
+      "question": "Come si ottiene il divorzio consensuale?",
+      "expected_citations": [
+        "art. 3 legge 898/1970",
+        "art. 4 legge 898/1970"
+      ],
+      "required_topics": [
+        "divorzio consensuale",
+        "procedura"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-013",
+      "vertical": "famiglia",
+      "question": "Quali sono le conseguenze del divorzio sulla proprietà dei beni?",
+      "expected_citations": [
+        "art. 192 c.c.",
+        "art. 193 c.c."
+      ],
+      "required_topics": [
+        "divorzio",
+        "proprietà dei beni"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-014",
+      "vertical": "famiglia",
+      "question": "Come si procede per la tutela dei minori in caso di separazione o divorzio?",
+      "expected_citations": [
+        "art. 155 c.c.",
+        "art. 317 c.c."
+      ],
+      "required_topics": [
+        "tutela minori",
+        "separazione o divorzio"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-015",
+      "vertical": "famiglia",
+      "question": "Quali sono i diritti e doveri dei nonni nei confronti dei nipoti?",
+      "expected_citations": [
+        "art. 317 c.c.",
+        "art. 318 c.c."
+      ],
+      "required_topics": [
+        "diritti nonni",
+        "doveri nonni"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FAM-016",
+      "vertical": "famiglia",
+      "question": "Come si procede per il riconoscimento della paternità putativa?",
+      "expected_citations": [
+        "art. 269 c.c.",
+        "art. 270 c.c."
+      ],
+      "required_topics": [
+        "riconoscimento paternità putativa",
+        "procedura"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-017",
+      "vertical": "famiglia",
+      "question": "Quali sono le conseguenze della mancata registrazione dell'atto di nascita?",
+      "expected_citations": [
+        "art. 30 d.P.R. 396/2000",
+        "art. 31 d.P.R. 396/2000"
+      ],
+      "required_topics": [
+        "mancata registrazione atto di nascita",
+        "conseguenze"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-018",
+      "vertical": "famiglia",
+      "question": "Come si procede per la revoca dell'assegno di mantenimento?",
+      "expected_citations": [
+        "art. 156 c.c.",
+        "art. 710 c.p.c."
+      ],
+      "required_topics": [
+        "revoca assegno di mantenimento",
+        "procedura"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-019",
+      "vertical": "famiglia",
+      "question": "Quali sono i diritti e doveri dei figli maggiorenni nei confronti dei genitori?",
+      "expected_citations": [
+        "art. 147 c.c.",
+        "art. 148 c.c."
+      ],
+      "required_topics": [
+        "diritti figli maggiorenni",
+        "doveri figli maggiorenni"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FAM-020",
+      "vertical": "famiglia",
+      "question": "Come si procede per la modifica della residenza del minore?",
+      "expected_citations": [
+        "art. 155 c.c.",
+        "art. 156 c.c."
+      ],
+      "required_topics": [
+        "modifica residenza minore",
+        "procedura"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-021",
+      "vertical": "famiglia",
+      "question": "Quali sono le conseguenze del matrimonio putativo?",
+      "expected_citations": [
+        "art. 128 c.c.",
+        "art. 129 c.c."
+      ],
+      "required_topics": [
+        "matrimonio putativo",
+        "conseguenze"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FAM-022",
+      "vertical": "famiglia",
+      "question": "Come si procede per la dichiarazione di adottabilità?",
+      "expected_citations": [
+        "art. 15 legge 184/1983",
+        "art. 16 legge 184/1983"
+      ],
+      "required_topics": [
+        "dichiarazione adottabilità",
+        "procedura"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "medium"
+    },
+    {
+      "id": "SYN-FAM-023",
+      "vertical": "famiglia",
+      "question": "Quali sono i diritti e doveri dei genitori adottivi?",
+      "expected_citations": [
+        "art. 27 legge 184/1983",
+        "art. 30 legge 184/1983"
+      ],
+      "required_topics": [
+        "diritti genitori adottivi",
+        "doveri genitori adottivi"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "easy"
+    },
+    {
+      "id": "SYN-FAM-024",
+      "vertical": "famiglia",
+      "question": "Come si procede per la tutela dei minori in caso di abuso o maltrattamento?",
+      "expected_citations": [
+        "art. 403 c.p.",
+        "art. 404 c.p."
+      ],
+      "required_topics": [
+        "tutela minori",
+        "abuso o maltrattamento"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    },
+    {
+      "id": "SYN-FAM-025",
+      "vertical": "famiglia",
+      "question": "Quali sono le conseguenze della mancata esecuzione dell'assegno di mantenimento?",
+      "expected_citations": [
+        "art. 156 c.c.",
+        "art. 709 c.p.c."
+      ],
+      "required_topics": [
+        "mancata esecuzione assegno di mantenimento",
+        "conseguenze"
+      ],
+      "forbidden_hallucinations": [],
+      "difficulty": "hard"
+    }
+  ]
+}
