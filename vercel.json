@@ -27,5 +27,15 @@
       "path": "/api/sentinel/heartbeat",
       "schedule": "*/5 * * * *"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/studio",
+      "destination": "https://normaai-studio.vercel.app"
+    },
+    {
+      "source": "/studio/:path*",
+      "destination": "https://normaai-studio.vercel.app/:path*"
+    }
   ]
 }
