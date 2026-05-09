@@ -1,12 +1,13 @@
 import { CLUSTER_COUNTS, SQUADRON_META, mockSnapshot } from '../_lib/mock';
 import type { AgentSnapshot, AgentStatus, SquadronId } from '../_lib/types';
 
-const VIEW_W = 900;
-const VIEW_H = 600;
-const COL_X = [150, 450, 750];
-const ROW_Y = [130, 310, 490];
-const BASE_R = 9;
-const DOT_R = 2.4;
+/** Per-cluster SVG canvas — cluster fits in 140x120 box, points centered on (70, 70). */
+const CLUSTER_W = 140;
+const CLUSTER_H = 120;
+const CLUSTER_CX = CLUSTER_W / 2;
+const CLUSTER_CY = CLUSTER_H / 2;
+const BASE_R = 7;
+const DOT_R = 2.6;
 
 const STATUS_COLORS: Record<AgentStatus, string> = {
   running: 'currentColor',
@@ -22,7 +23,7 @@ const STATUS_OPACITY: Record<AgentStatus, number> = {
   error: 1,
 };
 
-/** Vogel-spiral packing inside a cluster centered on (cx, cy). */
+/** Vogel-spiral packing centered on (cx, cy). Compatto, golden angle. */
 function clusterPoints(count: number, cx: number, cy: number) {
   if (count <= 0) return [];
   if (count === 1) return [{ x: cx, y: cy }];
@@ -36,8 +37,6 @@ function clusterPoints(count: number, cx: number, cy: number) {
 
 interface ClusterRender {
   squadron: SquadronId;
-  cx: number;
-  cy: number;
   agents: AgentSnapshot[];
 }
 
@@ -47,16 +46,58 @@ function buildClusters(agents: AgentSnapshot[]): ClusterRender[] {
     if (!bySquadron.has(a.squadron)) bySquadron.set(a.squadron, []);
     bySquadron.get(a.squadron)!.push(a);
   }
-  return CLUSTER_COUNTS.map(({ id }, idx) => {
-    const col = idx % 3;
-    const row = Math.floor(idx / 3);
-    return {
-      squadron: id,
-      cx: COL_X[col],
-      cy: ROW_Y[row],
-      agents: bySquadron.get(id) ?? [],
-    };
-  });
+  return CLUSTER_COUNTS.map(({ id }) => ({
+    squadron: id,
+    agents: bySquadron.get(id) ?? [],
+  }));
+}
+
+function ClusterCard({ cluster }: { cluster: ClusterRender }) {
+  const meta = SQUADRON_META[cluster.squadron];
+  const points = clusterPoints(cluster.agents.length, CLUSTER_CX, CLUSTER_CY);
+
+  return (
+    <div className="flex flex-col items-center">
+      <h3
+        className="text-[11px] uppercase tracking-[0.18em] text-[#13110F]"
+        style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
+      >
+        {cluster.squadron}
+      </h3>
+      <p
+        className="mt-1 text-[11px] text-[#756C5E]"
+        style={{ fontFamily: 'var(--font-inter-tight)' }}
+      >
+        {meta.italianLabel} · {cluster.agents.length}
+      </p>
+      <svg
+        viewBox={`0 0 ${CLUSTER_W} ${CLUSTER_H}`}
+        width={CLUSTER_W}
+        height={CLUSTER_H}
+        className="mt-3"
+        style={{ color: meta.accent }}
+        role="img"
+        aria-label={`${cluster.squadron} · ${cluster.agents.length} agenti`}
+      >
+        {cluster.agents.map((a, i) => {
+          const p = points[i];
+          return (
+            <circle
+              key={a.id}
+              cx={p.x}
+              cy={p.y}
+              r={DOT_R}
+              fill={STATUS_COLORS[a.status]}
+              opacity={STATUS_OPACITY[a.status]}
+              className={a.status === 'retry' ? 'animate-pulse motion-reduce:animate-none' : ''}
+            >
+              <title>{`${a.id} · ${italianStatus(a.status)}`}</title>
+            </circle>
+          );
+        })}
+      </svg>
+    </div>
+  );
 }
 
 export function AgentMap() {
@@ -92,77 +133,27 @@ export function AgentMap() {
         <span className="text-[#B43B25]">Rosso</span> = errore.
       </p>
 
-      <div className="mt-16 overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-          className="block w-full min-w-[640px]"
-          role="img"
-          aria-label={`Mappa di ${agents.length} agenti distribuiti in ${CLUSTER_COUNTS.length} reparti`}
-        >
-          {clusters.map((c) => {
-            const meta = SQUADRON_META[c.squadron];
-            const points = clusterPoints(c.agents.length, c.cx, c.cy);
-            return (
-              <g key={c.squadron} style={{ color: meta.accent }}>
-                <text
-                  x={c.cx}
-                  y={c.cy - 60}
-                  textAnchor="middle"
-                  className="fill-[#13110F]"
-                  style={{
-                    fontFamily: 'var(--font-jetbrains-mono)',
-                    fontSize: 11,
-                    letterSpacing: '0.18em',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {c.squadron}
-                </text>
-                <text
-                  x={c.cx}
-                  y={c.cy - 46}
-                  textAnchor="middle"
-                  className="fill-[#756C5E]"
-                  style={{
-                    fontFamily: 'var(--font-inter-tight)',
-                    fontSize: 11,
-                  }}
-                >
-                  {meta.italianLabel} · {c.agents.length}
-                </text>
-                {c.agents.map((a, i) => {
-                  const p = points[i];
-                  return (
-                    <circle
-                      key={a.id}
-                      cx={p.x}
-                      cy={p.y}
-                      r={DOT_R}
-                      fill={STATUS_COLORS[a.status]}
-                      opacity={STATUS_OPACITY[a.status]}
-                      className={a.status === 'retry' ? 'animate-pulse motion-reduce:animate-none' : ''}
-                    >
-                      <title>{`${a.id} · ${italianStatus(a.status)}`}</title>
-                    </circle>
-                  );
-                })}
-              </g>
-            );
-          })}
-        </svg>
+      <div
+        className="mt-16 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 lg:gap-x-10 lg:gap-y-16"
+        role="group"
+        aria-label={`Mappa di ${agents.length} agenti distribuiti in ${CLUSTER_COUNTS.length} reparti`}
+      >
+        {clusters.map((c) => (
+          <ClusterCard key={c.squadron} cluster={c} />
+        ))}
       </div>
 
-      <hr className="mt-12 border-t border-[#D8CFBC]" aria-hidden="true" />
+      <hr className="mt-16 border-t border-[#D8CFBC]" aria-hidden="true" />
 
       <dl
-        className="mt-6 flex flex-wrap items-baseline gap-x-8 gap-y-2 text-[13px] text-[#756C5E]"
+        className="mt-6 flex flex-wrap items-baseline gap-x-8 gap-y-3 text-[13px] text-[#756C5E]"
         style={{ fontFamily: 'var(--font-inter-tight)' }}
       >
         <Stat label="in azione"  value={totals.running} accent="#13110F" />
         <Stat label="in attesa"  value={totals.idle}    accent="#13110F" />
         <Stat label="in riprova" value={totals.retry}   accent="#C9A14B" />
         <Stat label="in errore"  value={totals.error}   accent="#B43B25" />
-        <span className="ml-auto text-[#9A8E83]">
+        <span className="w-full text-[12px] text-[#9A8E83] sm:ml-auto sm:w-auto">
           {agents.length} in mappa · 114 nominali a regime
         </span>
       </dl>
