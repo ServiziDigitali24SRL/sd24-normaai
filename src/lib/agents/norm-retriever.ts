@@ -1,7 +1,7 @@
-// Norm Retriever Agent — RAG dense vector search over normaai_chunks (8.3M rows).
-// SER-108 (1 maggio 2026): switched from corpus_chunks (empty) to normaai_chunks (production).
-// Embedding: FastEmbed bge-small-en-v1.5 via Hetzner VPS (EMBED_VPS_URL).
-// RPC: match_normaai_chunks (existing in production, embedding inline on chunks).
+// Norm Retriever Agent — RAG hybrid (dense + FTS) over normaai_chunks (8.3M rows).
+// SER-157 / SER-162 (9 maggio 2026): re-enabled dense path via hybrid_search_chunks_v2
+// RPC (uses embedding_bgem3 1024d, linear weighted sim*0.7 + fts*0.3 server-side).
+// Fallback: corpus_simple_fts (FTS-only, sub-second on 8.3M rows) when embed unavailable.
 
 import { createAdminClient } from "@/lib/supabase-admin";
 import type { Agent, AgentContext, AgentResult, CitationRef } from "./types";
@@ -226,14 +226,12 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
       // Retrieve 2× topK candidates from RPC, then rerank to topK final.
       const retrievalCount = topK * 2;
 
-      // SIMPLIFIED RAG (2026-05-05): the dense pgvector path was blocked by
-      // missing global HNSW index on embedding_bgem3 → seq scan + 6s timeout.
-      // We rely on the FTS GIN index (`normaai_chunks_fts_italian_gin`) via
-      // RPC `corpus_simple_fts` which uses bitmap-index-scan + LIMIT 200
-      // candidates + ts_rank_cd → sub-second on 8.3M-row table.
-      // When the global HNSW gets built (offline), reintroduce the dense
-      // path here as a parallel call and fuse scores.
+      // Hybrid retrieval: try embed with hard timeout; on success call
+      // hybrid_search_chunks_v2 (dense+FTS fused inside Postgres). On any
+      // failure, fall back gracefully to corpus_simple_fts (FTS-only).
+      // No zero-vector fallback — see EmbeddingUnavailableError above.
       const sb = createAdminClient();
+      const dimEnv = parseInt(process.env.EMBED_DIM ?? "1024", 10);
 
       type ChunkRow = {
         id: string;
@@ -247,13 +245,61 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         similarity: number;
       };
 
-      const { data, error } = await sb.rpc("corpus_simple_fts", {
-        query_text: input.query,
-        match_count: retrievalCount,
-      });
+      let allRows: ChunkRow[] = [];
+      let lastError: { code?: string; message?: string } | null = null;
+      let path: "hybrid" | "fts_only" = "fts_only";
 
-      const allRows: ChunkRow[] = (data ?? []) as ChunkRow[];
-      const lastError = error ? { code: (error as { code?: string }).code, message: error.message } : null;
+      let embedding: number[] | null = null;
+      try {
+        embedding = await Promise.race([
+          embedQuery(input.query),
+          new Promise<number[]>((_, rej) =>
+            setTimeout(() => rej(new EmbeddingUnavailableError("embed timeout 2500ms")), 2500),
+          ),
+        ]);
+      } catch (err) {
+        console.warn(
+          "[norm-retriever] embed unavailable, falling back to FTS:",
+          err instanceof Error ? err.message : String(err),
+        );
+        embedding = null;
+      }
+
+      if (embedding && embedding.length === dimEnv) {
+        const { data, error } = await sb.rpc("hybrid_search_chunks_v2", {
+          query_embedding: embedding,
+          query_text: input.query,
+          match_vertical: input.vertical ?? null,
+          match_count: retrievalCount,
+          candidate_count: Math.max(retrievalCount * 3, 30),
+        });
+        if (error) {
+          console.warn("[norm-retriever] hybrid RPC failed, falling back to FTS:", error.message);
+        } else if (data && (data as unknown[]).length > 0) {
+          type HybridRow = {
+            id: string; chunk: string; fonte: string; tipo: string; titolo: string;
+            url: string | null; verticale: string | null;
+            similarity: number; hybrid_score: number;
+          };
+          allRows = (data as HybridRow[]).map((r) => ({
+            id: r.id, fonte: r.fonte, tipo: r.tipo, titolo: r.titolo,
+            chunk: r.chunk, url: r.url, verticale: r.verticale, data: null,
+            similarity: r.hybrid_score,
+          }));
+          path = "hybrid";
+        }
+      }
+
+      if (allRows.length === 0) {
+        const { data, error } = await sb.rpc("corpus_simple_fts", {
+          query_text: input.query,
+          match_count: retrievalCount,
+        });
+        allRows = (data ?? []) as ChunkRow[];
+        lastError = error
+          ? { code: (error as { code?: string }).code, message: error.message }
+          : null;
+      }
 
       if (lastError && allRows.length === 0) {
         // All RPC calls failed → graceful degradation
@@ -290,7 +336,7 @@ export const normRetrieverAgent: Agent<NormRetrieverInput, NormRetrieverOutput> 
         agent: "norm-retriever",
         state: "done",
         durationMs: Date.now() - t0,
-        output: `${chunks.length} norme trovate`,
+        output: `${chunks.length} norme trovate (path=${path})`,
       });
 
       return { ok: true, data: { chunks, ragContext } };
