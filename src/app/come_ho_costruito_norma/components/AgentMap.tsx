@@ -107,7 +107,7 @@ export function AgentMap() {
   return (
     <section className="mx-auto max-w-6xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.58_0.18_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         03 · chi lavora
@@ -145,33 +145,35 @@ export function AgentMap() {
 
       <hr className="mt-16 border-t border-[#D8CFBC]" aria-hidden="true" />
 
-      <dl
+      <div
         className="mt-6 flex flex-wrap items-baseline gap-x-8 gap-y-3 text-[13px] text-[#756C5E]"
         style={{ fontFamily: 'var(--font-inter-tight)' }}
+        role="group"
+        aria-label="Riepilogo stato agenti"
       >
         <Stat label="in azione"  value={totals.running} accent="#13110F" />
         <Stat label="in attesa"  value={totals.idle}    accent="#13110F" />
         <Stat label="in riprova" value={totals.retry}   accent="#C9A14B" />
         <Stat label="in errore"  value={totals.error}   accent="#B43B25" />
-        <span className="w-full text-[12px] text-[#9A8E83] sm:ml-auto sm:w-auto">
+        <p className="w-full text-[12px] text-[#9A8E83] sm:ml-auto sm:w-auto">
           {agents.length} in mappa · 114 nominali a regime
-        </span>
-      </dl>
+        </p>
+      </div>
     </section>
   );
 }
 
 function Stat({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
-    <div className="flex items-baseline gap-2">
-      <dt className="sr-only">{label}</dt>
-      <dd
+    <div className="flex items-baseline gap-2" aria-label={`${value} ${label}`}>
+      <span
         className="text-[28px] leading-none"
         style={{ fontFamily: 'var(--font-instrument-serif)', color: accent }}
+        aria-hidden="true"
       >
         {value}
-      </dd>
-      <span>{label}</span>
+      </span>
+      <span aria-hidden="true">{label}</span>
     </div>
   );
 }

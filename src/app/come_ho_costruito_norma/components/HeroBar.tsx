@@ -20,7 +20,7 @@ export function HeroBar() {
 
         <div className="flex items-center gap-2">
           <span
-            className="text-[10px] uppercase tracking-[0.2em] text-[oklch(0.58_0.18_35)]"
+            className="text-[10px] uppercase tracking-[0.2em] text-[oklch(0.48_0.20_35)]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             01 · in diretta
