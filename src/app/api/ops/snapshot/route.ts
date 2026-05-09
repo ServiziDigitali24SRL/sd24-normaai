@@ -116,12 +116,12 @@ export async function GET() {
         'milestone_key, title, category, description, target_at, achieved_at, achieved_by, evidence_url, voto_at_achievement',
       )
       .order('target_at', { ascending: true, nullsFirst: false }),
-    sb.from('documents').select('id', { count: 'exact', head: true }),
+    sb.from('documents').select('id', { count: 'estimated', head: true }),
     sb
       .from('documents')
-      .select('id', { count: 'exact', head: true })
-      .not('source_url', 'is', null),
-    sb.from('normaai_chunks').select('id', { count: 'exact', head: true }),
+      .select('id', { count: 'estimated', head: true })
+      .not('url', 'is', null),
+    sb.from('normaai_chunks').select('id', { count: 'estimated', head: true }),
     sb.from('gpu_jobs_latency_5min').select('*'),
     sb.from('incidents_mttr_90d').select('severity, n_resolved, mttr_minutes'),
     sb
