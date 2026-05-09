@@ -13,7 +13,7 @@ const instrumentSerif = Instrument_Serif({
   display: 'swap',
   preload: true,
   fallback: ['Iowan Old Style', 'Georgia', 'serif'],
-  adjustFontFallback: 'Times New Roman',
+  adjustFontFallback: true,
 });
 
 // Font UI body — preloaded perché usato in body text e label sotto headline.

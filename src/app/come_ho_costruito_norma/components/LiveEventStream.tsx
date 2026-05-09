@@ -66,7 +66,7 @@ export function LiveEventStream() {
     });
   }, []);
 
-  // SSE wiring + demo fallback
+  // SSE wiring + demo fallback. Defer init a quando il browser è idle (TBT win).
   useEffect(() => {
     if (typeof window === 'undefined' || typeof EventSource === 'undefined') {
       setMode('demo');
@@ -74,6 +74,9 @@ export function LiveEventStream() {
     }
 
     let demoTimer: ReturnType<typeof setInterval> | null = null;
+    let es: EventSource | null = null;
+    let cleanupListeners: (() => void) | null = null;
+
     let demoCursor = 0;
     const startDemo = () => {
       if (demoTimer) return;
@@ -85,45 +88,74 @@ export function LiveEventStream() {
       }, MOCK_INTERVAL_MS);
     };
 
-    let failCount = 0;
-    const es = new EventSource(STREAM_URL);
+    const initSse = () => {
+      let failCount = 0;
+      es = new EventSource(STREAM_URL);
 
-    es.onopen = () => {
-      failCount = 0;
-      setMode('live');
-      if (demoTimer) {
-        clearInterval(demoTimer);
-        demoTimer = null;
-      }
+      es.onopen = () => {
+        failCount = 0;
+        setMode('live');
+        if (demoTimer) {
+          clearInterval(demoTimer);
+          demoTimer = null;
+        }
+      };
+
+      const onAgentEvent = (rawEv: MessageEvent) => {
+        try {
+          const data = JSON.parse(rawEv.data);
+          // Tab 4 backend payload: { ts, squadron, agent_id, action, status }
+          // (legacy fallback: agentId, message/msg per altre fonti SSE)
+          const action = data.action ?? data.message ?? data.msg ?? '';
+          const status = data.status;
+          const composed = status ? `${action} · ${status}` : String(action);
+          const next: AgentEvent = {
+            ts: data.ts ?? new Date().toISOString(),
+            agentId: String(data.agent_id ?? data.agentId ?? 'unknown'),
+            squadron: (data.squadron ?? 'META') as SquadronId,
+            message: composed,
+          };
+          pushEvent(next);
+        } catch {
+          // ignore malformed payload
+        }
+      };
+      es.addEventListener('agent_event', onAgentEvent);
+
+      es.onerror = () => {
+        failCount += 1;
+        if (failCount >= SSE_FAIL_THRESHOLD || es?.readyState === EventSource.CLOSED) {
+          es?.close();
+          startDemo();
+        }
+      };
+
+      cleanupListeners = () => {
+        es?.removeEventListener('agent_event', onAgentEvent);
+      };
     };
 
-    const onAgentEvent = (rawEv: MessageEvent) => {
-      try {
-        const data = JSON.parse(rawEv.data);
-        const next: AgentEvent = {
-          ts: data.ts ?? new Date().toISOString(),
-          agentId: String(data.agentId ?? data.agent_id ?? 'unknown'),
-          squadron: (data.squadron ?? 'META') as SquadronId,
-          message: String(data.message ?? data.msg ?? ''),
-        };
-        pushEvent(next);
-      } catch {
-        // ignore malformed payload
-      }
+    // Defer SSE setup a "browser idle" per liberare il main thread durante TBT.
+    // Fallback setTimeout 200ms se requestIdleCallback non disponibile (Safari).
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
     };
-    es.addEventListener('agent_event', onAgentEvent);
-
-    es.onerror = () => {
-      failCount += 1;
-      if (failCount >= SSE_FAIL_THRESHOLD || es.readyState === EventSource.CLOSED) {
-        es.close();
-        startDemo();
-      }
-    };
+    let idleHandle: number | null = null;
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+    if (typeof win.requestIdleCallback === 'function') {
+      idleHandle = win.requestIdleCallback(initSse, { timeout: 1500 });
+    } else {
+      timeoutHandle = setTimeout(initSse, 200);
+    }
 
     return () => {
-      es.removeEventListener('agent_event', onAgentEvent);
-      es.close();
+      if (idleHandle !== null && typeof win.cancelIdleCallback === 'function') {
+        win.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle) clearTimeout(timeoutHandle);
+      cleanupListeners?.();
+      es?.close();
       if (demoTimer) clearInterval(demoTimer);
     };
   }, [pushEvent]);
