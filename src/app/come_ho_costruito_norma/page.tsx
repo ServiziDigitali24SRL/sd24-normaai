@@ -1,10 +1,12 @@
 import { AgentMap } from './components/AgentMap';
+import { Architettura } from './components/Architettura';
 import { AutopilotADR } from './components/AutopilotADR';
 import { FunnelCorpus } from './components/FunnelCorpus';
 import { GpuLive } from './components/GpuLive';
 import { HeroBar } from './components/HeroBar';
 import { HeroHeadline } from './components/HeroHeadline';
 import { LiveEventStream } from './components/LiveEventStream';
+import { MilestoneTimeline } from './components/MilestoneTimeline';
 import { SentinelHealth } from './components/SentinelHealth';
 import { SkillsAndDiscovery } from './components/SkillsAndDiscovery';
 import { SourceCoverage } from './components/SourceCoverage';
@@ -33,6 +35,8 @@ export default function ComeHoCostruitoNormaPage() {
         <SentinelHealth />
         <SkillsAndDiscovery />
         <AutopilotADR />
+        <MilestoneTimeline />
+        <Architettura />
       </main>
     </>
   );
