@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import CookieBanner from "@/components/CookieBanner";
-import PlausibleAnalytics from "@/components/PlausibleAnalytics";
-import SessionGuard from "@/components/SessionGuard";
+import { ClientChrome } from "@/components/ClientChrome";
 
 // Brand fonts NormaAI cream/serif legal-warm — esposti come CSS variables
 // per essere usati da homepage, /come_ho_costruito_norma, /studio e route future
@@ -120,9 +118,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {children}
-        <SessionGuard />
-        <CookieBanner />
-        <PlausibleAnalytics />
+        <ClientChrome />
       </body>
     </html>
   );
