@@ -1,16 +1,19 @@
 "use client";
 
-// AvatarLive — real-time WebRTC streaming avatar via LiveAvatar (HeyGen rebrand).
-// Direct LiveKit connection (no @heygen/streaming-avatar SDK conflict).
+// AvatarLive — real-time WebRTC streaming avatar.
+// Transport: api.liveavatar.com (LiveKit room). Backend: ElevenLabs Conversational
+// Agent (ASR+LLM+TTS server-side). LiveAvatar acts as pure lip-sync renderer.
+// Direct livekit-client connection (no @heygen/streaming-avatar SDK).
 //
 // Flow:
-//   1. POST /api/avatar/streaming/start → backend creates session AND starts it
-//      → returns { session_id, session_token, livekit_url, livekit_client_token }
-//   2. We connect directly via livekit-client to the LiveKit room with the client_token
-//   3. Subscribe to remote video+audio tracks → attach to <video>
-//   4. speak()/interrupt() POST to LiveAvatar task endpoints with session_token
+//   1. POST /api/avatar/streaming/start → backend opens LiveAvatar session with
+//      `mode: LITE + elevenlabs_agent_config: { secret_id, agent_id }`.
+//      Returns { session_id, session_token, livekit_url, livekit_client_token }.
+//   2. Connect directly via livekit-client using client_token.
+//   3. Subscribe to remote video+audio tracks → attach to <video>/<audio>.
+//   4. speak()/interrupt() POST to api.liveavatar.com/v1/sessions/{task,interrupt}.
 //
-// Latency: ~1.5s first frame.
+// Target: first frame < 1.5s (SER-163 lat_avatar).
 
 import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import { Room, RoomEvent, RemoteVideoTrack, RemoteAudioTrack } from "livekit-client";

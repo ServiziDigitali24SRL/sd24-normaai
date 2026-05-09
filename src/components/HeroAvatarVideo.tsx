@@ -3,7 +3,7 @@
 // HeroAvatarVideo — pre-rendered Sofia greeting (~12s) with click-to-play.
 // Drop-in component for the desktop hero section.
 //
-// Asset: /public/sofia-greeting.mp4 (HeyGen render, 9:16, voce italiana).
+// Asset: /public/sofia-greeting.mp4 (static MP4 fallback, 9:16, voce italiana).
 // Use case: zero-latency intro for anonymous visitors, before the chat / live avatar.
 //
 // Usage:
