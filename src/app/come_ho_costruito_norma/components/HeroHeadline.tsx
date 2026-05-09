@@ -89,7 +89,7 @@ export function HeroHeadline() {
       </h1>
 
       <p className="mt-10 max-w-3xl text-[18px] leading-relaxed text-[#756C5E]">
-        612.847 documenti scaricati. 4,2 milioni di chunk. Zero LLM cloud a pagamento.
+        612.847 documenti scaricati. 8,3 milioni di chunk. Zero LLM cloud a pagamento.
         Tutto in tempo reale, qui sotto.
       </p>
 

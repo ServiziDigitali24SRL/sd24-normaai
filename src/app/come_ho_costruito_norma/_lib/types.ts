@@ -38,6 +38,55 @@ export interface VotoSnapshot {
   deltaPct: number;
 }
 
+export interface FunnelSnapshot {
+  fontiPubbliche: number;
+  fontiRegionali: number;
+  scaricati: number;
+  rifiutati: number;
+  pulito: number;
+  scarto: number;
+  chunkPronti: number;
+  etaCompletamentoOre: number;
+  velocityChunkPerMin: number;
+}
+
+export interface GpuModel {
+  name: string;
+  status: 'active' | 'idle' | 'unloaded';
+}
+
+export interface GpuSnapshot {
+  utilPct: number;
+  /** 60 valori di utilization GPU, dal più vecchio al più recente. */
+  utilSeries60s: number[];
+  vramUsedGb: number;
+  vramTotalGb: number;
+  models: GpuModel[];
+  llmCost24hUsd: number;
+  /** Costo equivalente con Anthropic Claude per le stesse 24h. */
+  llmCostBaselineUsd: number;
+}
+
+export type SourceStatus = 'complete' | 'partial' | 'missing';
+
+export interface SourceSnapshot {
+  name: string;
+  shortName: string;
+  status: SourceStatus;
+  coveragePct: number;
+  documentCount: number;
+  lastUpdateLabel: string;
+  url: string;
+}
+
+export interface AgentEvent {
+  /** ISO timestamp. Il client formatta come HH:MM:SS. */
+  ts: string;
+  agentId: string;
+  squadron: SquadronId;
+  message: string;
+}
+
 export interface SnapshotData {
   ts: string;
   totals: {
@@ -53,4 +102,9 @@ export interface SnapshotData {
   };
   voti: VotoSnapshot[];
   agents: AgentSnapshot[];
+  funnel: FunnelSnapshot;
+  gpu: GpuSnapshot;
+  sources: SourceSnapshot[];
+  /** Eventi precaricati per il primo render (fallback se SSE non parte). */
+  recentEvents: AgentEvent[];
 }
