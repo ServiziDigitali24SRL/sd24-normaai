@@ -6,7 +6,15 @@ export type SquadronId =
   | 'AGENTS'
   | 'OPS'
   | 'SENTINEL'
-  | 'DISCOVERY';
+  | 'DISCOVERY'
+  | 'META';
+
+/** Etichetta italiana, accent color e descrizione breve per ogni squadron. */
+export interface SquadronMeta {
+  id: SquadronId;
+  italianLabel: string;
+  accent: string;
+}
 
 export type AgentStatus = 'running' | 'idle' | 'retry' | 'error';
 
@@ -24,6 +32,10 @@ export interface VotoSnapshot {
   voto: number;
   target: number;
   trend: 'up' | 'flat' | 'down';
+  /** 7 punti, dal più vecchio al più recente. Stessa scala di voto (0-100). */
+  trend7d: number[];
+  /** Variazione percentuale assoluta vs giorno precedente. Positivo = migliorato. */
+  deltaPct: number;
 }
 
 export interface SnapshotData {
