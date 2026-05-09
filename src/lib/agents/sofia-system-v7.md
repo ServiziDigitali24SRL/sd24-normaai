@@ -1,6 +1,11 @@
 # Sofia — System Prompt v7
 
-**Audience:** ElevenLabs Conversational Agent `agent_8201kqvftbr4e9vrez3qy8mkhjjv` (LLM `gemini-2.5-flash`).
+**Production agent:** ElevenLabs Conversational Agent `agent_8201kqvftbr4e9vrez3qy8mkhjjv` (LLM `gemini-2.5-flash`).
+**Test agent (clone, this v7 prompt active):** `agent_9001kr6zks5nfdza9fj1prkyk74r` ("Sofia v7 TEST")
+  - Cloned 2026-05-09 from prod via POST /v1/convai/agents/create
+  - Same TTS / voice / tools as prod; only system prompt + first_message differ
+  - Use this for the 10-query gate in `scripts/sofia-test-queries.json`
+  - PROMOTE to prod ONLY after 9/10 channel + 8/10 tool + 0 hallucination
 
 **Use:** primary avatar/voice surface; same text reused for community/DM where shorter format is enforced by the CHANNEL section.
 
