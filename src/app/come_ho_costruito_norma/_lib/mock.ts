@@ -1,9 +1,12 @@
 import type {
+  ADREntry,
   AgentEvent,
   AgentSnapshot,
   AgentStatus,
+  DiscoverySnapshot,
   FunnelSnapshot,
   GpuSnapshot,
+  SentinelSnapshot,
   SnapshotData,
   SourceSnapshot,
   SquadronId,
@@ -161,6 +164,83 @@ const mockSources: SourceSnapshot[] = [
 ];
 
 /** §9 — eventi pre-popolati per primo render (fallback se SSE non parte). */
+/** §14 — Sentinel: salute sistema + ultimi incident. */
+const mockSentinel: SentinelSnapshot = {
+  uptimePct: 99.97,
+  mttrSeconds: 3.2,
+  autoFix24h: 47,
+  openIncidents: 0,
+  recentIncidents: [
+    {
+      ts: '2026-05-08T14:22:00.000Z',
+      agentId: 'CORPUS-12',
+      cause: 'memoria esaurita',
+      resolution: 'riavviato in automatico',
+      durationLabel: '4 secondi',
+      status: 'resolved',
+    },
+    {
+      ts: '2026-05-07T02:11:00.000Z',
+      agentId: 'GEX44 GPU',
+      cause: 'thermal throttling',
+      resolution: 'attesa raffreddamento',
+      durationLabel: '18 secondi',
+      status: 'resolved',
+    },
+    {
+      ts: '2026-05-06T19:48:00.000Z',
+      agentId: 'OPS-pool',
+      cause: 'pool Supabase saturo',
+      resolution: 'riconnessione automatica',
+      durationLabel: '7 secondi',
+      status: 'resolved',
+    },
+  ],
+};
+
+/** §15 — Discovery: skill nuove + scout in corso. */
+const mockDiscovery: DiscoverySnapshot = {
+  skills: [
+    { date: '2026-05-09', name: 'capture-pdf-with-tables',     ownerAgentId: 'DISCOVERY-02', status: 'eval superato' },
+    { date: '2026-05-08', name: 'parse-italian-court-num',     ownerAgentId: 'DISCOVERY-04', status: 'in test' },
+    { date: '2026-05-06', name: 'detect-pdf-language',         ownerAgentId: 'DISCOVERY-01', status: 'in produzione' },
+    { date: '2026-05-05', name: 'semantic-chunk-by-section',   ownerAgentId: 'DISCOVERY-03', status: 'eval superato' },
+  ],
+  scouts: [
+    { url: 'regione.lazio.it/normativa',          candidatesFound: 234,   squadron: 'DISCOVERY' },
+    { url: 'anac.gov.it/decisioni-vigilanza',    candidatesFound: 1_200, squadron: 'DISCOVERY' },
+    { url: 'comune.roma.it/ordinanze',            candidatesFound: 89,    squadron: 'DISCOVERY' },
+  ],
+};
+
+/** §16 — ADR: ultime decisioni autopilot in prima persona. */
+const mockAdr: ADREntry[] = [
+  {
+    id: 52,
+    ts: '2026-05-09T11:42:00.000Z',
+    title: 'Ho cambiato il modello di embedding da gemma2:9b a qwen2.5:7b.',
+    attribution: 'Sentinel + Discovery, decisione congiunta',
+    reason: 'qwen2.5 ha mostrato +12 % di precisione sul test set legale italiano. Rollback pronto se la latenza supera i 200 ms.',
+    status: 'in produzione',
+  },
+  {
+    id: 51,
+    ts: '2026-05-08T22:14:00.000Z',
+    title: 'Ho aumentato il batch chunking da 256 a 512.',
+    attribution: 'OPS, trigger: GPU sotto-utilizzo al 38 %',
+    reason: 'A parità di costo (Ollama locale) il throughput è salito del 47 %. 24 ore di osservazione poi consolidamento.',
+    status: 'in osservazione',
+  },
+  {
+    id: 50,
+    ts: '2026-05-07T09:30:00.000Z',
+    title: 'Ho deprecato l’endpoint legacy /api/search-v1.',
+    attribution: 'OPS, dopo 30 giorni senza traffico',
+    reason: 'Nessuna chiamata da metà aprile. Mantengo solo /api/search-v2 con compatibilità retroattiva sui parametri principali.',
+    status: 'in produzione',
+  },
+];
+
 function buildRecentEvents(): AgentEvent[] {
   const now = new Date('2026-05-09T12:04:31.000Z').getTime();
   const lines: { offsetSec: number; agentId: string; squadron: SquadronId; message: string }[] = [
@@ -256,6 +336,10 @@ export const mockSnapshot: SnapshotData = {
   gpu: mockGpu,
   sources: mockSources,
   recentEvents: buildRecentEvents(),
+  sentinel: mockSentinel,
+  discovery: mockDiscovery,
+  adr: mockAdr,
+  adrTotal: 52,
 };
 
 /** Squadron palette + label italiana per AgentMap, voti, log color-coding. */
