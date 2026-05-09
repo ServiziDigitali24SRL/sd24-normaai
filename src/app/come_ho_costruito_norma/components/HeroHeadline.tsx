@@ -78,7 +78,7 @@ export function HeroHeadline() {
       </p>
 
       <h1
-        className="text-[44px] leading-[1.05] tracking-[-0.01em] sm:text-[64px] md:text-[80px]"
+        className="text-[clamp(2.25rem,7vw,5rem)] leading-[1.05] tracking-[-0.01em]"
         style={{ fontFamily: 'var(--font-instrument-serif)', fontWeight: 400 }}
       >
         Stiamo costruendo
@@ -99,7 +99,7 @@ export function HeroHeadline() {
         <div>
           <dt className="sr-only">Documenti scaricati</dt>
           <dd
-            className="text-[56px] leading-none"
+            className="text-[clamp(2.5rem,9vw,3.5rem)] leading-none"
             style={{ fontFamily: 'var(--font-instrument-serif)', fontWeight: 400 }}
             aria-live="polite"
           >
@@ -113,7 +113,7 @@ export function HeroHeadline() {
         <div>
           <dt className="sr-only">Corpus pulito</dt>
           <dd
-            className="text-[56px] leading-none"
+            className="text-[clamp(2.5rem,9vw,3.5rem)] leading-none"
             style={{ fontFamily: 'var(--font-instrument-serif)', fontWeight: 400 }}
             aria-live="polite"
           >
@@ -127,7 +127,7 @@ export function HeroHeadline() {
         <div>
           <dt className="sr-only">Costo LLM ultime 24 ore</dt>
           <dd
-            className="text-[56px] leading-none"
+            className="text-[clamp(2.5rem,9vw,3.5rem)] leading-none"
             style={{ fontFamily: 'var(--font-instrument-serif)', fontWeight: 400 }}
             aria-live="polite"
           >
