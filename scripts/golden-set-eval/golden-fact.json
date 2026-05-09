@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "description": "SER-82: Golden Set NormaAI — query di riferimento per LLM-judge eval",
+    "total": 50,
+    "target": 500,
+    "verticals": [
+      "lavoro",
+      "fisco",
+      "edilizia",
+      "privacy",
+      "penale",
+      "civile",
+      "appalti",
+      "immobiliare",
+      "famiglia",
+      "consumatori"
+    ],
+    "last_updated": "2026-04-29",
+    "split": "date-fact",
+    "parent": "golden-set.json"
+  },
+  "queries": [
+    {
+      "id": "GS-005",
+      "vertical": "fisco",
+      "question": "Quali sono le aliquote IRPEF 2024?",
+      "expected_citations": [
+        "L. 207/2024",
+        "TUIR art. 11"
+      ],
+      "required_topics": [
+        "scaglioni",
+        "aliquote 23% 35% 43%"
+      ],
+      "forbidden_hallucinations": [
+        "aliquote pre-riforma 2024"
+      ],
+      "difficulty": "easy"
+    },
+    {
+      "id": "GS-015",
+      "vertical": "appalti",
+      "question": "Qual è la soglia per gli appalti sotto-soglia comunitaria per i lavori nel 2024?",
+      "expected_citations": [
+        "D.Lgs. 36/2023",
+        "Dir. 2014/24/UE"
+      ],
+      "required_topics": [
+        "5.538.000 euro",
+        "soglie comunitarie"
+      ],
+      "forbidden_hallucinations": [
+        "soglie errate"
+      ],
+      "difficulty": "medium"
+    }
+  ]
+}
