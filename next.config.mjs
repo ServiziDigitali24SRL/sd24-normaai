@@ -24,6 +24,16 @@ const nextConfig = {
       { source: "/auth/login", destination: "/", permanent: false },
       { source: "/piani", destination: "/", permanent: false },
       { source: "/formazione", destination: "/", permanent: false },
+      // SER-184 — LandingHero CTA usa /voce + /reel (italiano marketing).
+      // Redirect a route reali implementate (PR #39 sd24-normaai e
+      // canale Instagram pubblico).
+      { source: "/voce", destination: "/voice", permanent: false },
+      {
+        source: "/reel",
+        destination: "https://www.instagram.com/normaai_official",
+        permanent: false,
+        basePath: false,
+      },
     ];
   },
   async headers() {

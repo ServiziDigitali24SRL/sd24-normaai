@@ -22,14 +22,24 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/mobile/buy-lead" ||              // mobile: acquisto lead
     pathname === "/api/mobile/pay-professional" ||      // mobile: pagamento professionista
     pathname.startsWith("/api/avatar/streaming/") ||     // LiveAvatar WebRTC + ElevenLabs Agent (freemium)
+    pathname === "/api/avatar/livesession" ||            // Surface 2: LiveAvatar Beta (auth via X-API-KEY env)
     pathname === "/api/avatar/corpus-tool" ||            // ElevenLabs Agent tool (Bearer-auth)
+    pathname === "/api/voice/sofia" ||                   // Surface 1: Sofia voice agent (auth via xi-api-key env)
     pathname === "/api/voice/transcribe" ||              // voice ASR (Voxtral): freemium pubblico
     pathname === "/api/voice/tts" ||                     // voice TTS (Voxtral): freemium pubblico
     pathname === "/api/voice/chat-turn" ||               // voice loop turn (ASR+LLM+TTS)
     pathname === "/api/voice/chat-stream" ||             // voice loop streaming SSE
     pathname === "/api/ops/snapshot" ||                  // SQ-OPS public snapshot (/come_ho_costruito_norma)
     pathname === "/api/ops/stream" ||                    // SQ-OPS public SSE (filtro public-safe interno)
-    pathname === "/api/sentinel/heartbeat"               // sentinel cron (Bearer CRON_SECRET interno)
+    pathname === "/api/ops/health" ||                    // public health aggregato (no PII)
+    pathname === "/api/ops/health/alert" ||              // gate Bearer CRON_SECRET interno
+    pathname === "/api/sentinel/heartbeat" ||            // sentinel cron (Bearer CRON_SECRET interno)
+    pathname === "/api/community/webhook" ||             // n8n bridge (auth via X-Community-Webhook-Secret env)
+    pathname === "/api/community/replies" ||             // Studio M5 stub: SSE auto-reply Sofia
+    pathname === "/api/community/sentiment-heatmap" ||   // Studio M5 stub: 7×24 heatmap
+    pathname === "/api/ops/squadron/status" ||           // Studio M5 stub: 114 agent grid
+    pathname === "/api/ops/spend" ||                     // Studio M5 stub: cost dashboard
+    pathname.startsWith("/api/ops/agent/")               // Studio M5 stub: pause agent (in-memory)
   );
 }
 
@@ -37,18 +47,27 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ââ Mobile redirect: homepage â /mobile for mobile browsers ââââââââââââââ
-  // Only redirect GET requests on "/" (not API, not assets)
+  // Only redirect GET requests on "/" or "/avatar" (not API, not assets).
+  // SER-184 sprint launch: mobile default surface ora è /voice (Surface 1),
+  // /avatar resta desktop-only e mobile UA viene rediretto a /voice.
+  // /mobile resta accessibile come legacy bookmark.
   if (
-    pathname === "/" &&
     req.method === "GET" &&
     isMobileUA(req) &&
-    !req.nextUrl.searchParams.has("desktop")
+    !req.nextUrl.searchParams.has("desktop") &&
+    (pathname === "/" || pathname === "/avatar")
   ) {
-    return NextResponse.redirect(new URL("/mobile", req.url));
+    return NextResponse.redirect(new URL("/voice", req.url));
   }
 
   // ââ /mobile routes are always public (auth handled client-side) âââââââââââ
   if (pathname.startsWith("/mobile")) {
+    return NextResponse.next();
+  }
+
+  // SER-184 — /voice (Surface 1 mobile) e /avatar (Surface 2 desktop) sono
+  // pubbliche, no auth required. Mic/cam permission gestita lato browser.
+  if (pathname === "/voice" || pathname === "/avatar") {
     return NextResponse.next();
   }
 

@@ -95,7 +95,7 @@ export function LandingHero() {
             <a href="/avvocato/login" className="hover:text-[#13110F]">Per avvocati</a>
             <a
               href="/voce"
-              className="rounded bg-[oklch(0.48_0.20_35)] px-4 py-1.5 text-[12px] uppercase tracking-[0.18em] text-[#FBF8F1] transition hover:bg-[oklch(0.42_0.20_35)]"
+              className="rounded bg-[oklch(0.42_0.20_35)] px-4 py-1.5 text-[12px] uppercase tracking-[0.18em] text-[#FBF8F1] transition hover:bg-[oklch(0.42_0.20_35)]"
               style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
             >
               parla con Sofia
@@ -107,7 +107,7 @@ export function LandingHero() {
       {/* Hero principale */}
       <section className="mx-auto flex min-h-[80vh] max-w-5xl flex-col justify-center px-6 py-24">
         <p
-          className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+          className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
           style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
           NormaAI · 2026
@@ -178,7 +178,7 @@ export function LandingHero() {
       {/* "3 modi di parlare con Norma" — narrativa editoriale */}
       <section className="mx-auto max-w-3xl px-6 py-24">
         <p
-          className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+          className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
           style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
           come funziona
@@ -202,7 +202,7 @@ export function LandingHero() {
           {MODI.map((m) => (
             <li key={m.id}>
               <p
-                className="text-[12px] uppercase tracking-[0.18em] text-[oklch(0.48_0.20_35)]"
+                className="text-[12px] uppercase tracking-[0.18em] text-[oklch(0.42_0.20_35)]"
                 style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
               >
                 {m.id} · modo
@@ -227,7 +227,7 @@ export function LandingHero() {
           Vuoi vedere come è costruita Sofia?{' '}
           <a
             href="/come_ho_costruito_norma"
-            className="text-[oklch(0.48_0.20_35)] underline-offset-4 hover:underline not-italic"
+            className="text-[oklch(0.42_0.20_35)] underline-offset-4 hover:underline not-italic"
           >
             Leggi il diario di costruzione →
           </a>

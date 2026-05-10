@@ -1,0 +1,128 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "purpose": "10 representative queries to validate Sofia v7 prompt + tool routing on the TEST agent before promoting to production.",
+    "test_agent_id": "agent_9001kr6zks5nfdza9fj1prkyk74r",
+    "test_agent_name": "Sofia v7 TEST",
+    "prod_agent_id": "agent_8201kqvftbr4e9vrez3qy8mkhjjv",
+    "tested_via": "ElevenLabs ConvAI WebSocket OR dashboard 'Test agent' chat panel"
+  },
+  "tests": [
+    {
+      "id": "T1",
+      "channel": "voice/avatar",
+      "user": "Mio padre 80 anni gli hanno fatto un TSO ieri",
+      "expect": [
+        "3-7 sentences",
+        "Tone: Lei",
+        "Calls query_normaai_corpus tool",
+        "[CERTO] tag with [Fonte X] L. 833/1978 art. 35 (or similar)",
+        "Asks 1 follow-up question (e.g. ospedale, sindaco)",
+        "Closes with: *Risposta generata da AI ai sensi Reg. UE 2024/1689*"
+      ]
+    },
+    {
+      "id": "T2",
+      "channel": "voice/avatar",
+      "user": "Mi hanno cambiato mansioni senza motivazione, è legale?",
+      "expect": [
+        "Question first (data assunzione pre/post 7 marzo 2015)",
+        "Calls query_normaai_corpus",
+        "[CERTO] art. 2103 c.c. + Jobs Act",
+        "AI Act disclaimer at end"
+      ]
+    },
+    {
+      "id": "T3",
+      "channel": "voice/avatar",
+      "user": "Quali sono le aliquote IRPEF 2024?",
+      "expect": [
+        "Triggers web_search_recent (year 2024 + verticale fisco) — ONLY if /api/web-search-recent route exists; otherwise [NON SO] + suggest verifying on Agenzia delle Entrate",
+        "DOES NOT invent specific 2024 aliquote",
+        "Suggests official source verification",
+        "AI Act disclaimer"
+      ]
+    },
+    {
+      "id": "T4",
+      "channel": "voice/avatar",
+      "user": "Qual è la soglia per gli appalti sotto-soglia comunitaria 2024?",
+      "expect": [
+        "Triggers web_search_recent (soglia + verticale appalti)",
+        "DOES NOT cite stale figure",
+        "Suggests Portale Contratti Pubblici"
+      ]
+    },
+    {
+      "id": "T5",
+      "channel": "community",
+      "user": "GDPR data breach quanto tempo per notificare?",
+      "context_hint": "Set conversation context to channel=community",
+      "expect": [
+        "Max 200 characters",
+        "Single concept: 72 ore al Garante (art. 33 Reg. UE 2016/679)",
+        "Closes with: Risposta automatica · Sofia AI di NormaAI",
+        "NO long AI Act disclaimer"
+      ]
+    },
+    {
+      "id": "T6",
+      "channel": "dm",
+      "user": "Locazione 4+4: si applica la cedolare secca?",
+      "context_hint": "Set conversation context to channel=dm",
+      "expect": [
+        "Max 500 characters",
+        "[CERTO] cedolare 21% / 10% canone concordato",
+        "Closes with: Risposta automatica · Sofia AI di NormaAI",
+        "NO long AI Act disclaimer"
+      ]
+    },
+    {
+      "id": "T7",
+      "channel": "voice/avatar",
+      "user": "Posso parlare con un avvocato?",
+      "expect": [
+        "CTA 9€ con \"pulsante a schermo. Costa nove euro\"",
+        "Tone Lei"
+      ]
+    },
+    {
+      "id": "T8",
+      "channel": "community",
+      "user": "Posso parlare con un avvocato?",
+      "expect": [
+        "CTA con \"sito può prenotare 9€\"",
+        "Max 200 char",
+        "Risposta automatica · Sofia AI di NormaAI"
+      ]
+    },
+    {
+      "id": "T9",
+      "channel": "voice/avatar",
+      "user": "Per quanto tempo è obbligatoria la mediazione civile?",
+      "expect": [
+        "Calls query_normaai_corpus",
+        "[CERTO] D.Lgs. 28/2010 art. 5",
+        "Numbers in letters (TTS-friendly)",
+        "AI Act disclaimer"
+      ]
+    },
+    {
+      "id": "T10",
+      "channel": "voice/avatar",
+      "user": "Verbale della polizia per eccesso di velocità: entro quanti giorni va contestato?",
+      "expect": [
+        "Calls query_normaai_corpus",
+        "[CERTO] art. 203 CdS / 60 giorni opposizione al Prefetto / 30 giorni Giudice di Pace",
+        "Conditional on year (2024+ amendments via web_search_recent if needed)",
+        "AI Act disclaimer"
+      ]
+    }
+  ],
+  "scoring": {
+    "channel_compliance": "9/10 must follow channel length + disclaimer rules",
+    "tool_trigger": "8/10 must trigger correct tool (query_normaai_corpus default; web_search_recent only on T3+T4 IF the route exists)",
+    "no_hallucination": "0/10 may cite invented norms or numbers"
+  },
+  "promotion_gate": "If 9/10 channel + 8/10 tool + 0 hallucination → promote v7 prompt to PROD agent_8201... via PATCH conversation_config.agent.prompt.prompt"
+}

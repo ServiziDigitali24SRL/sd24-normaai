@@ -71,7 +71,7 @@ export function HeroHeadline() {
   return (
     <section className="mx-auto flex min-h-[85vh] max-w-5xl flex-col justify-center px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         01 · diario
