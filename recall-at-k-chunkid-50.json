@@ -1,0 +1,20 @@
+{
+  "run_at": "2026-05-10T16:34:02.876Z",
+  "method": "bronze-ft-ground-truth + chunk_id intersection",
+  "retriever": "hybrid_search_chunks_v2 (linear sim*0.7+fts*0.3)",
+  "embedder": "bge-m3 1024d",
+  "ground_truth_source": "corpus_simple_fts on each expected_citation, top-10",
+  "n_queries": 0,
+  "ks": [
+    5,
+    10,
+    20
+  ],
+  "aggregate": {
+    "recall@5": 0,
+    "recall@10": 0,
+    "recall@20": 0,
+    "MRR": 0
+  },
+  "reports": []
+}
