@@ -87,7 +87,7 @@ export default function AvatarPage() {
       {!started ? (
         <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-5xl flex-col items-center justify-center px-8 text-center">
           <p
-            className="mb-6 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+            className="mb-6 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             surface 2 · avatar
@@ -109,7 +109,7 @@ export default function AvatarPage() {
           <button
             type="button"
             onClick={start}
-            className="mt-12 rounded bg-[oklch(0.48_0.20_35)] px-8 py-4 text-[14px] uppercase tracking-[0.18em] text-[#FBF8F1] transition hover:bg-[oklch(0.42_0.20_35)]"
+            className="mt-12 rounded bg-[oklch(0.42_0.20_35)] px-8 py-4 text-[14px] uppercase tracking-[0.18em] text-[#FBF8F1] transition hover:bg-[oklch(0.42_0.20_35)]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
             inizia videochiamata →

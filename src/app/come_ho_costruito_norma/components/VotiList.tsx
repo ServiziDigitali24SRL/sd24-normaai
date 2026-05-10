@@ -13,7 +13,7 @@ export function VotiList() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         02 · stato
@@ -60,7 +60,7 @@ export function VotiList() {
 
               <div className="flex flex-col items-start gap-1 sm:items-end">
                 <span className="text-[13px] text-[#756C5E]">target {v.target}</span>
-                <span className="text-[13px] text-[oklch(0.48_0.20_35)]">
+                <span className="text-[13px] text-[oklch(0.42_0.20_35)]">
                   {trendGlyph(v.trend)} {fmtDelta(v.deltaPct)}
                   <span className="ml-1 text-[#756C5E]">vs ieri</span>
                 </span>

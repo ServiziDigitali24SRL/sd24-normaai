@@ -175,7 +175,7 @@ export function LiveEventStream() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         07 · cronaca
@@ -200,7 +200,7 @@ export function LiveEventStream() {
           <span
             className={
               mode === 'live'
-                ? 'inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[oklch(0.48_0.20_35)]'
+                ? 'inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[oklch(0.42_0.20_35)]'
                 : 'inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[#756C5E]'
             }
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
@@ -235,8 +235,9 @@ export function LiveEventStream() {
           className="rounded border border-[#D8CFBC] bg-[#FBF8F1] px-3 py-1 text-[12px] uppercase tracking-[0.18em] text-[#13110F] transition hover:border-[#756C5E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[oklch(0.58_0.18_35)]"
           style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           aria-pressed={paused}
+          aria-label={paused ? 'Riprendi lo stream eventi' : 'Metti in pausa lo stream eventi'}
         >
-          {paused ? '▶ riprendi' : '⏸ pausa'}
+          <span aria-hidden="true">{paused ? '▶ riprendi' : '⏸ pausa'}</span>
         </button>
       </div>
 
