@@ -22,7 +22,9 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/mobile/buy-lead" ||              // mobile: acquisto lead
     pathname === "/api/mobile/pay-professional" ||      // mobile: pagamento professionista
     pathname.startsWith("/api/avatar/streaming/") ||     // LiveAvatar WebRTC + ElevenLabs Agent (freemium)
+    pathname === "/api/avatar/livesession" ||            // Surface 2: LiveAvatar Beta (auth via X-API-KEY env)
     pathname === "/api/avatar/corpus-tool" ||            // ElevenLabs Agent tool (Bearer-auth)
+    pathname === "/api/voice/sofia" ||                   // Surface 1: Sofia voice agent (auth via xi-api-key env)
     pathname === "/api/voice/transcribe" ||              // voice ASR (Voxtral): freemium pubblico
     pathname === "/api/voice/tts" ||                     // voice TTS (Voxtral): freemium pubblico
     pathname === "/api/voice/chat-turn" ||               // voice loop turn (ASR+LLM+TTS)
