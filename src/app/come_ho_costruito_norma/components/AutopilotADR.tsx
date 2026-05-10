@@ -40,7 +40,7 @@ export function AutopilotADR() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         10 · decisioni automatiche
@@ -109,7 +109,7 @@ export function AutopilotADR() {
 
               <button
                 type="button"
-                className="rounded border border-[oklch(0.48_0.20_35)] px-3 py-1 text-[12px] uppercase tracking-[0.18em] text-[oklch(0.48_0.20_35)] transition hover:bg-[oklch(0.48_0.20_35)] hover:text-[#FBF8F1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[oklch(0.48_0.20_35)]"
+                className="rounded border border-[oklch(0.42_0.20_35)] px-3 py-1 text-[12px] uppercase tracking-[0.18em] text-[oklch(0.42_0.20_35)] transition hover:bg-[oklch(0.42_0.20_35)] hover:text-[#FBF8F1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[oklch(0.42_0.20_35)]"
                 style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
                 aria-label={`Annulla ADR ${d.id}`}
               >
@@ -123,7 +123,7 @@ export function AutopilotADR() {
       <p className="mt-12 text-[14px]">
         <a
           href="/adr"
-          className="text-[oklch(0.48_0.20_35)] underline-offset-4 hover:underline"
+          className="text-[oklch(0.42_0.20_35)] underline-offset-4 hover:underline"
         >
           vedi tutti i {total} ADR →
         </a>

@@ -26,7 +26,7 @@ export default function ComeHoCostruitoNormaPage() {
   return (
     <>
       <HeroBar />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <HeroHeadline />
         <VotiList />
         <AgentMap />

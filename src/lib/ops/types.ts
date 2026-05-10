@@ -273,3 +273,21 @@ export interface SentinelHeartbeatResponse {
     last_voti_age_seconds: number | null;
   };
 }
+
+// SER-167 — /api/ops/health aggregated health check
+export type HealthStatus = 'up' | 'down' | 'degraded' | 'unknown';
+
+export interface ComponentHealth {
+  component: string;
+  status: HealthStatus;
+  latency_ms: number | null;
+  message?: string;
+  checked_at: string;
+}
+
+export interface OpsHealthResponse {
+  generated_at: string;
+  overall: HealthStatus;
+  components: ComponentHealth[];
+  squadrons_voti: { squadron: string; voto: number }[];
+}

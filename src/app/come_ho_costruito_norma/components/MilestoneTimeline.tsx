@@ -54,7 +54,7 @@ export function MilestoneTimeline() {
   return (
     <section className="mx-auto max-w-3xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         11 · la storia
@@ -80,7 +80,7 @@ export function MilestoneTimeline() {
         {MILESTONES.map((m) => (
           <li key={m.iso}>
             <p
-              className="text-[12px] uppercase tracking-[0.18em] text-[oklch(0.48_0.20_35)]"
+              className="text-[12px] uppercase tracking-[0.18em] text-[oklch(0.42_0.20_35)]"
               style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
             >
               <time dateTime={m.iso}>{m.date}</time>
