@@ -44,11 +44,16 @@ export async function middleware(req: NextRequest) {
     isMobileUA(req) &&
     !req.nextUrl.searchParams.has("desktop")
   ) {
-    return NextResponse.redirect(new URL("/mobile", req.url));
+    return NextResponse.redirect(new URL("/voice", req.url));
+  }
+
+  // /avatar is desktop-only: mobile UA -> /voice
+  if (pathname === "/avatar" && req.method === "GET" && isMobileUA(req)) {
+    return NextResponse.redirect(new URL("/voice", req.url));
   }
 
   // ââ /mobile routes are always public (auth handled client-side) âââââââââââ
-  if (pathname.startsWith("/mobile")) {
+  if (pathname.startsWith("/mobile") || pathname.startsWith("/voice")) {
     return NextResponse.next();
   }
 
