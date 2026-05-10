@@ -8,6 +8,12 @@
     },
     "src/app/api/sentinel/heartbeat/route.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/ops/health/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/ops/health/alert/route.ts": {
+      "maxDuration": 30
     }
   },
   "crons": [
@@ -26,6 +32,10 @@
     {
       "path": "/api/sentinel/heartbeat",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/ops/health/alert",
+      "schedule": "*/2 * * * *"
     }
   ],
   "rewrites": [
