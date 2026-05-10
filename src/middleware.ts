@@ -47,6 +47,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/mobile", req.url));
   }
 
+  // /avatar is desktop-only: mobile UA -> /voice
+  if (pathname === "/avatar" && req.method === "GET" && isMobileUA(req)) {
+    return NextResponse.redirect(new URL("/voice", req.url));
+  }
+
   // ââ /mobile routes are always public (auth handled client-side) âââââââââââ
   if (pathname.startsWith("/mobile")) {
     return NextResponse.next();
