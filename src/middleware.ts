@@ -42,18 +42,27 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ââ Mobile redirect: homepage â /mobile for mobile browsers ââââââââââââââ
-  // Only redirect GET requests on "/" (not API, not assets)
+  // Only redirect GET requests on "/" or "/avatar" (not API, not assets).
+  // SER-184 sprint launch: mobile default surface ora è /voice (Surface 1),
+  // /avatar resta desktop-only e mobile UA viene rediretto a /voice.
+  // /mobile resta accessibile come legacy bookmark.
   if (
-    pathname === "/" &&
     req.method === "GET" &&
     isMobileUA(req) &&
-    !req.nextUrl.searchParams.has("desktop")
+    !req.nextUrl.searchParams.has("desktop") &&
+    (pathname === "/" || pathname === "/avatar")
   ) {
-    return NextResponse.redirect(new URL("/mobile", req.url));
+    return NextResponse.redirect(new URL("/voice", req.url));
   }
 
   // ââ /mobile routes are always public (auth handled client-side) âââââââââââ
   if (pathname.startsWith("/mobile")) {
+    return NextResponse.next();
+  }
+
+  // SER-184 — /voice (Surface 1 mobile) e /avatar (Surface 2 desktop) sono
+  // pubbliche, no auth required. Mic/cam permission gestita lato browser.
+  if (pathname === "/voice" || pathname === "/avatar") {
     return NextResponse.next();
   }
 
