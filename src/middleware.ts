@@ -30,6 +30,7 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/ops/snapshot" ||                  // SQ-OPS public snapshot (/come_ho_costruito_norma)
     pathname === "/api/ops/stream" ||                    // SQ-OPS public SSE (filtro public-safe interno)
     pathname === "/api/sentinel/heartbeat" ||            // sentinel cron (Bearer CRON_SECRET interno)
+    pathname === "/api/community/webhook" ||             // n8n bridge (auth via X-Community-Webhook-Secret env)
     pathname === "/api/community/replies" ||             // Studio M5 stub: SSE auto-reply Sofia
     pathname === "/api/community/sentiment-heatmap" ||   // Studio M5 stub: 7×24 heatmap
     pathname === "/api/ops/squadron/status" ||           // Studio M5 stub: 114 agent grid
