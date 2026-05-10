@@ -31,6 +31,8 @@ function isPublicApiRoute(pathname: string): boolean {
     pathname === "/api/voice/chat-stream" ||             // voice loop streaming SSE
     pathname === "/api/ops/snapshot" ||                  // SQ-OPS public snapshot (/come_ho_costruito_norma)
     pathname === "/api/ops/stream" ||                    // SQ-OPS public SSE (filtro public-safe interno)
+    pathname === "/api/ops/health" ||                    // public health aggregato (no PII)
+    pathname === "/api/ops/health/alert" ||              // gate Bearer CRON_SECRET interno
     pathname === "/api/sentinel/heartbeat" ||            // sentinel cron (Bearer CRON_SECRET interno)
     pathname === "/api/community/webhook" ||             // n8n bridge (auth via X-Community-Webhook-Secret env)
     pathname === "/api/community/replies" ||             // Studio M5 stub: SSE auto-reply Sofia
