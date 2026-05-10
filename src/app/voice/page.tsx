@@ -187,7 +187,7 @@ export default function VoicePage() {
       {/* Hero */}
       <section className="flex flex-1 flex-col items-center justify-center px-5 text-center">
         <p
-          className="mb-6 text-[10px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+          className="mb-6 text-[10px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
           style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
           surface 1 · voice
@@ -218,8 +218,8 @@ export default function VoicePage() {
           className={
             'mt-6 flex h-32 w-32 items-center justify-center rounded-full border-4 transition disabled:opacity-60 ' +
             (isActive
-              ? 'border-[oklch(0.48_0.20_35)] bg-[oklch(0.58_0.18_35)] text-[#FBF8F1] shadow-[0_0_0_8px_oklch(0.58_0.18_35_/_0.15)]'
-              : 'border-[#D8CFBC] bg-[#FBF8F1] text-[#13110F] hover:border-[oklch(0.48_0.20_35)]')
+              ? 'border-[oklch(0.42_0.20_35)] bg-[oklch(0.58_0.18_35)] text-[#FBF8F1] shadow-[0_0_0_8px_oklch(0.58_0.18_35_/_0.15)]'
+              : 'border-[#D8CFBC] bg-[#FBF8F1] text-[#13110F] hover:border-[oklch(0.42_0.20_35)]')
           }
           aria-label={isActive ? 'Ferma sessione voce' : 'Avvia sessione voce'}
           aria-pressed={isActive}

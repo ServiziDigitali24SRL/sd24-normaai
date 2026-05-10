@@ -62,6 +62,14 @@ export default function ComeHoCostruitoNormaLayout({ children }: { children: Rea
       className={`${instrumentSerif.variable} ${interTight.variable} ${jetbrainsMono.variable} min-h-screen bg-[#F6F2EA] text-[#13110F] antialiased`}
       style={{ fontFamily: 'var(--font-inter-tight), system-ui, sans-serif' }}
     >
+      {/* SER-187 — Skip-link per a11y bypass-navigation audit. Visibile solo su
+       * focus tastiera (sr-only di default, classi focus:not-sr-only espongono). */}
+      <a
+        href="#main-content"
+        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:left-4 focus-visible:top-4 focus-visible:z-[60] focus-visible:rounded focus-visible:bg-[#13110F] focus-visible:px-4 focus-visible:py-2 focus-visible:text-[14px] focus-visible:text-[#FBF8F1]"
+      >
+        Salta al contenuto principale
+      </a>
       {children}
     </div>
   );

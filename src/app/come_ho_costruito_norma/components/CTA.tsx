@@ -30,12 +30,12 @@ export function CTA() {
           required
           autoComplete="email"
           placeholder="tua@email.it"
-          className="flex-1 rounded border border-[#D8CFBC] bg-[#FBF8F1] px-4 py-3 text-[16px] text-[#13110F] placeholder:text-[#9A8E83] focus-visible:border-[oklch(0.48_0.20_35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[oklch(0.48_0.20_35)]"
+          className="flex-1 rounded border border-[#D8CFBC] bg-[#FBF8F1] px-4 py-3 text-[16px] text-[#13110F] placeholder:text-[#9A8E83] focus-visible:border-[oklch(0.42_0.20_35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[oklch(0.42_0.20_35)]"
           style={{ fontFamily: 'var(--font-inter-tight)' }}
         />
         <button
           type="submit"
-          className="rounded bg-[oklch(0.48_0.20_35)] px-6 py-3 text-[14px] uppercase tracking-[0.18em] text-[#FBF8F1] transition hover:bg-[oklch(0.42_0.20_35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[oklch(0.48_0.20_35)]"
+          className="rounded bg-[oklch(0.42_0.20_35)] px-6 py-3 text-[14px] uppercase tracking-[0.18em] text-[#FBF8F1] transition hover:bg-[oklch(0.42_0.20_35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[oklch(0.42_0.20_35)]"
           style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
         >
           iscrivimi →
@@ -58,7 +58,7 @@ export function CTA() {
             href="/manifesto"
             className="text-[#13110F] underline-offset-4 hover:underline"
           >
-            <span aria-hidden="true" className="text-[oklch(0.48_0.20_35)]">→</span> il manifesto del progetto
+            <span aria-hidden="true" className="text-[oklch(0.42_0.20_35)]">→</span> il manifesto del progetto
           </a>
         </li>
         <li>
@@ -68,7 +68,7 @@ export function CTA() {
             rel="noopener noreferrer"
             className="text-[#13110F] underline-offset-4 hover:underline"
           >
-            <span aria-hidden="true" className="text-[oklch(0.48_0.20_35)]">→</span> il repository su GitHub
+            <span aria-hidden="true" className="text-[oklch(0.42_0.20_35)]">→</span> il repository su GitHub
           </a>
         </li>
         <li>
@@ -78,7 +78,7 @@ export function CTA() {
             rel="noopener noreferrer"
             className="text-[#13110F] underline-offset-4 hover:underline"
           >
-            <span aria-hidden="true" className="text-[oklch(0.48_0.20_35)]">→</span> seguire Francesco su X
+            <span aria-hidden="true" className="text-[oklch(0.42_0.20_35)]">→</span> seguire Francesco su X
           </a>
         </li>
       </ul>

@@ -20,7 +20,7 @@ export function SkillsAndDiscovery() {
   return (
     <section className="mx-auto max-w-4xl px-6 py-24">
       <p
-        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.48_0.20_35)]"
+        className="mb-10 text-[11px] uppercase tracking-[0.25em] text-[oklch(0.42_0.20_35)]"
         style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
       >
         09 · caccia e apprendimento
