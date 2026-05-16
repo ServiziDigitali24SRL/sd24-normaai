@@ -17,7 +17,7 @@ export default function TermsPage() {
         <h1 className="font-serif text-[36px] tracking-[-1px] mb-2">Termini di Servizio</h1>
         <p className="text-[13px] text-[#555] mb-10">
           Condizioni generali di utilizzo della piattaforma NormaAI<br />
-          NormaAI | normaai.it | Versione 1.0 — 10 maggio 2026
+          NormaAI | normaai.it | Versione 1.1 — 16 maggio 2026
         </p>
 
         <Section title="1. Fornitore del servizio">
@@ -133,7 +133,27 @@ export default function TermsPage() {
           </p>
         </Section>
 
-        <Section title="13. Contatti">
+        <Section title="13. Risposte automatiche AI sui social media">
+          <p>
+            NormaAI utilizza un sistema di intelligenza artificiale (&quot;Sofia&quot;) per rispondere
+            automaticamente ai commenti e ai messaggi diretti ricevuti sui propri profili ufficiali Instagram
+            (<strong>@norma_ai_official</strong>) e Facebook (<strong>NormaAI</strong>).
+          </p>
+          <p className="mt-2">L&apos;Utente che interagisce con i profili social di NormaAI è informato che:</p>
+          <ul className="list-disc ml-5 mt-2 space-y-1">
+            <li>le risposte possono essere generate in modo automatico da un sistema AI;</li>
+            <li>le risposte hanno finalità informativa e <strong>non costituiscono consulenza legale</strong>;</li>
+            <li>il testo del commento o del messaggio diretto viene elaborato per generare la risposta e non viene archiviato a lungo termine;</li>
+            <li>è possibile opporsi al trattamento scrivendo a <a href="mailto:privacy@normaai.it" className="text-accent hover:underline">privacy@normaai.it</a>.</li>
+          </ul>
+          <p className="mt-2">
+            NormaAI non raccoglie dati personali degli utenti social al di fuori del testo dei messaggi necessario
+            per generare la risposta. L&apos;utilizzo di questi dati è disciplinato dall&apos;
+            <a href="/privacy" className="text-accent hover:underline">Informativa Privacy</a>, sezione 10.
+          </p>
+        </Section>
+
+        <Section title="14. Contatti">
           <p>
             Per qualsiasi richiesta relativa ai presenti Termini:{" "}
             <a href="mailto:legal@normaai.it" className="text-accent hover:underline">legal@normaai.it</a>.
