@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         <h1 className="font-serif text-[36px] tracking-[-1px] mb-2">Privacy Policy</h1>
         <p className="text-[13px] text-[#555] mb-10">
           Informativa sul trattamento dei dati personali ai sensi degli artt. 13-14 Regolamento UE 2016/679 (GDPR)<br />
-          NormaAI | normaai.it | Versione 1.0 — 28 marzo 2026
+          NormaAI | normaai.it | Versione 1.1 — 16 maggio 2026
         </p>
 
         <Section title="1. Titolare del trattamento">
@@ -80,6 +80,8 @@ export default function PrivacyPage() {
               <Tr cells={["Stripe, Inc.", "Pagamenti", "SCC"]} />
               <Tr cells={["Hetzner Online GmbH", "VPS server", "UE — GDPR applicabile"]} />
               <Tr cells={["Brevo SAS", "Email transazionali", "UE — GDPR applicabile"]} />
+              <Tr cells={["Meta Platforms Ireland Ltd.", "Instagram / Facebook Graph API (commenti, DM, insights)", "SCC — Meta Data Processing Terms"]} />
+              <Tr cells={["Groq, Inc.", "Elaborazione linguaggio naturale (risposte AI)", "SCC"]} />
             </tbody>
           </table>
         </Section>
@@ -157,7 +159,66 @@ export default function PrivacyPage() {
           </p>
         </Section>
 
-        <Section title="10. Modifiche alla presente informativa">
+        <Section title="10. Dati raccolti tramite piattaforme Meta (Instagram / Facebook)">
+          <p>
+            NormaAI utilizza le API di Meta Platforms per gestire la propria presenza sui social (account{" "}
+            <strong>@norma_ai_official</strong> su Instagram e la Page Facebook NormaAI).
+          </p>
+          <p className="mt-2">Tramite queste API raccogliamo e trattiamo i seguenti dati:</p>
+          <table className="w-full text-[12.5px] border-collapse mt-3">
+            <thead>
+              <tr className="border-b border-[#222]">
+                <Th>Tipo di dato</Th><Th>Finalità</Th><Th>Conservazione</Th>
+              </tr>
+            </thead>
+            <tbody>
+              <Tr cells={["Testo dei commenti ai post", "Generare risposta automatica (Sofia AI)", "Log anonimizzati — 30 giorni"]} />
+              <Tr cells={["ID utente Meta del commentatore", "Rate limiting anti-spam (in memoria)", "Non persistito"]} />
+              <Tr cells={["Testo dei messaggi diretti (DM) ricevuti", "Generare risposta automatica (Sofia AI)", "Log anonimizzati — 30 giorni"]} />
+              <Tr cells={["Insight metriche post (reach, impression)", "Analisi performance contenuti", "90 giorni aggregati"]} />
+            </tbody>
+          </table>
+          <p className="mt-3">
+            <strong>Risposte automatiche (Sofia AI):</strong> NormaAI utilizza un sistema di intelligenza artificiale
+            (&quot;Sofia&quot;) per rispondere automaticamente ai commenti e ai messaggi diretti ricevuti sui propri
+            profili social. Le risposte sono generate da modelli linguistici (Groq / llama-3.3-70b) sulla base del
+            contenuto del messaggio ricevuto. Nessun dato personale degli utenti che commentano o scrivono viene
+            conservato a lungo termine né ceduto a terzi per finalità di marketing.
+          </p>
+          <p className="mt-2">
+            <strong>Base giuridica:</strong> Legittimo interesse del Titolare (art. 6(1)(f) GDPR) nella gestione
+            della propria presenza sui social media e nel fornire assistenza agli utenti.
+          </p>
+          <p className="mt-2">
+            <strong>Diritto di opposizione:</strong> Gli utenti possono opporsi al trattamento delle proprie
+            interazioni social scrivendo a{" "}
+            <a href="mailto:privacy@normaai.it" className="text-accent hover:underline">privacy@normaai.it</a>.
+            Per richiedere la cancellazione dei dati raccolti tramite le API Meta, utilizzare lo stesso indirizzo
+            oppure la funzione di cancellazione prevista da Meta:{" "}
+            <a href="https://www.facebook.com/help/contact/1573486992611572" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+              Richiesta cancellazione dati Facebook
+            </a>.
+          </p>
+          <p className="mt-2 text-[12px] text-[#777]">
+            NormaAI non accede né archivia dati degli account Instagram o Facebook degli utenti al di fuori delle
+            interazioni dirette con i propri profili ufficiali. I dati non vengono usati per profilazione, targeting
+            pubblicitario o rivenduti a terzi.
+          </p>
+        </Section>
+
+        <Section title="11. Cancellazione dati (Data Deletion)">
+          <p>
+            In conformità alle politiche di Meta e al GDPR, gli utenti che abbiano interagito con NormaAI tramite
+            piattaforme Meta possono richiedere la cancellazione di tutti i dati in nostro possesso inviando una
+            richiesta a <a href="mailto:privacy@normaai.it" className="text-accent hover:underline">privacy@normaai.it</a>.
+          </p>
+          <p className="mt-2">
+            La richiesta sarà evasa entro 30 giorni. Verrà inviata conferma via email dell&apos;avvenuta cancellazione
+            con un codice di riferimento tracciabile.
+          </p>
+        </Section>
+
+        <Section title="12. Modifiche alla presente informativa">
           <p>
             Eventuali modifiche saranno comunicate via email agli utenti registrati con almeno 14 giorni di preavviso.
             La versione aggiornata sarà sempre disponibile su questa pagina.
@@ -166,7 +227,7 @@ export default function PrivacyPage() {
 
         <div className="mt-12 pt-8 border-t border-[#E5E1D8] text-[11px] text-[#444]">
           Servizi Digitali 24 S.R.L. · P.IVA / C.F. 18422681009 · Sede: Roma, Italia · <a href="mailto:privacy@normaai.it" className="hover:text-[#1a1a1a] transition-colors">privacy@normaai.it</a>
-          {" · "}<Link href="/termini" className="hover:text-[#1a1a1a] transition-colors">Termini di Servizio</Link>
+          {" · "}<Link href="/terms" className="hover:text-[#1a1a1a] transition-colors">Termini di Servizio</Link>
         </div>
       </div>
     </div>
