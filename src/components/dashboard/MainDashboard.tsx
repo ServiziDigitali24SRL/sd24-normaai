@@ -1180,13 +1180,35 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
   const [widgetOpen, setWidgetOpen] = useState(true);
   const [liveTasks, setLiveTasks] = useState<LiveTask[]>([]);
   const [pendingFile, setPendingFile] = useState<File | null>(initialFile ?? null);
+  // Daily quota indicator (10 msg/24h). Updated after each /api/chat call and
+  // on mount. Anonymous users get tracked by ip_hash; registered by user_id.
+  const [quota, setQuota] = useState<{ used: number; max: number; remaining: number; anonymous: boolean } | null>(null);
+  const refreshQuota = async () => {
+    try {
+      const r = await fetch('/api/quota/me', { cache: 'no-store' });
+      if (r.ok) {
+        const j = await r.json();
+        setQuota({ used: j.used, max: j.max, remaining: j.remaining, anonymous: j.anonymous });
+      }
+    } catch { /* fail silent — non-blocking */ }
+  };
   const scrollerRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Stable conversation_id for the SSE backend (/api/chat expects this).
+  // Generated once per mount; reused across the whole chat session.
+  const conversationIdRef = useRef<string>(
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `conv-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  );
 
   useEffect(() => {
     if (scrollerRef.current) scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
   }, [messages]);
+
+  // Quota: fetch on mount
+  useEffect(() => { void refreshQuota(); }, []);
 
   const send = async () => {
     if ((!input.trim() && !pendingFile) || streaming) return;
@@ -1217,17 +1239,20 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
       };
     }
 
+    // NOTE: /api/chat (pivot/marketplace SSE route) currently doesn't accept
+    // attachments. We keep the upload UX (file is shown in the message) but
+    // don't forward it. When backend Document Analyzer agent is wired we'll
+    // pass `attachment` alongside conversation_id + message.
+    void attachmentPayload;
+
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          question: q,
-          vertical: context || null,
-          userId: null,
-          conversationHistory: history,
-          turnNumber: history.filter(h => h.role === 'user').length,
-          ...(attachmentPayload ? { attachment: attachmentPayload } : {}),
+          conversation_id: conversationIdRef.current,
+          message: q,
+          channel: 'chat',
         }),
       });
 
@@ -1236,6 +1261,7 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
         try { const j = await res.json(); if (j?.message) errMsg = j.message; } catch { /* noop */ }
         setMessages(m => m.map((msg, i) => i === m.length - 1 ? { ...msg, text: errMsg } : msg));
         setStreaming(false);
+        void refreshQuota();   // sync counter — ora siamo at limit
         return;
       }
       if (res.status === 413) {
@@ -1245,6 +1271,13 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
       }
       if (!res.ok || !res.body) throw new Error('HTTP ' + res.status);
 
+      // Backend emits a multiplexed SSE stream:
+      //   event: token  → data: { text: "..." }
+      //   event: agent  → data: { agent, state, durationMs?, output? }
+      //   event: done   → data: { citations, invalidCitations, highRisk, finalMarkdown }
+      //   event: error  → data: { message }
+      // Events are separated by double newline; each event has its own
+      // `event:` and `data:` lines.
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
@@ -1254,17 +1287,33 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const event = JSON.parse(line.slice(6));
-            if (event.type === 'text') {
-              fullText += event.text;
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() ?? '';
+        for (const part of parts) {
+          const evMatch = part.match(/^event:\s*(.+)$/m);
+          const dataMatch = part.match(/^data:\s*(.+)$/m);
+          if (!evMatch || !dataMatch) continue;
+          const ev = evMatch[1].trim();
+          let payload: Record<string, unknown>;
+          try { payload = JSON.parse(dataMatch[1]); } catch { continue; }
+          if (ev === 'token') {
+            fullText += String(payload.text ?? '');
+            setMessages(m => m.map((msg, i) => i === m.length - 1 ? { ...msg, text: fullText } : msg));
+          } else if (ev === 'done') {
+            // Final payload may contain `finalMarkdown` (post-validated text
+            // with footer/disclaimer). Prefer it over the streamed tokens
+            // when present so the citation-validator's normalised output wins.
+            const finalMd = typeof payload.finalMarkdown === 'string' ? payload.finalMarkdown : '';
+            if (finalMd && finalMd.trim().length > 0) {
+              fullText = finalMd;
               setMessages(m => m.map((msg, i) => i === m.length - 1 ? { ...msg, text: fullText } : msg));
             }
-          } catch { /* skip malformed SSE */ }
+          } else if (ev === 'error') {
+            const msg = typeof payload.message === 'string' ? payload.message : 'stream_error';
+            throw new Error(msg);
+          }
+          // 'agent' events ignored here — they're consumed by AgentSidebar
+          // when present. Left intentionally silent to avoid noise.
         }
       }
 
@@ -1274,6 +1323,7 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
     } finally {
       setStreaming(false);
       void aiMsgId;
+      void refreshQuota();   // sync counter after each completed request
     }
   };
 
@@ -1342,6 +1392,66 @@ function ChatComplianceExpanded({ role: _role, context, onClose, score, pushToas
               />
               <button onClick={send} className="btn btn-primary" disabled={(!input.trim() && !pendingFile) || streaming}>
                 <Icon name="send" size={12} /> {streaming ? '…' : 'Invia'}
+              </button>
+            </div>
+
+            {/* Quota indicator (left) + permanent Lawyer CTA (right). Always visible. */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: 10,
+              gap: 12,
+              fontFamily: 'var(--sans)',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}>
+                {quota ? (
+                  <>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: quota.remaining === 0 ? 'var(--vermiglio)'
+                                : quota.remaining <= 2 ? '#d97706'   // ambra warning
+                                : 'var(--alloro, #5a7a3a)',
+                    }} />
+                    <span>{quota.used} / {quota.max} oggi</span>
+                    {quota.anonymous && quota.remaining <= 3 && (
+                      <span style={{ marginLeft: 8, color: 'var(--ink-3)', textTransform: 'none', letterSpacing: 0, fontFamily: 'var(--sans)', fontSize: 11 }}>
+                        — registrati per non perdere lo storico
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span>quota…</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  // TODO(NA-LEAD-CTA): apri modal "Rivolgiti a un legale (9€)"
+                  // che mostra: anteprima cosa l'avvocato vedrà (chat history)
+                  // + form contatto (cognome, telefono) + Stripe checkout.
+                  // Per ora redirect alla pagina dedicata.
+                  window.location.href = '/lead/new?conv=' + encodeURIComponent(conversationIdRef.current);
+                }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  background: 'var(--ink)',
+                  color: 'var(--paper)',
+                  border: 'none', borderRadius: 6,
+                  padding: '8px 14px',
+                  fontSize: 12, fontFamily: 'var(--sans)', fontWeight: 500,
+                  cursor: 'pointer',
+                  letterSpacing: '0.01em',
+                }}
+                title="Trasforma questa conversazione in un parere legale di un avvocato verificato"
+              >
+                <Icon name="user" size={11} />
+                Rivolgiti a un legale <span style={{ opacity: 0.7, marginLeft: 2 }}>· 9 €</span>
               </button>
             </div>
           </div>

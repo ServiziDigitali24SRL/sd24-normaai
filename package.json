@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "build:cap": "node scripts/build-cap-dataset.mjs",
     "sec:audit": "bash scripts/sec-audit/check-bundle-secrets.sh"
   },
   "dependencies": {
@@ -47,6 +48,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "comuni-json": "^1.0.0",
     "eslint": "^8",
     "eslint-config-next": "^15.3.1",
     "postcss": "^8",

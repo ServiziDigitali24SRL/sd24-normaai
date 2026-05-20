@@ -17,6 +17,8 @@ import { guardInput } from "@/lib/guardrails";
 import { encodeAgentEvent, type AgentEvent } from "@/lib/agent-events";
 import { getProvider, classifyComplexity } from "@/lib/llm/router";
 import { buildDateFactSystemAddendum } from "@/lib/llm/date-fact-router";
+import { checkAndIncrementQuota, getClientIp } from "@/lib/quota";
+import { createClient as createSupabaseServer } from "@/lib/supabase-server";
 import * as Sentry from "@sentry/nextjs";
 
 // Soft guard for queries asking time-pegged numbers (aliquote, soglie, year-spec).
@@ -55,6 +57,51 @@ export async function POST(req: NextRequest) {
   }
   const userQuery = guard.sanitized ?? body.message;
   const channel: SofiaChannel = body.channel ?? "chat";
+
+  // ── Daily quota gate (10 msg/24h, midnight Europe/Rome reset)
+  // Anonymous → sha256(ip + DAILY_QUOTA_SALT). Authenticated → user_id.
+  // Counts only `channel === "chat"` for now; voice/avatar/api have their own
+  // limits handled by the orb / API key rate limiter.
+  if (channel === "chat") {
+    let userId: string | null = null;
+    try {
+      const sb = await createSupabaseServer();
+      const { data: { user } } = await sb.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      // anon path is fine; just use IP
+    }
+    const ip = getClientIp(req);
+    const quota = await checkAndIncrementQuota(userId, ip);
+
+    if (!quota.allowed) {
+      const isAnon = quota.identifierType === "ip_hash";
+      const message = isAnon
+        ? "Hai usato le 10 query gratuite di oggi. Registrati per continuare o rivolgiti a un legale (9€)."
+        : "Hai raggiunto il limite di 10 messaggi al giorno. Torna domani o rivolgiti a un legale (9€).";
+      return new Response(
+        JSON.stringify({
+          error: "quota_exceeded",
+          message,
+          quota: {
+            used: quota.newCount,
+            max: quota.max,
+            remaining: 0,
+            anonymous: isAnon,
+            resets_at_tz: "Europe/Rome",
+          },
+        }),
+        {
+          status: 402,
+          headers: {
+            "Content-Type": "application/json",
+            "X-NormaAI-Quota-Used": String(quota.newCount),
+            "X-NormaAI-Quota-Max": String(quota.max),
+          },
+        },
+      );
+    }
+  }
 
   // ── SSE stream
   const encoder = new TextEncoder();

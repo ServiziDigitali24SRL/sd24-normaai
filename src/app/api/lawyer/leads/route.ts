@@ -1,5 +1,7 @@
-// /api/lawyer/leads — GET list of available leads matching the lawyer's
-// specializzazioni and city. Excludes leads the lawyer has already purchased.
+// /api/lawyer/leads — GET list of all available leads in Italy.
+// New scope (May 2026): no city/specializzazione filter — every verified lawyer
+// sees all available leads. Each lead can be purchased by only ONE lawyer
+// (exclusive), enforced by lead.status = 'sold' on first purchase.
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
@@ -15,47 +17,22 @@ export async function GET() {
 
   const { data: lawyer } = await supabase
     .from("lawyers")
-    .select("user_id, city, specializzazioni, verified")
+    .select("user_id, verification_status, verified")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!lawyer || !lawyer.verified) {
+  const isVerified = lawyer?.verification_status === "verified" || lawyer?.verified === true;
+  if (!isVerified) {
     return NextResponse.json({ error: "not_verified_lawyer" }, { status: 403 });
   }
 
-  // List available leads. RLS allows verified lawyers to read available leads
-  // (without contact fields — the marketplace_preview view exposes only safe cols).
+  // All available leads, ordered by newest first. RLS on leads_marketplace_preview
+  // hides contact fields — only preview-safe columns returned.
   const { data: leads } = await supabase
     .from("leads_marketplace_preview")
     .select("*")
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(200);
 
-  // Filter client-side by city + specializzazioni overlap (pgvector-style hybrid
-  // could do this server-side later)
-  const lawyerCity = (lawyer.city ?? "").toLowerCase();
-  const lawyerSpecs: string[] = (lawyer.specializzazioni ?? []).map((s: string) => s.toLowerCase());
-
-  type LeadPreview = {
-    id: string; vertical: string; city: string; summary: string;
-    score: number; pdf_url: string; created_at: string; expires_at: string;
-  };
-
-  const filtered = (leads as LeadPreview[] | null ?? []).filter(l => {
-    const matchCity = (l.city ?? "").toLowerCase() === lawyerCity;
-    const matchSpec = lawyerSpecs.some(s => (l.vertical ?? "").toLowerCase().includes(s) ||
-                                              s.includes((l.vertical ?? "").toLowerCase()));
-    return matchCity || matchSpec;   // any match
-  });
-
-  // Exclude already-purchased leads
-  const { data: bought } = await supabase
-    .from("lead_purchases")
-    .select("lead_id")
-    .eq("lawyer_id", user.id);
-  const boughtIds = new Set((bought ?? []).map(p => p.lead_id));
-
-  const available = filtered.filter(l => !boughtIds.has(l.id));
-
-  return NextResponse.json({ leads: available, total: available.length });
+  return NextResponse.json({ leads: leads ?? [], total: leads?.length ?? 0 });
 }

@@ -13,8 +13,12 @@ function isMobileUA(req: NextRequest): boolean {
 function isPublicApiRoute(pathname: string): boolean {
   return (
     pathname === "/api/chat" ||                        // freemium anonimo consentito
+    pathname === "/api/quota/me" ||                    // quota status (anon ok)
+    pathname.startsWith("/api/onboarding/lookup/") ||  // CAP/PIVA lookups (anon ok)
+    pathname === "/api/onboarding/finalize" ||         // crea account a fine onboarding
+    pathname === "/api/enterprise-leads" ||            // form Su Misura anonimo
     pathname.startsWith("/api/stripe/webhook") ||      // Stripe non manda cookie
-    pathname.startsWith("/api/auth/") ||               // OAuth callbacks
+    pathname.startsWith("/api/auth/") ||               // OAuth callbacks + OTP SMS
     pathname === "/api/bug-report" ||
     pathname === "/api/developer-waitlist" ||
     pathname === "/api/invest-lead" ||

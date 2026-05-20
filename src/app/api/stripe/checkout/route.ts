@@ -21,6 +21,10 @@ interface CheckoutBody {
   mode: "lead_create" | "lead_buy";
   conversation_id?: string;   // required for lead_create
   lead_id?: string;           // required for lead_buy
+  // Optional context propagated via Stripe metadata → webhook → leads row
+  contact_phone?: string;
+  city?: string;
+  vertical?: string;          // es. "civile", "lavoro", "famiglia"
 }
 
 export async function POST(req: NextRequest) {
@@ -74,6 +78,9 @@ export async function POST(req: NextRequest) {
           flow: "lead_create",
           user_id: user.id,
           conversation_id: body.conversation_id,
+          ...(body.contact_phone ? { contact_phone: body.contact_phone } : {}),
+          ...(body.city ? { city: body.city } : {}),
+          ...(body.vertical ? { vertical: body.vertical } : {}),
         },
         success_url: `${origin}/lead/created?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/?checkout=cancelled`,

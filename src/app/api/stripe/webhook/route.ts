@@ -154,6 +154,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, lead_id: lead.id, notified: matched.length });
     }
 
+    // ── FLOW: wallet_topup (lawyer ricarica wallet, 250€+ multipli di 250) ──
+    if (meta.flow === "wallet_topup" && meta.user_id && session.amount_total) {
+      const amountCents = session.amount_total; // Stripe già in cents
+      const { data: newBalance, error: topupErr } = await supabase.rpc("wallet_topup", {
+        p_user_id: meta.user_id,
+        p_amount_cents: amountCents,
+        p_stripe_session: session.id,
+        p_metadata: { source: "stripe_checkout", session_id: session.id },
+      });
+
+      if (topupErr) {
+        console.error("[stripe/webhook] wallet_topup failed", topupErr);
+        return NextResponse.json({ error: "wallet_topup_failed" }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        received: true,
+        flow: "wallet_topup",
+        user_id: meta.user_id,
+        amount_cents: amountCents,
+        new_balance_cents: newBalance,
+      });
+    }
+
     // ── FLOW: lead_buy (lawyer paid 91 €) ─────────────────────────────────
     if (meta.flow === "lead_buy" && meta.lawyer_id && meta.lead_id) {
       const { data: purchase, error: purErr } = await supabase
