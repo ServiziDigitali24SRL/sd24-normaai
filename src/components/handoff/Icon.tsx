@@ -4,7 +4,7 @@
  * All paths use currentColor stroke; size prop drives both width and height.
  */
 
-import type { SVGProps } from "react";
+import type { ReactNode, SVGProps } from "react";
 
 export type IconName =
   | "chat" | "archive" | "pdf" | "clock" | "users" | "plug" | "pen"
@@ -20,7 +20,7 @@ interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
   size?: number;
 }
 
-const PATHS: Record<IconName, JSX.Element> = {
+const PATHS: Record<IconName, ReactNode> = {
   chat: <path d="M4 6h16v10H8l-4 4V6z" />,
   archive: (
     <>
