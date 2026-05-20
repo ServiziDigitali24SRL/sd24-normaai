@@ -18,7 +18,13 @@ interface SidebarProps {
 }
 
 function Sidebar({ onNav }: SidebarProps) {
-  const items = [
+  const items: {
+    key: string;
+    icon: ReactNode;
+    label: string;
+    active?: boolean;
+    badge?: string;
+  }[] = [
     { key: "chat", icon: <Icon name="chat" />, label: "Chat legale", active: true },
     { key: "archivio", icon: <Icon name="archive" />, label: "Archivio documenti" },
     { key: "pdf", icon: <Icon name="doc" />, label: "Analisi PDF" },
