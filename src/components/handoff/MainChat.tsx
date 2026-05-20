@@ -20,18 +20,13 @@ interface SidebarProps {
 function Sidebar({ onNav }: SidebarProps) {
   const items = [
     { key: "chat", icon: <Icon name="chat" />, label: "Chat legale", active: true },
-    { key: "archivio", icon: <Icon name="archive" />, label: "Archivio documenti", badge: "12" },
+    { key: "archivio", icon: <Icon name="archive" />, label: "Archivio documenti" },
     { key: "pdf", icon: <Icon name="doc" />, label: "Analisi PDF" },
-    { key: "scadenze", icon: <Icon name="clock" />, label: "Scadenze", badge: "3" },
+    { key: "scadenze", icon: <Icon name="clock" />, label: "Scadenze" },
     { key: "prof", icon: <Icon name="users" />, label: "Trova professionista" },
   ];
 
-  const recent = [
-    { t: "Contratto locazione — cedolare secca", d: "2h fa" },
-    { t: "Licenziamento giusta causa", d: "Ieri" },
-    { t: "TFR e trattamento di fine rapporto", d: "3 giorni" },
-    { t: "Art. 2043 c.c. responsabilità", d: "1 sett." },
-  ];
+  const recent: { t: string; d: string }[] = [];
 
   return (
     <aside
@@ -88,43 +83,45 @@ function Sidebar({ onNav }: SidebarProps) {
         ))}
       </div>
 
-      <div style={{ padding: "8px 14px" }}>
-        <div className="caps" style={{ color: "var(--ink-4)", paddingLeft: 12, marginBottom: 6 }}>
-          Conversazioni recenti
-        </div>
-        {recent.map((c, i) => (
-          <button
-            key={i}
-            style={{
-              display: "block",
-              width: "100%",
-              textAlign: "left",
-              padding: "8px 12px",
-              background: "transparent",
-              border: "none",
-              borderRadius: 6,
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "var(--paper-2)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-          >
-            <div
+      {recent.length > 0 && (
+        <div style={{ padding: "8px 14px" }}>
+          <div className="caps" style={{ color: "var(--ink-4)", paddingLeft: 12, marginBottom: 6 }}>
+            Conversazioni recenti
+          </div>
+          {recent.map((c, i) => (
+            <button
+              key={i}
               style={{
-                fontSize: 13,
-                color: "var(--ink-2)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                padding: "8px 12px",
+                background: "transparent",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--paper-2)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
             >
-              {c.t}
-            </div>
-            <div className="mono" style={{ fontSize: 10, color: "var(--ink-4)", marginTop: 2 }}>
-              {c.d}
-            </div>
-          </button>
-        ))}
-      </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "var(--ink-2)",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {c.t}
+              </div>
+              <div className="mono" style={{ fontSize: 10, color: "var(--ink-4)", marginTop: 2 }}>
+                {c.d}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div style={{ flex: 1 }} />
 
@@ -139,7 +136,7 @@ function Sidebar({ onNav }: SidebarProps) {
       >
         <Stamp>Piano Gratuito</Stamp>
         <div style={{ fontSize: 13, color: "var(--ink-2)", margin: "10px 0 12px", lineHeight: 1.45 }}>
-          3 di 10 consultazioni mensili utilizzate
+          0 di 10 consultazioni mensili utilizzate
         </div>
         <div
           style={{
@@ -150,7 +147,7 @@ function Sidebar({ onNav }: SidebarProps) {
             overflow: "hidden",
           }}
         >
-          <div style={{ width: "30%", height: "100%", background: "var(--vermiglio)" }} />
+          <div style={{ width: "0%", height: "100%", background: "var(--vermiglio)" }} />
         </div>
         <button
           onClick={() => onNav?.("upgrade")}
@@ -416,7 +413,7 @@ export function MainChat({ onNav }: { onNav?: (key: string) => void }) {
                 </button>
                 <div style={{ flex: 1 }} />
                 <span className="mono" style={{ fontSize: 10, color: "var(--ink-4)" }}>
-                  7/10 consultazioni
+                  0/10 consultazioni
                 </span>
                 <button className="btn btn-accent" style={{ padding: "8px 14px" }}>
                   <Icon name="send" size={13} /> Invia
