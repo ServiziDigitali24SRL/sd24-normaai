@@ -86,10 +86,14 @@ export async function middleware(req: NextRequest) {
   const isProtectedApiRoute =
     pathname.startsWith("/api/") && !isPublicApiRoute(pathname);
 
-  // /onboarding Ã¨ sempre accessibile agli utenti autenticati
+  // /onboarding e' sempre accessibile (anche agli anon, per signup)
   const isOnboardingRoute = pathname.startsWith("/onboarding");
-  // /api/onboarding Ã¨ pubblica per utenti autenticati
-  const isOnboardingApi = pathname.startsWith("/api/onboarding/");
+  // /api/onboarding: solo le route NON gia' whitelisted devono passare
+  // dall'auth gate. Lookup/cap e finalize sono pubbliche (l'utente non
+  // ha ancora un account quando le chiama). Bugfix: in precedenza
+  // isOnboardingApi superava la whitelist e bloccava l'intero flow signup.
+  const isOnboardingApi =
+    pathname.startsWith("/api/onboarding/") && !isPublicApiRoute(pathname);
 
   if (!isProtectedPageRoute && !isProtectedApiRoute && !isOnboardingApi) {
     return NextResponse.next();
