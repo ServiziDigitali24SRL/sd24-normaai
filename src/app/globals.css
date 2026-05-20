@@ -48,3 +48,143 @@ html, body {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0.4; }
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * HANDOFF DESIGN SYSTEM (SER-209)
+ * Tokens del template Claude Design handoff (20/05/2026), scope-isolati per
+ * non collidere con il design system attuale (LandingHero, diario, ecc.).
+ * I componenti di /chat, /onboarding (reskin), /utente, /avvocato, /impresa,
+ * /api-access, /su-misura applicano data-design="handoff" sul root.
+ * ────────────────────────────────────────────────────────────────────────── */
+[data-design="handoff"] {
+  /* Paper & Ink */
+  --paper: #F6F2EA;
+  --paper-2: #EFE9DD;
+  --paper-3: #E6DFD0;
+  --paper-line: #D8CFBC;
+  --paper-tint: #FBF8F1;
+
+  --ink: #13110F;
+  --ink-2: #2A2621;
+  --ink-3: #4A433A;
+  --ink-4: #756C5E;
+  --ink-5: #A89F90;
+
+  /* Accents */
+  --vermiglio: oklch(0.58 0.18 35);
+  --vermiglio-soft: oklch(0.58 0.18 35 / 0.12);
+  --vermiglio-ink: oklch(0.38 0.14 35);
+  --alloro: oklch(0.45 0.06 145);
+  --alloro-soft: oklch(0.45 0.06 145 / 0.12);
+  --ambra: oklch(0.72 0.14 75);
+  --ambra-soft: oklch(0.72 0.14 75 / 0.15);
+
+  /* Type — riusa CSS vars già esposte da next/font in layout.tsx */
+  --serif: var(--font-instrument-serif), 'Iowan Old Style', Georgia, serif;
+  --sans: var(--font-inter-tight), system-ui, -apple-system, sans-serif;
+  --mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Radii — almost architectural */
+  --r-sm: 3px;
+  --r-md: 6px;
+  --r-lg: 10px;
+
+  /* Shadows */
+  --shadow-1: 0 1px 0 rgba(19,17,15,0.04), 0 1px 2px rgba(19,17,15,0.04);
+  --shadow-2: 0 1px 0 rgba(19,17,15,0.05), 0 4px 16px -4px rgba(19,17,15,0.08);
+  --shadow-3: 0 2px 0 rgba(19,17,15,0.04), 0 16px 40px -8px rgba(19,17,15,0.12);
+
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--paper);
+  font-feature-settings: "ss01", "cv11";
+}
+
+[data-design="handoff"] .serif { font-family: var(--serif); font-weight: 400; letter-spacing: -0.01em; }
+[data-design="handoff"] .mono { font-family: var(--mono); }
+[data-design="handoff"] .caps { text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; font-weight: 500; }
+[data-design="handoff"] .num { font-variant-numeric: tabular-nums; }
+[data-design="handoff"] .rule { height: 1px; background: var(--paper-line); border: 0; }
+[data-design="handoff"] .rule-ink { height: 1px; background: var(--ink); border: 0; }
+
+/* Paper grain background — SVG noise overlay (multiply blend) */
+[data-design="handoff"] .grain { position: relative; isolation: isolate; }
+[data-design="handoff"] .grain::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.07  0 0 0 0 0.06  0 0 0 0 0.05  0 0 0 0.05 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: -1;
+  mix-blend-mode: multiply;
+}
+
+/* Buttons */
+[data-design="handoff"] .btn {
+  font-family: var(--sans);
+  font-size: 14px; font-weight: 500;
+  padding: 10px 18px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: all 0.15s ease;
+  background: transparent;
+  color: var(--ink);
+  line-height: 1;
+}
+[data-design="handoff"] .btn-primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+[data-design="handoff"] .btn-primary:hover { background: var(--ink-2); }
+[data-design="handoff"] .btn-accent { background: var(--vermiglio); color: white; border-color: var(--vermiglio); }
+[data-design="handoff"] .btn-accent:hover { filter: brightness(0.95); }
+[data-design="handoff"] .btn-ghost { background: transparent; border-color: var(--paper-line); }
+[data-design="handoff"] .btn-ghost:hover { background: var(--paper-2); border-color: var(--ink-5); }
+
+/* Stamp annotation — rotated -1.5° editorial mark */
+[data-design="handoff"] .stamp {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transform: rotate(-1.5deg);
+  color: var(--vermiglio-ink);
+}
+
+/* Section label — editorial signature with § prefix */
+[data-design="handoff"] .section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+[data-design="handoff"] .section-label::before {
+  content: '§';
+  font-family: var(--serif);
+  font-size: 18px;
+  color: var(--vermiglio);
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+/* Scrollbar — paper-toned */
+[data-design="handoff"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+[data-design="handoff"] ::-webkit-scrollbar-track { background: transparent; }
+[data-design="handoff"] ::-webkit-scrollbar-thumb { background: var(--paper-line); border-radius: 5px; border: 2px solid var(--paper); }
+[data-design="handoff"] ::-webkit-scrollbar-thumb:hover { background: var(--ink-5); }
+
+/* Focus */
+[data-design="handoff"] :focus-visible { outline: 2px solid var(--vermiglio); outline-offset: 2px; }
+
+/* Utility */
+[data-design="handoff"] .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+[data-design="handoff"] .hover-lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
