@@ -55,13 +55,15 @@ export async function middleware(req: NextRequest) {
   // SER-184 sprint launch: mobile default surface ora è /voice (Surface 1),
   // /avatar resta desktop-only e mobile UA viene rediretto a /voice.
   // /mobile resta accessibile come legacy bookmark.
+  // Pivot scope May 2026: mobile UA -> /mobile/welcome (standalone blue+orange).
+  // ?desktop=1 bypassa il redirect.
   if (
     req.method === "GET" &&
     isMobileUA(req) &&
     !req.nextUrl.searchParams.has("desktop") &&
-    (pathname === "/" || pathname === "/avatar")
+    (pathname === "/" || pathname === "/avatar" || pathname === "/voice")
   ) {
-    return NextResponse.redirect(new URL("/voice", req.url));
+    return NextResponse.redirect(new URL("/mobile/welcome", req.url));
   }
 
   // ââ /mobile routes are always public (auth handled client-side) âââââââââââ
