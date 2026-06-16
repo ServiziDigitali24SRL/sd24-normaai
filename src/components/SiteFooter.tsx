@@ -127,7 +127,7 @@ export function SiteFooter({ lastUpdateLabel }: SiteFooterProps = {}) {
             className="uppercase tracking-[0.18em]"
             style={{ fontFamily: 'var(--font-jetbrains-mono)' }}
           >
-            Servizi Digitali 24 S.R.L. · D-U-N-S 302416196 · Sede legale: Roma · support@normaai.it
+            Servizi Digitali 24 S.R.L. · D-U-N-S 302416196 · Sede legale: Roma · francesco@servizidigitali24.online
           </p>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p
