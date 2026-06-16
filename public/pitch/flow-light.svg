@@ -1,0 +1,53 @@
+<svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flusso marketplace a due lati" font-family="Inter,system-ui,sans-serif">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#C9A14B"/></marker>
+  </defs>
+  <rect width="960" height="520" rx="14" fill="#FDFBF7"/>
+  <rect x="0.5" y="0.5" width="959" height="519" rx="14" fill="none" stroke="#E8E0D2"/>
+  <text x="480" y="44" text-anchor="middle" font-family="Georgia,serif" font-size="24" fill="#1A1714">Un marketplace legale a due lati</text>
+  <text x="480" y="68" text-anchor="middle" font-size="13" fill="#6B5F55">Gratis per chi chiede · redditizio per chi assiste</text>
+
+  <text x="150" y="108" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" letter-spacing="1.5" fill="#2E7D5B">CITTADINO</text>
+  <text x="480" y="108" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" letter-spacing="1.5" fill="#C93924">NORMA AI</text>
+  <text x="810" y="108" text-anchor="middle" font-family="ui-monospace,monospace" font-size="12" letter-spacing="1.5" fill="#8E2818">AVVOCATO</text>
+
+  <rect x="360" y="130" width="240" height="116" rx="10" fill="#FBE8E4" stroke="#C93924"/>
+  <text x="480" y="160" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#1A1714">Agente vocale AI</text>
+  <text x="480" y="184" text-anchor="middle" font-size="12" fill="#6B5F55">RAG ibrido · &gt;1M documenti</text>
+  <text x="480" y="202" text-anchor="middle" font-size="12" fill="#6B5F55">8,8M chunk · fonti citate</text>
+  <text x="480" y="226" text-anchor="middle" font-size="12" fill="#2E7D5B" font-weight="600">risposta gratuita a tutti</text>
+
+  <g>
+    <rect x="40" y="138" width="220" height="44" rx="8" fill="#F8F4ED" stroke="#E8E0D2"/>
+    <text x="150" y="165" text-anchor="middle" font-size="13" fill="#1A1714">fa una domanda legale</text>
+    <rect x="40" y="280" width="220" height="56" rx="8" fill="#F8F4ED" stroke="#E8E0D2"/>
+    <text x="150" y="304" text-anchor="middle" font-size="13" fill="#1A1714">serve un avvocato?</text>
+    <text x="150" y="324" text-anchor="middle" font-size="13" fill="#C93924" font-weight="600">paga 9 € e finalizza</text>
+    <rect x="40" y="410" width="220" height="60" rx="8" fill="#F8F4ED" stroke="#E8E0D2"/>
+    <text x="150" y="434" text-anchor="middle" font-size="13" fill="#1A1714">riceve fino a 4 pareri</text>
+    <text x="150" y="454" text-anchor="middle" font-size="13" fill="#2E7D5B" font-weight="600">sceglie il suo avvocato</text>
+  </g>
+  <g>
+    <rect x="700" y="138" width="220" height="44" rx="8" fill="#F8F4ED" stroke="#E8E0D2"/>
+    <text x="810" y="165" text-anchor="middle" font-size="13" fill="#1A1714">sfoglia i casi (swipe)</text>
+    <rect x="700" y="280" width="220" height="56" rx="8" fill="#F8F4ED" stroke="#E8E0D2"/>
+    <text x="810" y="304" text-anchor="middle" font-size="13" fill="#1A1714">PDF anonimizzato</text>
+    <text x="810" y="324" text-anchor="middle" font-size="13" fill="#C93924" font-weight="600">compra il lead · 91 €</text>
+    <rect x="700" y="410" width="220" height="60" rx="8" fill="#F8F4ED" stroke="#E8E0D2"/>
+    <text x="810" y="434" text-anchor="middle" font-size="13" fill="#1A1714">stesso lead venduto</text>
+    <text x="810" y="454" text-anchor="middle" font-size="13" fill="#8E2818" font-weight="600">fino a 4 volte</text>
+  </g>
+
+  <path d="M260 160 L356 188" fill="none" stroke="#2E7D5B" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M360 214 L262 298" fill="none" stroke="#2E7D5B" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+  <text x="300" y="250" text-anchor="middle" font-size="11" fill="#2E7D5B">gratis</text>
+  <path d="M260 308 L356 220" fill="none" stroke="#C93924" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M600 188 L698 300" fill="none" stroke="#C93924" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M698 160 L602 188" fill="none" stroke="#8E2818" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M810 336 L810 406" fill="none" stroke="#8E2818" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M700 440 L262 440" fill="none" stroke="#2E7D5B" stroke-width="2" marker-end="url(#a)"/>
+  <text x="480" y="432" text-anchor="middle" font-size="11" fill="#6B5F55">fino a 4 call / video-call</text>
+
+  <rect x="300" y="478" width="360" height="34" rx="8" fill="#FBF2DD" stroke="#C9A14B"/>
+  <text x="480" y="500" text-anchor="middle" font-family="Georgia,serif" font-size="14" fill="#8E2818" font-weight="600">Ricavo per lead: fino a 373 € (9 € + 4 × 91 €)</text>
+</svg>

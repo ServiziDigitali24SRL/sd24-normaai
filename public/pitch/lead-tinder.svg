@@ -1,0 +1,47 @@
+<svg viewBox="0 0 560 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anteprima marketplace lead stile Tinder">
+  <rect width="560" height="420" rx="10" fill="#FDFBF7"/>
+  <rect x="0.5" y="0.5" width="559" height="419" rx="10" fill="none" stroke="#E8E0D2"/>
+  <text x="28" y="40" font-family="ui-monospace,monospace" font-size="11" letter-spacing="2" fill="#C93924">MARKETPLACE AVVOCATI · SWIPE</text>
+  <text x="28" y="64" font-family="Georgia,serif" font-size="22" fill="#1A1714">I casi, <tspan font-style="italic" fill="#C93924">come su Tinder.</tspan></text>
+
+  <!-- back cards (stack) -->
+  <rect x="178" y="92" width="204" height="276" rx="14" fill="#F0EADD"/>
+  <rect x="168" y="86" width="224" height="288" rx="14" fill="#F8F4ED" stroke="#E8E0D2"/>
+  <!-- top card -->
+  <rect x="158" y="80" width="244" height="300" rx="14" fill="#FFFFFF" stroke="#D8CFBC"/>
+
+  <!-- anonymized header -->
+  <circle cx="190" cy="116" r="14" fill="#F0EADD"/>
+  <text x="190" y="121" text-anchor="middle" font-family="Inter,sans-serif" font-size="13" fill="#9A8E83">🔒</text>
+  <text x="214" y="112" font-family="Inter,sans-serif" font-size="13" fill="#1A1714" font-weight="600">Cliente anonimo · Milano</text>
+  <text x="214" y="128" font-family="ui-monospace,monospace" font-size="9" fill="#6B5F55">DIRITTO DI LOCAZIONE</text>
+
+  <line x1="176" y1="142" x2="384" y2="142" stroke="#E8E0D2"/>
+
+  <text x="176" y="166" font-family="Inter,sans-serif" font-size="11.5" fill="#3D3530">Sfratto per morosità: inquilino</text>
+  <text x="176" y="183" font-family="Inter,sans-serif" font-size="11.5" fill="#3D3530">moroso da 3 mensilità. Cerca</text>
+  <text x="176" y="200" font-family="Inter,sans-serif" font-size="11.5" fill="#3D3530">avvocato per intimazione e</text>
+  <text x="176" y="217" font-family="Inter,sans-serif" font-size="11.5" fill="#3D3530">convalida. Parere AI allegato.</text>
+
+  <!-- pdf chip -->
+  <rect x="176" y="232" width="208" height="26" rx="6" fill="#FBF2DD" stroke="#E6CF93"/>
+  <text x="188" y="249" font-family="ui-monospace,monospace" font-size="9.5" fill="#7a5d12">📄 PDF ANONIMIZZATO · cliente ha pagato 9 €</text>
+
+  <!-- tags -->
+  <rect x="176" y="268" width="70" height="22" rx="11" fill="#F0EADD"/><text x="211" y="283" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#3D3530">Urgente</text>
+  <rect x="252" y="268" width="86" height="22" rx="11" fill="#F0EADD"/><text x="295" y="283" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" fill="#3D3530">Civile</text>
+
+  <!-- price -->
+  <text x="176" y="324" font-family="Georgia,serif" font-size="18" fill="#1A1714">Acquista lead</text>
+  <text x="384" y="324" text-anchor="end" font-family="Georgia,serif" font-size="20" fill="#C93924" font-weight="600">91 €</text>
+  <text x="176" y="344" font-family="Inter,sans-serif" font-size="9.5" fill="#6B5F55">venduto fino a 4 avvocati</text>
+
+  <!-- swipe buttons -->
+  <circle cx="430" cy="170" r="30" fill="#FFFFFF" stroke="#E8E0D2"/>
+  <text x="430" y="178" text-anchor="middle" font-size="22" fill="#9A8E83">✕</text>
+  <text x="430" y="218" text-anchor="middle" font-family="ui-monospace,monospace" font-size="8.5" fill="#6B5F55">PASSA</text>
+
+  <circle cx="430" cy="280" r="34" fill="#C93924"/>
+  <text x="430" y="290" text-anchor="middle" font-size="24" fill="#FFFFFF">♥</text>
+  <text x="430" y="328" text-anchor="middle" font-family="ui-monospace,monospace" font-size="8.5" fill="#C93924">PRENDI</text>
+</svg>

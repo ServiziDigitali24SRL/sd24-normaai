@@ -1,0 +1,37 @@
+<svg viewBox="0 0 560 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anteprima agente vocale Sofia">
+  <defs>
+    <radialGradient id="orb" cx="50%" cy="40%" r="60%">
+      <stop offset="0" stop-color="#E4604C"/>
+      <stop offset="1" stop-color="#C93924"/>
+    </radialGradient>
+  </defs>
+  <rect width="560" height="380" rx="10" fill="#FDFBF7"/>
+  <rect x="0.5" y="0.5" width="559" height="379" rx="10" fill="none" stroke="#E8E0D2"/>
+  <!-- label -->
+  <text x="28" y="40" font-family="ui-monospace,monospace" font-size="11" letter-spacing="2" fill="#C93924">AGENTE VOCALE · SOFIA</text>
+  <text x="28" y="64" font-family="Georgia,serif" font-size="22" fill="#1A1714">Parla. Lei risponde <tspan font-style="italic" fill="#C93924">con la legge in mano.</tspan></text>
+
+  <!-- orb -->
+  <circle cx="110" cy="200" r="56" fill="url(#orb)"/>
+  <circle cx="110" cy="200" r="70" fill="none" stroke="#C93924" stroke-opacity="0.35"/>
+  <circle cx="110" cy="200" r="84" fill="none" stroke="#C93924" stroke-opacity="0.18"/>
+  <text x="110" y="290" text-anchor="middle" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.5" fill="#6B5F55">● IN ASCOLTO</text>
+
+  <!-- chat bubbles -->
+  <g font-family="Inter,system-ui,sans-serif">
+    <rect x="210" y="100" width="320" height="44" rx="8" fill="#F0EADD"/>
+    <text x="226" y="120" font-size="12" fill="#3D3530">"Il mio inquilino non paga da 3 mesi.</text>
+    <text x="226" y="136" font-size="12" fill="#3D3530">Posso sfrattarlo?"</text>
+
+    <rect x="210" y="158" width="320" height="118" rx="8" fill="#FBE8E4" stroke="#F0D2CC"/>
+    <text x="226" y="180" font-size="12" fill="#1A1714">Sì. Per morosità puoi avviare lo sfratto</text>
+    <text x="226" y="197" font-size="12" fill="#1A1714">con intimazione e citazione per la convalida.</text>
+    <text x="226" y="220" font-size="12" fill="#1A1714">La soglia è di due rate non pagate.</text>
+    <!-- source chip -->
+    <rect x="226" y="234" width="288" height="28" rx="6" fill="#FBF2DD" stroke="#E6CF93"/>
+    <text x="238" y="252" font-family="ui-monospace,monospace" font-size="10" fill="#7a5d12">📎 FONTE · L. 392/1978 art. 5 · c.p.c. art. 658</text>
+  </g>
+
+  <!-- footer note -->
+  <text x="210" y="300" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#6B5F55">Risposta gratuita · ogni affermazione cita la norma vigente</text>
+</svg>
