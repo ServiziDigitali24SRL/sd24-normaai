@@ -32,6 +32,7 @@ const COL_RISORSE = [
   { label: 'Diario di costruzione', href: '/come_ho_costruito_norma' },
   { label: 'Stato corpus', href: '/come_ho_costruito_norma#chi-lavora' },
   { label: 'Manifesto', href: '/manifesto' },
+  { label: 'Per investitori', href: '/pitch' },
 ];
 
 const COL_LEGALE = [
