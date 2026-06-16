@@ -44,4 +44,4 @@ Cerchiamo un **investitore/partner finanziario** e **membri del team** (Sales/av
 
 ---
 
-📧 **immobiliarcoach@gmail.com** · Servizi Digitali 24 S.r.l.
+📧 **francesco@servizidigitali24.online** · Servizi Digitali 24 S.r.l.

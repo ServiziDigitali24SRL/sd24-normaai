@@ -130,7 +130,7 @@ Per portare NormaAI **al 100%** e lanciarla cerchiamo:
 ## 🏢 Contatti
 
 **Servizi Digitali 24 S.r.l.** (SD24) — progettato e costruito con **Claude**.
-📧 immobiliarcoach@gmail.com · 🌐 [normaai.it](https://normaai.it/)
+📧 francesco@servizidigitali24.online · 🌐 [normaai.it](https://normaai.it/)
 
 <div align="center">
 <sub>NormaAI — la legge italiana, accessibile a tutti. Gratis per chi chiede, redditizio per chi assiste.</sub>
