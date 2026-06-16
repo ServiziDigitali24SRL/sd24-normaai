@@ -13,6 +13,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { SiteFooter } from '@/components/SiteFooter';
 import { WhatsAppFab } from '@/components/WhatsAppFab';
+import { BPGateForm } from '@/components/BPGateForm';
 
 export const metadata: Metadata = {
   title: 'NormaAI · Pitch per incubatori',
@@ -78,6 +79,9 @@ export default function PitchPage() {
           </a>
           <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="rounded border border-[#D8CFBC] px-6 py-3 text-[13px] font-semibold hover:border-[#756C5E]">
             Codice su GitHub
+          </a>
+          <a href="#business-plan" className="rounded border border-[#D8CFBC] px-6 py-3 text-[13px] font-semibold hover:border-[#756C5E]">
+            Ricevi il Business Plan
           </a>
         </div>
       </section>
@@ -225,6 +229,30 @@ export default function PitchPage() {
                 </a>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Business Plan gated ── */}
+      <section id="business-plan" className="scroll-mt-16 border-t border-[#D8CFBC]">
+        <div className="mx-auto max-w-5xl px-6 py-20">
+          <Label>Business Plan</Label>
+          <div className="grid items-start gap-10 md:grid-cols-2">
+            <div>
+              <h2 className="text-[1.75rem] leading-tight" style={{ ...serif, fontWeight: 400 }}>
+                Il Business Plan completo, su richiesta.
+              </h2>
+              <p className="mt-4 text-[15px] leading-relaxed text-[#3D3530]">
+                Mercato, modello, unit economics, go-to-market, proiezioni a 18 mesi, uso dei fondi e team.
+                Lascia i tuoi dati e lo ricevi subito.
+              </p>
+              <ul className="mt-5 space-y-2 text-[14px] text-[#6B5F55]">
+                <li>📈 Proiezioni: obiettivo 2M € di ricavi in 18 mesi</li>
+                <li>💰 Round: 100k € — uso dei fondi dettagliato</li>
+                <li>🛡️ Vantaggio difendibile, rischi e mitigazioni</li>
+              </ul>
+            </div>
+            <BPGateForm />
           </div>
         </div>
       </section>
