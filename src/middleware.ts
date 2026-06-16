@@ -55,7 +55,7 @@ export async function middleware(req: NextRequest) {
     req.method === "GET" &&
     isMobileUA(req) &&
     !req.nextUrl.searchParams.has("desktop") &&
-    (pathname === "/" || pathname === "/avatar")
+    pathname === "/avatar"
   ) {
     return NextResponse.redirect(new URL("/voice", req.url));
   }
@@ -136,6 +136,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|html)$).*)",
   ],
 };
