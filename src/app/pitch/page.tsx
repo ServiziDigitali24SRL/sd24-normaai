@@ -101,7 +101,7 @@ export default function PitchPage() {
               <p className="mt-4 text-[15px] leading-relaxed text-[#3D3530]">
                 Una piattaforma <strong>a due lati</strong>. Per il cittadino: un agente vocale AI risponde gratis,
                 citando la legge; quando serve un avvocato umano paga <strong>9 €</strong> per finalizzare. Per
-                l&apos;avvocato: sfoglia i casi come su Tinder e <strong>compra il lead a 91 €</strong> — venduto
+                l&apos;avvocato: sfoglia i casi come su Tinder e <strong>compra il lead a 99 €</strong> — venduto
                 fino a 4 volte. Il cittadino riceve fino a 4 pareri e sceglie il suo avvocato.
               </p>
             </div>
@@ -172,7 +172,7 @@ export default function PitchPage() {
               <h2 className="text-[1.75rem] leading-tight" style={{ ...serif, fontWeight: 400 }}>I casi, come su Tinder.</h2>
               <p className="mt-4 text-[15px] leading-relaxed text-[#3D3530]">
                 Gli avvocati sfogliano i casi: leggono il <strong>PDF anonimizzato</strong> del problema (il cliente
-                ha già pagato 9 €) e, quando uno interessa, <strong>comprano il lead a 91 €</strong>. Lo stesso caso
+                ha già pagato 9 €) e, quando uno interessa, <strong>comprano il lead a 99 €</strong>. Lo stesso caso
                 viene venduto fino a 4 volte. Il cittadino confronta i pareri e sceglie.
               </p>
             </div>
@@ -188,8 +188,8 @@ export default function PitchPage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {[
               ['9 €', 'finalizzazione cittadino'],
-              ['4 × 91 €', 'acquisto lead avvocati'],
-              ['fino a 373 €', 'ricavo per lead · costo di servizio ≈ 0'],
+              ['4 × 99 €', 'acquisto lead avvocati'],
+              ['fino a 405 €', 'ricavo per lead · costo di servizio ≈ 0'],
             ].map(([big, small]) => (
               <div key={big} className="rounded border border-[#D8CFBC] bg-[#FBF8F1] p-5">
                 <p className="text-[1.5rem]" style={{ ...serif, color: VERM }}>{big}</p>

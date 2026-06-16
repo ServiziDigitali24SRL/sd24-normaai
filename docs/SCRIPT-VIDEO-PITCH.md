@@ -1,7 +1,7 @@
 # 🎬 NormaAI — Script video pitch (3 min)
 
 > Per avatar parlante + 12 slide. Frasi brevi e "a respiro". Tra `[ ]` slide e testo a schermo.
-> Durata ~3:00 · ~470 parole · ritmo speaker calmo (~150 ppm).
+> Durata ~3:15 · ritmo speaker calmo (~150 ppm).
 
 **[SLIDE 1 — Logo NormaAI · "La legge italiana, accessibile a tutti"]**
 > Ciao, sono Francesco, founder di NormaAI.
@@ -29,10 +29,10 @@
 > Ma quando serve un avvocato umano — una diffida, una difesa, un mandato — l'AI non basta.
 > Lì il cittadino paga nove euro per finalizzare la richiesta.
 
-**[SLIDE 6 — Marketplace · interfaccia swipe Tinder]**
+**[SLIDE 6 — Marketplace · swipe stile Tinder]**
 > Ed è qui che entra il secondo lato.
 > Gli avvocati sfogliano i casi come su Tinder: leggono il PDF anonimizzato del problema.
-> Quando un caso interessa, comprano il contatto per novantuno euro.
+> Quando un caso interessa, comprano il contatto per novantanove euro.
 > Lo stesso caso viene venduto fino a quattro volte.
 
 **[SLIDE 7 — La scelta · "4 pareri → 1 avvocato"]**
@@ -40,30 +40,32 @@
 > E poi sceglie il suo avvocato — per competenza, recensioni, e qualità del parere.
 > Assistenza gratuita per lui. Clienti qualificati per loro.
 
-**[SLIDE 8 — Unit economics · "fino a 373 € / caso"]**
+**[SLIDE 8 — Unit economics · "fino a 405 € / caso"]**
 > E i numeri funzionano.
-> Per ogni caso finalizzato: nove euro dal cittadino, più quattro avvocati a novantuno.
-> Fino a trecentosettantatré euro di ricavo per singolo lead.
+> Per ogni caso finalizzato: nove euro dal cittadino, più quattro avvocati a novantanove.
+> Fino a quattrocentocinque euro di ricavo per singolo lead.
 > Con un costo di servizio vicino allo zero, perché a rispondere è l'AI.
 
-**[SLIDE 9 — Il vantaggio · "1M+ documenti · 8,8M chunk"]**
+**[SLIDE 9 — Il vantaggio + stack · "1M+ documenti · 8,8M chunk"]**
 > Il vero asset è sotto il cofano.
 > Abbiamo fatto scraping su GPU dell'intera normativa italiana: oltre un milione di documenti.
 > Tagliati in otto milioni e ottocentomila frammenti, con ricerca ibrida e versioning temporale.
+> E tutto gira su uno stack moderno e solido: Next.js sul front-end, Supabase con pgvector per la ricerca vettoriale, Claude come motore di ragionamento, e una voce AI in tempo reale.
 > Un corpus legale pulito e indicizzato che è difficilissimo da replicare.
 
-**[SLIDE 10 — Stato · "MVP completo · online"]**
+**[SLIDE 10 — Stato · "MVP completo · online su normaai.it"]**
 > E non è un'idea su una slide.
 > Il prodotto è già costruito e funzionante: motore dati, agente vocale e marketplace. È online, su normaai.it.
 
-**[SLIDE 11 — L'ask · foto Francesco + "Cerco: capitale + team"]**
+**[SLIDE 11 — L'ask · foto Francesco + "100k → 2M in 18 mesi"]**
 > L'ho portato fin qui da solo, con l'AI come moltiplicatore.
-> Ora per lanciarlo cerco due cose: un investitore che creda nella missione, e le persone giuste per la squadra.
+> Ora cerco centomila euro: è quanto serve per lanciare e arrivare a due milioni di ricavi in diciotto mesi.
+> E cerco le persone giuste per costruire la squadra.
 
-**[SLIDE 12 — Chiusura · logo + normaai.it + email]**
+**[SLIDE 12 — Chiusura · logo + normaai.it + WhatsApp + email]**
 > NormaAI rende la legge italiana accessibile a tutti.
 > Gratis per chi chiede. Redditizio per chi assiste.
-> Parliamone.
+> Se vuoi saperne di più, scrivimi su WhatsApp. Parliamone.
 
 ---
 

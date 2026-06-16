@@ -33,7 +33,7 @@
 
   <!-- price -->
   <text x="176" y="324" font-family="Georgia,serif" font-size="18" fill="#1A1714">Acquista lead</text>
-  <text x="384" y="324" text-anchor="end" font-family="Georgia,serif" font-size="20" fill="#C93924" font-weight="600">91 €</text>
+  <text x="384" y="324" text-anchor="end" font-family="Georgia,serif" font-size="20" fill="#C93924" font-weight="600">99 €</text>
   <text x="176" y="344" font-family="Inter,sans-serif" font-size="9.5" fill="#6B5F55">venduto fino a 4 avvocati</text>
 
   <!-- swipe buttons -->

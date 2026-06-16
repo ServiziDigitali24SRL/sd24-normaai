@@ -48,7 +48,7 @@
 
   <rect x="690" y="300" width="230" height="58" rx="10" fill="#13243b" stroke="#2a3f5c"/>
   <text x="805" y="325" text-anchor="middle" fill="#e6edf5" font-size="13">PDF anonimizzato</text>
-  <text x="805" y="345" text-anchor="middle" fill="#c9a227" font-size="13" font-weight="700">compra il lead · 91 €</text>
+  <text x="805" y="345" text-anchor="middle" fill="#c9a227" font-size="13" font-weight="700">compra il lead · 99 €</text>
 
   <rect x="690" y="430" width="230" height="62" rx="10" fill="#13243b" stroke="#2a3f5c"/>
   <text x="805" y="455" text-anchor="middle" fill="#e6edf5" font-size="13">stesso lead venduto</text>
@@ -75,5 +75,5 @@
 
   <!-- Economics bar -->
   <rect x="280" y="500" width="400" height="40" rx="10" fill="#1a2c47" stroke="#c9a227" stroke-width="1.2"/>
-  <text x="480" y="525" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Ricavo per lead: fino a 373 € &#160;&#160;(9 € + 4 × 91 €)</text>
+  <text x="480" y="525" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="700">Ricavo per lead: fino a 405 € &#160;&#160;(9 € + 4 × 99 €)</text>
 </svg>

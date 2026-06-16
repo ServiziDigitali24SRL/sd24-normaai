@@ -18,13 +18,13 @@ Milioni di cittadini, imprenditori e turisti ogni anno hanno un problema legale 
 ## 💡 La soluzione
 Una piattaforma a due lati:
 - **Cittadino** → un **agente vocale AI** risponde **gratis**, citando le fonti di legge. Se serve un avvocato umano, paga **9 €** per finalizzare la richiesta.
-- **Avvocato** → sfoglia i casi **come su Tinder** (PDF anonimizzati) e **compra il lead a 91 €**. Ogni lead è venduto **fino a 4 volte**.
+- **Avvocato** → sfoglia i casi **come su Tinder** (PDF anonimizzati) e **compra il lead a 99 €**. Ogni lead è venduto **fino a 4 volte**.
 - Il cittadino riceve **fino a 4 pareri** e sceglie l'avvocato per **competenze, recensioni e parere**.
 
 ![Flusso NormaAI](assets/flow.svg)
 
 ## 💰 Unit economics
-**Fino a 373 € di ricavo per singolo caso finalizzato** → `9 € (cittadino) + 4 × 91 € (avvocati)`.
+**Fino a 405 € di ricavo per singolo caso finalizzato** → `9 € (cittadino) + 4 × 99 € (avvocati)`.
 Costo marginale di servizio ≈ **0** (la consulenza la eroga l'AI). Doppia monetizzazione dello stesso lead.
 
 ## 🧠 Vantaggio difendibile

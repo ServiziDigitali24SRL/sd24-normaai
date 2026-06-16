@@ -39,7 +39,7 @@ Una **piattaforma a due lati** che usa l'AI per abbattere la barriera d'ingresso
 Un **agente vocale AI** risponde **gratuitamente a chiunque**, fondando ogni risposta su fonti normative reali (niente allucinazioni: ogni risposta cita la legge). Quando il problema **richiede un avvocato umano** (una diffida, una difesa, un mandato), il cittadino paga **9 €** per **finalizzare la richiesta** e accedere al marketplace.
 
 ### Lato avvocato — *un marketplace di lead qualificati*
-Gli avvocati sfogliano i casi **come su Tinder**: leggono i **PDF anonimizzati** in cui i clienti hanno descritto il problema e già pagato i 9 €. Quando un caso interessa, l'avvocato lo **acquista pagando 91 €**. Ogni lead può essere venduto **fino a 4 volte**.
+Gli avvocati sfogliano i casi **come su Tinder**: leggono i **PDF anonimizzati** in cui i clienti hanno descritto il problema e già pagato i 9 €. Quando un caso interessa, l'avvocato lo **acquista pagando 99 €**. Ogni lead può essere venduto **fino a 4 volte**.
 
 Il cittadino riceve così **fino a 4 pareri telefonici** e poi **sceglie l'avvocato** con cui difendersi o a cui dare mandato — in base a **competenze, recensioni e qualità del parere ricevuto**.
 
@@ -54,8 +54,8 @@ Ricavo per **singolo caso finalizzato**:
 | Fonte | Importo |
 |---|---|
 | Cittadino (finalizzazione) | **9 €** |
-| Avvocato #1–#4 (acquisto lead) | **4 × 91 €** |
-| **Totale potenziale per lead** | **fino a 373 €** |
+| Avvocato #1–#4 (acquisto lead) | **4 × 99 €** |
+| **Totale potenziale per lead** | **fino a 405 €** |
 
 - **Costo marginale di servizio ≈ 0**: la consulenza gratuita è erogata dall'AI; il valore monetizzabile nasce solo quando c'è reale intenzione d'azione (il filtro dei 9 €).
 - **Doppia monetizzazione** dello stesso lead (lato domanda + lato offerta).
@@ -81,7 +81,7 @@ Ricavo per **singolo caso finalizzato**:
 - **LLM**: Claude Sonnet 4.6 (via OpenRouter).
 - **Voice**: Vapi (orb mobile) + Audio2Face NIM (avatar desktop — fase 2).
 - **Orchestrazione**: pipeline multi-agente con telemetria live (`src/components/AgentSidebar.tsx`).
-- **Pagamenti**: Stripe (9 € finalizzazione cittadino · 91 € acquisto lead avvocato).
+- **Pagamenti**: Stripe (9 € finalizzazione cittadino · 99 € acquisto lead avvocato).
 - **Compliance by design**: PDF lead **anonimizzati**, footer **AI Act** nell'UI.
 
 > Documentazione tecnica completa (pivot, schema DB, run): [`docs/README-dev.md`](docs/README-dev.md).
@@ -102,7 +102,7 @@ npm run dev
 - ✅ Pipeline RAG su **1.038.456 documenti** → **8.842.327 chunk** (ricerca ibrida)
 - ✅ Agente vocale con risposte fonti-citate
 - ✅ Marketplace lead con PDF anonimizzati e swipe avvocati
-- ✅ Flusso di pagamento Stripe (9 € / 91 €)
+- ✅ Flusso di pagamento Stripe (9 € / 99 €)
 - ⏳ Lancio pubblico e acquisizione dei primi avvocati e cittadini
 
 ---
