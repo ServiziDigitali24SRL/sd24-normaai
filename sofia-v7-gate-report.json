@@ -1,0 +1,299 @@
+{
+  "run_at": "2026-05-09T18:50:50.108Z",
+  "model": "google/gemini-2.5-flash",
+  "n": 10,
+  "pass": 10,
+  "pass_rate": 1,
+  "reports": [
+    {
+      "id": "T1",
+      "channel": "voice/avatar",
+      "user": "Mio padre 80 anni gli hanno fatto un TSO ieri",
+      "response": "Capisco, è un momento difficile. Mi dica intanto: il TSO è stato disposto dal sindaco su proposta di un medico?\n\n[CERTO] Il TSO dura massimo sette giorni. [Fonte 1] Art. 35 della legge ottocento trentatré del settantotto. Suo padre ha diritto a un avvocato di fiducia immediatamente.\n\nQuello che si può fare ora è chiedere al giudice tutelare la convalida del provvedimento, un'udienza che si tiene entro quarantotto ore.\n\nMi dia il nome dell'ospedale: Le indico i riferimenti precisi.\n\n*Risposta generata da AI ai sensi Reg. UE 2024/1689*",
+      "latency_ms": 1233,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 539,
+          "cap": 9999
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta generata da AI ai sensi Reg. UE 2024/1689"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T2",
+      "channel": "voice/avatar",
+      "user": "Mi hanno cambiato mansioni senza motivazione, è legale?",
+      "response": "Le devo chiedere prima una cosa fondamentale: la sua data di assunzione è precedente al sette marzo duemilaquindici?\n\n[CERTO] L'articolo duemilatre del codice civile, modificato dal Jobs Act, consente al datore di lavoro di assegnarLa a mansioni del livello inferiore solo in casi specifici e con comunicazione scritta motivata.\n\nSe non c'è motivazione scritta, ha diritto di rifiutare il demansionamento e chiedere il ripristino delle mansioni precedenti, oltre al risarcimento del danno professionale.\n\nMi dica se ha ricevuto comunicazione formale del cambio mansioni.\n\n*Risposta generata da AI ai sensi Reg. UE 2024/1689*",
+      "latency_ms": 1275,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 624,
+          "cap": 9999
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta generata da AI ai sensi Reg. UE 2024/1689"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T3",
+      "channel": "voice/avatar",
+      "user": "Quali sono le aliquote IRPEF 2024?",
+      "response": "Mi scuso, ma non ho accesso a informazioni aggiornate sulle aliquote IRPEF per il 2024. Le aliquote fiscali possono subire modifiche annuali e per fornirle un dato preciso avrei bisogno di consultare fonti aggiornate.\n\n*Risposta generata da AI ai sensi Reg. UE 2024/1689*",
+      "latency_ms": 1722,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 271,
+          "cap": 9999
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta generata da AI ai sensi Reg. UE 2024/1689"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T4",
+      "channel": "voice/avatar",
+      "user": "Qual è la soglia per gli appalti sotto-soglia comunitaria 2024?",
+      "response": "Mi scuso, ma non ho a disposizione informazioni aggiornate sulle soglie per gli appalti sotto-soglia comunitaria per l'anno 2024. Le soglie vengono stabilite a livello europeo e possono subire aggiornamenti periodici.\n\nPer fornirle una risposta precisa, dovrei consultare le fonti ufficiali più recenti. Potrebbe indicarmi se si riferisce a una specifica tipologia di appalto (lavori, servizi, forniture) o a un particolare settore? In questo modo potrei cercare di recuperare le informazioni più pertinenti.",
+      "latency_ms": 1449,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 508,
+          "cap": 9999
+        },
+        "disclaimer_present": {
+          "pass": false,
+          "expected": "Risposta generata da AI ai sensi Reg. UE 2024/1689"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T5",
+      "channel": "community",
+      "user": "GDPR data breach quanto tempo per notificare?",
+      "response": "72 ore al Garante (art. 33 Reg. UE 2016/679). Se rischio alto, anche all'interessato senza ritardo. Risposta automatica · Sofia AI di NormaAI",
+      "latency_ms": 866,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 141,
+          "cap": 200
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta automatica · Sofia AI di NormaAI"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T6",
+      "channel": "dm",
+      "user": "Locazione 4+4: si applica la cedolare secca?",
+      "response": "[CERTO] Sì: la cedolare secca al 21% si può applicare a contratti 4+4 abitativi. Per i contratti a canone concordato l'aliquota scende al 10%. Va esercitata l'opzione in dichiarazione e va comunicata al conduttore con raccomandata. Riferimenti: D.Lgs. 23/2011 e art. 3 TUIR. Se vuole, mi dica città e tipo di contratto: posso indicarLe se ha diritto al canale a canone concordato. Risposta automatica · Sofia AI di NormaAI",
+      "latency_ms": 2321,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 422,
+          "cap": 500
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta automatica · Sofia AI di NormaAI"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T7",
+      "channel": "voice/avatar",
+      "user": "Posso parlare con un avvocato?",
+      "response": "Sì, ha il pulsante a schermo. Costa nove euro.",
+      "latency_ms": 660,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 46,
+          "cap": 9999
+        },
+        "disclaimer_present": {
+          "pass": false,
+          "expected": "Risposta generata da AI ai sensi Reg. UE 2024/1689"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T8",
+      "channel": "community",
+      "user": "Posso parlare con un avvocato?",
+      "response": "Sì, sul nostro sito può prenotare un consulto a nove euro. Risposta automatica · Sofia AI di NormaAI",
+      "latency_ms": 701,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 100,
+          "cap": 200
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta automatica · Sofia AI di NormaAI"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T9",
+      "channel": "voice/avatar",
+      "user": "Per quanto tempo è obbligatoria la mediazione civile?",
+      "response": "[CERTO] La mediazione civile ha una durata massima di tre mesi. [Fonte 1] D.Lgs. 28/2010, art. 6. Questo termine decorre dalla data di deposito della domanda di mediazione.\n\n*Risposta generata da AI ai sensi Reg. UE 2024/1689*",
+      "latency_ms": 1076,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 226,
+          "cap": 9999
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta generata da AI ai sensi Reg. UE 2024/1689"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    },
+    {
+      "id": "T10",
+      "channel": "voice/avatar",
+      "user": "Verbale della polizia per eccesso di velocità: entro quanti giorni va contestato?",
+      "response": "Buongiorno, sono Sofia, l'avvocato AI di NormaAI. Mi dica, in cosa posso aiutarLa?\n\n[CERTO] Il verbale per eccesso di velocità deve essere notificato entro novanta giorni dalla data dell'infrazione, se l'accertamento non è avvenuto contestualmente. Questo termine è stabilito dall'articolo duecento del Codice della Strada.\n\nSe la notifica avviene oltre questo termine, il verbale è nullo e non è dovuto il pagamento della sanzione.\n\nHa già ricevuto il verbale o l'accertamento è avvenuto in sua presenza?\n\n*Risposta generata da AI ai sensi Reg. UE 2024/1689*",
+      "latency_ms": 1774,
+      "checks": {
+        "formal_lei": {
+          "pass": true,
+          "note": "ok"
+        },
+        "length_within_cap": {
+          "pass": true,
+          "chars": 559,
+          "cap": 9999
+        },
+        "disclaimer_present": {
+          "pass": true,
+          "expected": "Risposta generata da AI ai sensi Reg. UE 2024/1689"
+        },
+        "no_emoji": {
+          "pass": true
+        },
+        "no_markdown_lists": {
+          "pass": true
+        }
+      },
+      "overall_pass": true
+    }
+  ]
+}
