@@ -1,0 +1,12 @@
+[Unit]
+Description=NormaAI · Trigger batch-launch watcher every 2 minutes
+Requires=normaai-batch-launch.service
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Unit=normaai-batch-launch.service
+
+[Install]
+WantedBy=timers.target

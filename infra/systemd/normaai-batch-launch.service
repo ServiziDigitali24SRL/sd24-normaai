@@ -1,0 +1,15 @@
+[Unit]
+Description=NormaAI · Reel batch-launch file watcher (git fetch + diff scripts/reel-batch-launch.json)
+Documentation=https://github.com/ServiziDigitali24SRL/sd24-normaai/blob/main/infra/systemd/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=normaai
+WorkingDirectory=/opt/sd24-normaai
+EnvironmentFile=/etc/sd24-normaai/batch-launch.env
+ExecStart=/usr/bin/npx tsx scripts/check-batch-launch.ts
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=120

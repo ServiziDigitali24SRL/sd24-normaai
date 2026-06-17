@@ -1,0 +1,17 @@
+[Unit]
+Description=NormaAI · Higgsfield photo watcher (Francesco generated photos → S3 → Telegram poll)
+Documentation=https://github.com/ServiziDigitali24SRL/sd24-normaai/blob/main/infra/systemd/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=normaai
+WorkingDirectory=/opt/sd24-normaai
+EnvironmentFile=/etc/sd24-normaai/photo-watcher.env
+# scripts/check-francesco-photo.ts: lists s3://normaai-assets/francesco/incoming/
+# and pings the Telegram channel for new photo events.
+ExecStart=/usr/bin/npx tsx scripts/check-francesco-photo.ts
+StandardOutput=journal
+StandardError=journal
+TimeoutStartSec=120
